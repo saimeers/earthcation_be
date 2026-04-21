@@ -26,9 +26,9 @@ const login = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    const { username } = req.body;
-    if (!username) return res.status(400).json({ error: 'El username es requerido' });
-    const result = await authService.forgotPassword(username);
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'El email es requerido' });
+    const result = await authService.forgotPassword(email);
     res.json(result);
   } catch (err) { next(err); }
 };

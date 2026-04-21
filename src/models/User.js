@@ -22,6 +22,12 @@ const User = sequelize.define('User', {
   last_name: {
     type: DataTypes.STRING,
   },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+    validate: { isEmail: true }
+  },
   age: {
     type: DataTypes.INTEGER,
   },

@@ -1,9 +1,11 @@
-const { User, UserProfile } = require('../models');
-const { hashPassword, comparePassword } = require('../utils/hash.utils');
-const { generateToken } = require('../utils/jwt.utils');
-const { generateResetToken, hashToken } = require('../utils/token.utils');
+const { User, UserProfile }                    = require('../models');
+const { hashPassword, comparePassword }        = require('../utils/hash.utils');
+const { generateToken }                        = require('../utils/jwt.utils');
+const { generateResetToken, hashToken }        = require('../utils/token.utils');
+const { sendPasswordResetEmail }               = require('../utils/email.utils');
+const { Op }                                   = require('sequelize');
 
-const register = async ({ username, password, first_name, last_name, age, cedula, role, organization_id, location_id }) => {
+const register = async ({ username, password, email, first_name, last_name, age, cedula, role, organization_id, location_id }) => {
   const existing = await User.findOne({ where: { username } });
   if (existing) {
     const error = new Error('El nombre de usuario ya está en uso');
@@ -20,14 +22,24 @@ const register = async ({ username, password, first_name, last_name, age, cedula
     }
   }
 
+  if (email) {
+    const emailExists = await User.findOne({ where: { email } });
+    if (emailExists) {
+      const error = new Error('El correo ya está registrado');
+      error.status = 409;
+      throw error;
+    }
+  }
+
   const password_hash = await hashPassword(password);
   const user = await User.create({
-    username, password_hash, first_name, last_name, age, cedula,
+    username, password_hash, email,
+    first_name, last_name, age, cedula,
     role: role || 'player'
   });
 
   await UserProfile.create({
-    user_id: user.id,
+    user_id:         user.id,
     organization_id: organization_id || null,
     location_id:     location_id     || null
   });
@@ -73,6 +85,7 @@ const login = async ({ username, password }) => {
       last_name:      user.last_name,
       role:           user.role,
       cedula:         user.cedula,
+      email:          user.email,
       vark_completed: !!user.varkProfile,
       dominant_style: user.varkProfile?.dominant_style || null,
       organization:   user.profile?.organization || null,
@@ -81,25 +94,29 @@ const login = async ({ username, password }) => {
   };
 };
 
-const forgotPassword = async (username) => {
-  const user = await User.findOne({ where: { username } });
+const forgotPassword = async (email) => {
+  const user = await User.findOne({ where: { email } });
+
   if (!user) {
-    const error = new Error('Usuario no encontrado');
-    error.status = 404;
-    throw error;
+    return { message: 'Si el correo está registrado recibirás un enlace en breve.' };
   }
 
-  const rawToken   = generateResetToken();
+  const rawToken    = generateResetToken();
   const hashedToken = hashToken(rawToken);
-  const expires    = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+  const expires     = new Date(Date.now() + 15 * 60 * 1000);
 
   await user.update({
     reset_token_hash:    hashedToken,
     reset_token_expires: expires
   });
 
-  // Por ahora lo devolvemos para poder testear
-  return { reset_token: rawToken, expires_in: '15 minutos' };
+  await sendPasswordResetEmail({
+    to:         user.email,
+    username:   user.first_name || user.username,
+    resetToken: rawToken
+  });
+
+  return { message: 'Si el correo está registrado recibirás un enlace en breve.' };
 };
 
 const resetPassword = async (rawToken, newPassword) => {
@@ -107,8 +124,8 @@ const resetPassword = async (rawToken, newPassword) => {
 
   const user = await User.findOne({
     where: {
-      reset_token_hash: hashedToken,
-      reset_token_expires: { [require('sequelize').Op.gt]: new Date() }
+      reset_token_hash:    hashedToken,
+      reset_token_expires: { [Op.gt]: new Date() }
     }
   });
 
