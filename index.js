@@ -38,6 +38,15 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 sequelize.authenticate()
-  .then(() => sequelize.sync({ alter: process.env.NODE_ENV === 'development' }))
-  .then(() => app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`)))
-  .catch(err => { console.error('Error DB:', err); process.exit(1); });
+  .then(() => {
+    console.log('✅ Conexión a PostgreSQL exitosa.');
+    return sequelize.sync({ alter: true });
+  })
+  .then(() => {
+    console.log('✅ Tablas sincronizadas.');
+    app.listen(PORT, () => console.log(`🚀 Servidor en http://localhost:${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ Error DB:', err.message); 
+    process.exit(1);
+  });
