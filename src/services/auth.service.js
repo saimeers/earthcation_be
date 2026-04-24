@@ -52,9 +52,9 @@ const register = async ({ username, password, email, first_name, last_name, age,
   };
 };
 
-const login = async ({ username, password }) => {
+const login = async ({ cedula, password }) => {
   const user = await User.findOne({
-    where: { username },
+    where: { cedula },
     include: [
       { association: 'varkProfile' },
       {
@@ -74,7 +74,7 @@ const login = async ({ username, password }) => {
     throw error;
   }
 
-  const token = generateToken({ id: user.id, username: user.username, role: user.role });
+  const token = generateToken({ id: user.id, username: user.cedula, role: user.role });
 
   return {
     token,

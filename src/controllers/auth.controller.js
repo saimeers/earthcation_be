@@ -15,11 +15,11 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) {
+    const { cedula, password } = req.body;
+    if (!cedula || !password) {
       return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
     }
-    const result = await authService.login({ username, password });
+    const result = await authService.login({ cedula, password });
     res.json({ message: 'Login exitoso', ...result });
   } catch (err) { next(err); }
 };
