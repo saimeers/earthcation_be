@@ -21,6 +21,8 @@ app.use('/api/progress',  require('./src/routes/progress.routes'));
 app.use('/api/levels',    require('./src/routes/level.routes'));
 app.use('/api/sessions',  require('./src/routes/session.routes'));
 app.use('/api/analytics', require('./src/routes/analytics.routes'));
+app.use('/api/locations',     require('./src/routes/location.routes'));
+app.use('/api/organizations', require('./src/routes/organization.routes'));
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
