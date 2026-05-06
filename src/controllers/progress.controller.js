@@ -18,10 +18,19 @@ const save = async (req, res, next) => {
   }
 };
 
-const getMyProgress = async (req, res, next) => {
+const getFullMeProgress = async (req, res, next) => {
   try {
-    const progress = await progressService.getFullProgress(req.user.id);
+    const progress = await progressService.getFullMeProgress(req.user.id);
     res.json({ user_id: req.user.id, total_attempts: progress.length, progress });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getSessionProgress = async (req, res, next) => {
+  try {
+    const data = await progressService.getSessionProgress(req.params.id, req.user.id);
+    res.json(data);
   } catch (err) {
     next(err);
   }
@@ -36,4 +45,4 @@ const getProgressByLevel = async (req, res, next) => {
   }
 };
 
-module.exports = { save, getMyProgress, getProgressByLevel };
+module.exports = { save, getFullMeProgress, getSessionProgress, getProgressByLevel };

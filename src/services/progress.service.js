@@ -18,13 +18,21 @@ const saveProgress = async (userId, { risk_id, session_id, is_mitigated, mistake
   });
 };
 
-const getFullProgress = async (userId) => {
+const getFullMeProgress = async (userId) => {
   return UserRiskProgress.findAll({
     where: { user_id: userId },
     include: [{
       model: Risk, as: 'risk',
       include: [{ model: Level, as: 'level' }]
     }],
+    order: [['recorded_at', 'DESC']]
+  });
+};
+
+const getSessionProgress = async (sessionId, userId) => {
+  return UserRiskProgress.findAll({
+    where: { session_id: sessionId, user_id: userId },
+    include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }],
     order: [['recorded_at', 'DESC']]
   });
 };
@@ -62,4 +70,4 @@ const getProgressByLevel = async (userId, levelId) => {
   };
 };
 
-module.exports = { saveProgress, getFullProgress, getProgressByLevel };
+module.exports = { saveProgress, getFullMeProgress, getSessionProgress, getProgressByLevel };
