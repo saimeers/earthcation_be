@@ -2,7 +2,7 @@ const { Organization, UserProfile } = require('../models');
 const { Op } = require('sequelize');
 
 const getAll = async () => {
-    return Organization.findAll({ where: { is_active: true }, order: [['name', 'ASC']] });
+    return Organization.findAll({ order: [['name', 'ASC']] });
 };
 
 const getById = async (id) => {
