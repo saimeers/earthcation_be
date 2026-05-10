@@ -54,4 +54,10 @@ const getByLocation = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { create, join, start, end, getProgress, getMySessions, getByLocation };
+const getAll = async (req, res, next) => {
+  try {
+    const sessions = await sessionService.getAllSessions();
+    res.json(sessions);
+  } catch (err) { next(err); }
+}
+module.exports = { getAll, create, join, start, end, getProgress, getMySessions, getByLocation };

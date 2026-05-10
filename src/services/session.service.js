@@ -144,4 +144,14 @@ const getSessionsByLocation = async ({ department, municipality }) => {
   });
 };
 
-module.exports = { createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation };
+const getAllSessions = async () => {
+  return TrainingSession.findAll({
+    include: [
+      { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name', 'email'] },
+      { model: SessionUser, as: 'participants' },
+    ],
+    order: [['created_at', 'DESC']],
+  });
+};
+
+module.exports = { getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation };
