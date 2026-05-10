@@ -1,5 +1,12 @@
 const userService = require('../services/user.service');
 
+const createByAdmin = async (req, res, next) => {
+  try {
+    const result = await userService.createByAdmin(req.body);
+    res.status(201).json(result);
+  } catch (err) { next(err); }
+};
+
 const getAll = async (req, res, next) => {
   try {
     const { role, organization_id, location_id } = req.query;
@@ -29,4 +36,4 @@ const remove = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getAll, getById, update, remove };
+module.exports = { getAll, getById, update, remove, createByAdmin };

@@ -4,6 +4,7 @@ const requireRole = require('../middleware/role.middleware');
 const userController = require('../controllers/user.controller');
 
 router.get('/',     auth, requireRole('admin', 'instructor'), userController.getAll);
+router.post('/', auth, requireRole('admin'), userController.createByAdmin);
 router.get('/:id',  auth, requireRole('admin', 'instructor'), userController.getById);
 router.put('/:id',  auth, userController.update);
 router.delete('/:id', auth, requireRole('admin'), userController.remove);
