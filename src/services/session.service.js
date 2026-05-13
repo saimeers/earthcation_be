@@ -154,4 +154,73 @@ const getAllSessions = async () => {
   });
 };
 
-module.exports = { getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation };
+const getSessionProgressAdmin = async (sessionId) => {
+  const session = await TrainingSession.findByPk(sessionId, {
+    include: [
+      { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name', 'email'] },
+      {
+        model: SessionUser, as: 'participants',
+        include: [{
+          model: User, as: 'user',
+          attributes: ['id', 'first_name', 'last_name', 'username', 'cedula'],
+          include: [{ association: 'varkProfile', attributes: ['dominant_style'] }]
+        }]
+      }
+    ]
+  })
+
+  if (!session) {
+    const error = new Error('Sesión no encontrada')
+    error.status = 404
+    throw error
+  }
+
+  const participants = await Promise.all(
+    session.participants.map(async (su) => {
+      const progress = await UserRiskProgress.findAll({
+        where: { user_id: su.user_id, session_id: sessionId },
+        include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }]
+      })
+
+      const total     = progress.length
+      const mitigated = progress.filter(p => p.is_mitigated).length
+      const avgTime   = total > 0
+        ? progress.reduce((acc, p) => acc + (p.reaction_time_ms || 0), 0) / total
+        : null
+
+      // Agrupa por nivel
+      const byLevel = {}
+      progress.forEach(p => {
+        const levelName = p.risk?.level?.name ?? 'Sin nivel'
+        const levelId   = p.risk?.level?.id   ?? 'unknown'
+        if (!byLevel[levelId]) byLevel[levelId] = { name: levelName, total: 0, mitigated: 0, risks: [] }
+        byLevel[levelId].total++
+        if (p.is_mitigated) byLevel[levelId].mitigated++
+        byLevel[levelId].risks.push({
+          risk_id:          p.risk_id,
+          risk_name:        p.risk?.name,
+          category:         p.risk?.category,
+          is_mitigated:     p.is_mitigated,
+          mistakes_count:   p.mistakes_count,
+          reaction_time_ms: p.reaction_time_ms,
+          recorded_at:      p.recorded_at,
+        })
+      })
+
+      return {
+        user:            su.user,
+        dominant_style:  su.user?.varkProfile?.dominant_style || null,
+        total_attempts:  total,
+        mitigated,
+        percentage:      total > 0 ? Math.round((mitigated / total) * 100) : 0,
+        avg_reaction_ms: avgTime ? Math.round(avgTime) : null,
+        by_level:        Object.values(byLevel),
+        progress,
+      }
+    })
+  )
+
+  return { session, participants }
+}
+
+module.exports = { getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin };

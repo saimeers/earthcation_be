@@ -45,4 +45,13 @@ const getProgressByLevel = async (req, res, next) => {
   }
 };
 
-module.exports = { save, getFullMeProgress, getSessionProgress, getProgressByLevel };
+const getHistoryByUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params
+    const { session_id } = req.query
+    const data = await progressService.getHistoryByUser(userId, session_id)
+    res.json(data)
+  } catch (err) { next(err) }
+}
+
+module.exports = { save, getFullMeProgress, getSessionProgress, getProgressByLevel, getHistoryByUser };

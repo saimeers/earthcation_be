@@ -60,4 +60,12 @@ const getAll = async (req, res, next) => {
     res.json(sessions);
   } catch (err) { next(err); }
 }
-module.exports = { getAll, create, join, start, end, getProgress, getMySessions, getByLocation };
+
+const getProgressAdmin = async (req, res, next) => {
+  try {
+    const data = await sessionService.getSessionProgressAdmin(req.params.id)
+    res.json(data)
+  } catch (err) { next(err) }
+}
+
+module.exports = { getAll, create, join, start, end, getProgress, getMySessions, getByLocation, getProgressAdmin };

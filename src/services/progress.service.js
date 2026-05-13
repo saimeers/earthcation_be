@@ -70,4 +70,18 @@ const getProgressByLevel = async (userId, levelId) => {
   };
 };
 
-module.exports = { saveProgress, getFullMeProgress, getSessionProgress, getProgressByLevel };
+const getHistoryByUser = async (userId, sessionId) => {
+  const where = { user_id: userId }
+  if (sessionId) where.session_id = sessionId
+
+  return UserRiskProgress.findAll({
+    where,
+    include: [{
+      model: Risk, as: 'risk',
+      include: [{ model: Level, as: 'level' }]
+    }],
+    order: [['recorded_at', 'DESC']]
+  })
+}
+
+module.exports = { saveProgress, getFullMeProgress, getSessionProgress, getProgressByLevel, getHistoryByUser };

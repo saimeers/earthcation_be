@@ -11,5 +11,6 @@ router.get('/by-location',    auth, requireRole('instructor', 'admin'), sessionC
 router.patch('/:id/start',  auth, requireRole('instructor', 'admin'), sessionController.start);
 router.patch('/:id/end',    auth, requireRole('instructor', 'admin'), sessionController.end);
 router.get('/:id/progress', auth, requireRole('instructor', 'admin'), sessionController.getProgress);
+router.get('/:id/progress/admin', auth, requireRole('admin'), sessionController.getProgressAdmin)
 
 module.exports = router;
