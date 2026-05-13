@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const auth   = require('../middleware/auth.middleware');
+const requireRole = require('../middleware/role.middleware');
 const { save, getFullMeProgress, getSessionProgress, getProgressByLevel, getHistoryByUser } = require('../controllers/progress.controller');
 
 router.post('/save',           auth, save);
