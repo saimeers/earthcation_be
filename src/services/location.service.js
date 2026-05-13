@@ -2,16 +2,23 @@ const { Location } = require('../models');
 const { Op } = require('sequelize');
 
 const getAll = async () => {
-    return Location.findAll({ order: [['department', 'ASC'], ['municipality', 'ASC']] });
+    return Location.findAll({ where: { is_active: true }, order: [['department', 'ASC'], ['municipality', 'ASC']] });
 };
 
 const getById = async (id) => {
-    const location = await Location.findByPk(id);
+    const where = {
+        id,
+        is_active: true
+    };
+
+    const location = await Location.findOne({ where });
+
     if (!location) {
         const error = new Error('Localidad no encontrada');
         error.status = 404;
         throw error;
     }
+
     return location;
 };
 
