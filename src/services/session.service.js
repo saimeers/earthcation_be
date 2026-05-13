@@ -120,26 +120,22 @@ const getSessionsByLocation = async ({ department, municipality }) => {
   if (department)   locationWhere.department   = department;
   if (municipality) locationWhere.municipality = municipality;
 
+  const isFiltering = Object.keys(locationWhere).length > 0;
+
   return TrainingSession.findAll({
     include: [
       {
+        model: Location,
+        as: 'location', 
+        where: isFiltering ? locationWhere : undefined,
+        required: isFiltering 
+      },
+      {
         model: User,
         as: 'instructor',
-        attributes: ['id', 'first_name', 'last_name', 'cedula'],
-        required: true,
-        include: [{
-          model: UserProfile,
-          as: 'profile',
-          required: true,
-          include: [{
-            model: Location,
-            as: 'location',
-            where: locationWhere,
-            required: true
-          }]
-        }]
+        attributes: ['id', 'first_name', 'last_name', 'cedula']
       },
-      { association: 'participants' }
+      { association: 'participants' } 
     ],
     order: [['created_at', 'DESC']]
   });
@@ -148,8 +144,19 @@ const getSessionsByLocation = async ({ department, municipality }) => {
 const getAllSessions = async () => {
   return TrainingSession.findAll({
     include: [
-      { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name', 'email'] },
-      { model: SessionUser, as: 'participants' },
+      { 
+        model: Location, 
+        as: 'location' 
+      },
+      { 
+        model: User, 
+        as: 'instructor', 
+        attributes: ['id', 'first_name', 'last_name', 'email'] 
+      },
+      { 
+        model: SessionUser, 
+        as: 'participants' 
+      },
     ],
     order: [['created_at', 'DESC']],
   });
