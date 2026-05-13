@@ -2,7 +2,7 @@ const { Location } = require('../models');
 const { Op } = require('sequelize');
 
 const getAll = async () => {
-    return Location.findAll({ where: { is_active: true }, order: [['department', 'ASC'], ['municipality', 'ASC']] });
+    return Location.findAll({ order: [['department', 'ASC'], ['municipality', 'ASC']] });
 };
 
 const getById = async (id) => {
