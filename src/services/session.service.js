@@ -1,7 +1,7 @@
 const { TrainingSession, SessionUser, User, UserRiskProgress, Risk, Level, UserProfile, Location } = require('../models');
 const { generateSessionCode } = require('../utils/session.utils');
 
-const createSession = async (instructorId, { name }) => {
+const createSession = async (instructorId, { name, location_id }) => {
   let code, exists;
   do {
     code  = generateSessionCode();
@@ -10,6 +10,7 @@ const createSession = async (instructorId, { name }) => {
 
   return TrainingSession.create({
     instructor_id: instructorId,
+    location_id: location_id,
     name,
     code,
     status: 'waiting'

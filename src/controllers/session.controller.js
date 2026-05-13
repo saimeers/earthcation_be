@@ -2,9 +2,12 @@ const sessionService = require('../services/session.service');
 
 const create = async (req, res, next) => {
   try {
-    const { name } = req.body;
+    const { name, location_id } = req.body;
+    
     if (!name) return res.status(400).json({ error: 'El nombre de la sesión es requerido' });
-    const session = await sessionService.createSession(req.user.id, { name });
+    if (!location_id) return res.status(400).json({ error: 'La localidad (location_id) es requerida' }); // <-- VALIDACIÓN
+    
+    const session = await sessionService.createSession(req.user.id, { name, location_id });
     res.status(201).json({ message: 'Sesión creada', session });
   } catch (err) { next(err); }
 };

@@ -37,6 +37,8 @@ UserRiskProgress.belongsTo(Risk, { foreignKey: 'risk_id', as: 'risk' });
 TrainingSession.hasMany(SessionUser,      { foreignKey: 'session_id', as: 'participants' });
 TrainingSession.hasMany(UserRiskProgress, { foreignKey: 'session_id', as: 'progress' });
 TrainingSession.belongsTo(User, { foreignKey: 'instructor_id', as: 'instructor' });
+TrainingSession.belongsTo(Location, { foreignKey: 'location_id', as: 'location' });
+Location.hasMany(TrainingSession, { foreignKey: 'location_id', as: 'sessions' });
 SessionUser.belongsTo(TrainingSession, { foreignKey: 'session_id', as: 'session' });
 UserRiskProgress.belongsTo(TrainingSession, { foreignKey: 'session_id', as: 'session' });
 

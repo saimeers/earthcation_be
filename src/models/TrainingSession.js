@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const TrainingSession = sequelize.define('TrainingSession', {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     instructor_id: { type: DataTypes.UUID, allowNull: false },
+    location_id: { type: DataTypes.UUID, allowNull: false }, // <-- NUEVO CAMPO AÑADIDO
     name: { type: DataTypes.STRING, allowNull: false },
     code: {
         type: DataTypes.STRING(8),
