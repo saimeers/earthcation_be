@@ -6,6 +6,10 @@ const SessionUser = sequelize.define('SessionUser', {
     session_id: { type: DataTypes.UUID, allowNull: false },
     user_id: { type: DataTypes.UUID, allowNull: false },
     joined_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
-}, { tableName: 'session_users', timestamps: false });
+}, {
+    tableName: 'session_users',
+    timestamps: false,
+    indexes: [{ unique: true, fields: ['session_id', 'user_id'] }]
+});
 
 module.exports = SessionUser;
