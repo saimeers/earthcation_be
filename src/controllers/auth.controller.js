@@ -16,8 +16,8 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { cedula, password } = req.body;
-    if (!cedula || !password) {
-      return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
+    if (!cedula) {
+      return res.status(400).json({ error: 'La cédula es requerida' });
     }
     const result = await authService.login({ cedula, password });
     res.json({ message: 'Login exitoso', ...result });

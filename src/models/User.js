@@ -23,9 +23,11 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
   },
   email: {
+    // No es único a propósito — muchos trabajadores registran el correo de la empresa
+    // en vez del propio (ver bulk import ANM), así que varias personas pueden compartirlo.
+    // La cédula es el identificador real de login, no el correo.
     type: DataTypes.STRING,
     allowNull: true,
-    unique: true,
     validate: { isEmail: true }
   },
   age: {

@@ -52,6 +52,9 @@ const register = async ({ username, password, email, first_name, last_name, age,
   };
 };
 
+// El juego (jugadores) inicia sesión solo con cédula. El panel web (admin/instructor)
+// sigue exigiendo contraseña — mismo endpoint, la exigencia depende del rol del usuario
+// encontrado, no de lo que mande el cliente.
 const login = async ({ cedula, password }) => {
   const user = await User.findOne({
     where: { cedula },
@@ -67,11 +70,25 @@ const login = async ({ cedula, password }) => {
     ]
   });
 
-  const valid = user && await comparePassword(password, user.password_hash);
-  if (!valid) {
+  if (!user) {
     const error = new Error('Credenciales inválidas');
     error.status = 401;
     throw error;
+  }
+
+  if (!user.is_active) {
+    const error = new Error('Usuario inactivo');
+    error.status = 401;
+    throw error;
+  }
+
+  if (user.role !== 'player') {
+    const valid = password && await comparePassword(password, user.password_hash);
+    if (!valid) {
+      const error = new Error('Credenciales inválidas');
+      error.status = 401;
+      throw error;
+    }
   }
 
   const token = generateToken({ id: user.id, username: user.cedula, role: user.role });

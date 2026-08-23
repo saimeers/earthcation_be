@@ -16,6 +16,7 @@ app.use(morgan('dev'));
 
 app.use('/api/auth',      require('./src/routes/auth.routes'));
 app.use('/api/users',     require('./src/routes/user.routes'));
+app.use('/api/users/bulk-import', require('./src/routes/bulkImport.routes'));
 app.use('/api/vark',      require('./src/routes/vark.routes'));
 app.use('/api/progress',  require('./src/routes/progress.routes'));
 app.use('/api/levels',    require('./src/routes/level.routes'));
