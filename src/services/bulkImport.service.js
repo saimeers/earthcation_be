@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const { User, UserProfile, Organization, Location } = require('../models');
 const { hashPassword } = require('../utils/hash.utils');
 const { generateRandomPassword } = require('../utils/password.utils');
+const municipiosCatalog = require('../data/colombia-municipios.json');
 
 // Coincide con el formato oficial ANM (Base de Datos Anual de Personal Capacitado y
 // Entrenado en Estándares de Competencias en Seguridad y Salvamento Minero). Se busca
@@ -168,16 +169,93 @@ const findOrCreateOrganization = async (name) => {
   return { id: org.id, wasCreated: true };
 };
 
+// Distancia de Levenshtein simple (sin dependencia externa) — usada solo para tolerar typos
+// menores ("Santender" en vez de "Santander") al mapear contra el catálogo cerrado de municipios.
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...new Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// Índice normalizado (sin tildes/mayúsculas) del catálogo cerrado de municipios/departamentos,
+// construido una sola vez a partir de `data/colombia-municipios.json`.
+const catalogByDept = municipiosCatalog.map(({ departamento, municipios }) => ({
+  departamento,
+  normDept: normalize(departamento),
+  municipios: municipios.map((m) => ({ municipio: m, normMuni: normalize(m) }))
+}));
+
+function closestMatch(normTarget, candidates, getNorm, maxDistance) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const c of candidates) {
+    const norm = getNorm(c);
+    if (norm === normTarget) return c; // exacto, no hace falta seguir buscando
+    const dist = levenshtein(normTarget, norm);
+    if (dist < bestDist) { bestDist = dist; best = c; }
+  }
+  return bestDist <= maxDistance ? best : null;
+}
+
+// Resuelve municipio/departamento libres (tal como vienen del Excel, con typos/mayúsculas
+// inconsistentes) contra el catálogo cerrado — evita crear filas nuevas por variaciones del
+// mismo lugar (ej. "Norte de Santander" / "NORTE DE SANTANDER" / "Santender" ya no generan 3
+// filas distintas). Si no hay un match razonable, retorna null y el caller decide qué hacer.
+// Alias comunes que el Excel escribe abreviados y que la distancia de Levenshtein con umbral
+// bajo no perdona (ej. "Bogotá" sin el sufijo "D.C." difiere en 5 caracteres de "Bogotá D.C.").
+const DEPT_ALIASES = {
+  [normalize('Bogota')]: normalize('Bogotá D.C.'),
+  [normalize('Bogota DC')]: normalize('Bogotá D.C.'),
+  [normalize('San Andres')]: normalize('San Andrés y Providencia'),
+  [normalize('San Andres y Providencia y Santa Catalina')]: normalize('San Andrés y Providencia'),
+};
+
+function matchAgainstCatalog(municipalityRaw, departmentRaw) {
+  const normDept = DEPT_ALIASES[normalize(departmentRaw)] ?? normalize(departmentRaw);
+  const deptEntry = closestMatch(normDept, catalogByDept, (d) => d.normDept, 2);
+  if (!deptEntry) return null;
+
+  const normMuni = normalize(municipalityRaw);
+  const muniEntry = closestMatch(normMuni, deptEntry.municipios, (m) => m.normMuni, 2);
+  if (!muniEntry) return null;
+
+  return { municipality: muniEntry.municipio, department: deptEntry.departamento };
+}
+
 const findOrCreateLocation = async (municipality, department) => {
-  if (!municipality || !department) return { id: null, wasCreated: false };
+  if (!municipality || !department) return { id: null, wasCreated: false, noMatch: false };
+
+  const match = matchAgainstCatalog(municipality, department);
+  if (match) {
+    const existing = await Location.findOne({
+      where: { municipality: { [Op.iLike]: match.municipality }, department: { [Op.iLike]: match.department } }
+    });
+    if (existing) return { id: existing.id, wasCreated: false, noMatch: false };
+    // Match válido contra el catálogo pero la fila aún no existe en BD (no debería pasar tras
+    // el seed inicial, pero por si el catálogo se actualiza después) — se crea con el nombre
+    // canónico del catálogo, no con el texto libre del Excel.
+    const location = await Location.create({ municipality: match.municipality, department: match.department, country: 'Colombia' });
+    return { id: location.id, wasCreated: true, noMatch: false };
+  }
+
+  // Sin match razonable en el catálogo — se crea igual (no bloquea el import) pero marcado
+  // `noMatch: true` para que el admin lo revise a mano en el preview.
   const muni = municipality.trim();
   const dept = department.trim();
   const existing = await Location.findOne({
     where: { municipality: { [Op.iLike]: muni }, department: { [Op.iLike]: dept } }
   });
-  if (existing) return { id: existing.id, wasCreated: false };
+  if (existing) return { id: existing.id, wasCreated: false, noMatch: true };
   const location = await Location.create({ municipality: muni, department: dept, country: 'Colombia' });
-  return { id: location.id, wasCreated: true };
+  return { id: location.id, wasCreated: true, noMatch: true };
 };
 
 const confirmImport = async (rows) => {
@@ -221,7 +299,8 @@ const confirmImport = async (rows) => {
         cedula,
         user_id: user.id,
         organization_created: org.wasCreated ? row.organization_name : null,
-        location_created: loc.wasCreated ? `${row.location_municipality}, ${row.location_department}` : null
+        location_created: loc.wasCreated ? `${row.location_municipality}, ${row.location_department}` : null,
+        location_no_match: loc.noMatch ? `${row.location_municipality}, ${row.location_department}` : null
       });
     } catch (err) {
       errors.push({ cedula: row.cedula, reason: err.message });

@@ -1,5 +1,5 @@
 const generateSessionCode = () => {
-    return Math.random().toString(36).substring(2, 10).toUpperCase(); // ej: "A3FX9KQZ"
+    return String(Math.floor(Math.random() * 1000)).padStart(3, '0'); // ej: "042"
 };
 
 module.exports = { generateSessionCode };

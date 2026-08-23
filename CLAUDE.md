@@ -51,10 +51,17 @@ is actually the user's **cédula**, not a chosen username.
   email because they never registered a personal one. `cedula` is the real unique identity.
 - `VarkResult` is **upserted** per user — resubmitting the VARK test overwrites the previous result,
   there is no history of past attempts.
-- `TrainingSession.code` is an 8-char alphanumeric room code, generated with retry-until-unique
-  (`utils/session.utils.js`).
+- `TrainingSession.code` is a **3-digit numeric** room code (`utils/session.utils.js`), easy to
+  read/dictate in a classroom. Retry-until-unique only checks against non-`finished` sessions
+  (`session.service.js#createSession`) — a finished session frees its code, needed since 3 digits
+  only gives 1000 combinations.
 - `UserRiskProgress.session_id` is optional — progress can be recorded freely or tied to a live
   instructor-led session.
+- `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
+  `TrainingSession`, used by the frontend's player detail page.
+- `analyticsService.getOverview()` also returns `riesgos_mas_fallados` (top failed risks by fail
+  rate, grouped over `UserRiskProgress`) and `tendencia_temporal` (weekly mitigation % via
+  `date_trunc('week', recorded_at)`) — both computed on the fly, no new columns.
 
 ### Login — role-dependent password requirement
 
@@ -98,6 +105,29 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
 - Bulk-imported users always get `role: 'player'`, `username: cedula` (no separate username field
   in the Excel), and an internally generated random password hash that's never emailed or exposed
   (irrelevant since player login is cedula-only).
+
+### Municipios catalog (`src/data/colombia-municipios.json`, `src/scripts/seedMunicipios.js`)
+
+Closed catalog of 33 departments / 1104 municipios (open dataset, DANE-based, with a manual fix
+promoting Bogotá to its own department "Bogotá D.C." instead of a Cundinamarca municipality).
+Seeded idempotently on every boot (`index.js`, after `sequelize.sync`) — safe to re-run, only
+inserts rows that don't already exist by normalized municipality+department match. Added to fix a
+real production issue: `locations` had accumulated 3 separate rows for "Norte de Santander" from
+free-text Excel imports ("Norte de Santander" / "NORTE DE SANTANDER" / "Norte de Santender").
+
+`bulkImport.service.js#findOrCreateLocation` now matches the Excel's free-text municipio/
+departamento against this catalog first (normalized + Levenshtein distance ≤2 for typo tolerance,
+`DEPT_ALIASES` for common abbreviations like "Bogota" → "Bogotá D.C."), falling back to
+create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
+frontend's bulk-import preview) only when nothing in the catalog is close enough.
+
+### Analytics — mines map (`GET /api/analytics/map`)
+
+`analyticsService.getMinesMap()` powers the frontend's Leaflet map of mining units. `Organization`
+has no `location_id` of its own — each org's location is inferred as the most frequent
+municipality/department among its active players' `UserProfile.location`. Returns one row per
+organization with `municipality`/`department`/`player_count`/`percentage` (mitigation rate,
+computed the same way as `getByOrganization`).
 
 ### Schema management
 

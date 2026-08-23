@@ -43,4 +43,11 @@ const enable = async (req, res, next) => {
   } catch (err) { next(err) }
 }
 
-module.exports = { getAll, getById, update, disable, enable, createByAdmin }
+const getSessions = async (req, res, next) => {
+  try {
+    const sessions = await userService.getSessions(req.params.id)
+    res.json(sessions)
+  } catch (err) { next(err) }
+}
+
+module.exports = { getAll, getById, update, disable, enable, createByAdmin, getSessions }

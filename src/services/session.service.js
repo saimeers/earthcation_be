@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { TrainingSession, SessionUser, User, UserRiskProgress, Risk, Level, UserProfile, Location } = require('../models');
 const { generateSessionCode } = require('../utils/session.utils');
 
@@ -5,7 +6,9 @@ const createSession = async (instructorId, { name, location_id }) => {
   let code, exists;
   do {
     code  = generateSessionCode();
-    exists = await TrainingSession.findOne({ where: { code } });
+    // Solo choca contra sesiones que siguen "vivas" — una sesión finalizada libera su código,
+    // necesario con solo 3 dígitos (1000 combinaciones) para no agotar el espacio con historial.
+    exists = await TrainingSession.findOne({ where: { code, status: { [Op.ne]: 'finished' } } });
   } while (exists);
 
   return TrainingSession.create({

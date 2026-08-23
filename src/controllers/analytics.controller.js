@@ -22,4 +22,11 @@ const overview = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { byOrganization, byLocation, overview };
+const minesMap = async (req, res, next) => {
+  try {
+    const data = await analyticsService.getMinesMap();
+    res.json(data);
+  } catch (err) { next(err); }
+};
+
+module.exports = { byOrganization, byLocation, overview, minesMap };

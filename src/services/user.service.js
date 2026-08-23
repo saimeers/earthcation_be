@@ -1,4 +1,4 @@
-const { User, UserProfile, VarkResult, Organization, Location } = require('../models');
+const { User, UserProfile, VarkResult, Organization, Location, SessionUser, TrainingSession } = require('../models');
 const { sendWelcomeEmail }       = require('../utils/email.utils');
 const { hashPassword }           = require('../utils/hash.utils');
 const { generateRandomPassword } = require('../utils/password.utils');
@@ -166,4 +166,16 @@ const enable = async (id) => {
   return { message: 'Usuario habilitado correctamente' }
 }
 
-module.exports = { getAll, getById, update, disable, enable, createByAdmin }
+const getSessions = async (id) => {
+  return SessionUser.findAll({
+    where: { user_id: id },
+    include: [{
+      model: TrainingSession,
+      as: 'session',
+      attributes: ['id', 'name', 'code', 'status', 'started_at', 'ended_at', 'created_at']
+    }],
+    order: [['joined_at', 'DESC']]
+  })
+}
+
+module.exports = { getAll, getById, update, disable, enable, createByAdmin, getSessions }

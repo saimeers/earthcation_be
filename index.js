@@ -6,6 +6,7 @@ const helmet    = require('helmet');
 const morgan    = require('morgan');
 const sequelize = require('./src/config/database');
 require('./src/models');
+const { seedMunicipios } = require('./src/scripts/seedMunicipios');
 
 const app = express();
 
@@ -47,6 +48,10 @@ sequelize.authenticate()
   })
   .then(() => {
     console.log('✅ Tablas sincronizadas.');
+    return seedMunicipios();
+  })
+  .then(({ created }) => {
+    if (created > 0) console.log(`✅ Catálogo de municipios: ${created} filas nuevas sembradas.`);
     app.listen(PORT, () => console.log(`🚀 Servidor en http://localhost:${PORT}`));
   })
   .catch(err => {
