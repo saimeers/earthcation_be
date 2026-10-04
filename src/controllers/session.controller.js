@@ -1,4 +1,5 @@
 const sessionService = require('../services/session.service');
+const { buildSessionWorkbook } = require('../services/sessionExport.service');
 
 const create = async (req, res, next) => {
   try {
@@ -71,4 +72,21 @@ const getProgressAdmin = async (req, res, next) => {
   } catch (err) { next(err) }
 }
 
-module.exports = { getAll, create, join, start, end, getProgress, getMySessions, getByLocation, getProgressAdmin };
+const getParticipantAnalysis = async (req, res, next) => {
+  try {
+    res.json(await sessionService.getParticipantAnalysis(req.params.id, req.params.userId))
+  } catch (err) { next(err) }
+}
+
+const exportXlsx = async (req, res, next) => {
+  try {
+    const { workbook, session } = await buildSessionWorkbook(req.params.id)
+    const date = new Date().toISOString().slice(0, 10)
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', `attachment; filename="sesion-${session.code}-${date}.xlsx"`)
+    await workbook.xlsx.write(res)
+    res.end()
+  } catch (err) { next(err) }
+}
+
+module.exports = { getParticipantAnalysis, exportXlsx, getAll, create, join, start, end, getProgress, getMySessions, getByLocation, getProgressAdmin };

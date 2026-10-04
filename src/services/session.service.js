@@ -1,5 +1,7 @@
 const { Op } = require('sequelize');
-const { TrainingSession, SessionUser, User, UserRiskProgress, Risk, Level, UserProfile, Location } = require('../models');
+const { fn, col, literal } = require('sequelize');
+const { TrainingSession, SessionUser, User, UserRiskProgress, Risk, Level, Location, LevelAttempt, GameEvent } = require('../models');
+const { summarizeAttempts, summarizeRisks, round } = require('./telemetry.service');
 const { generateSessionCode } = require('../utils/session.utils');
 
 const createSession = async (instructorId, { name, location_id }) => {
@@ -165,19 +167,40 @@ const getAllSessions = async () => {
   });
 };
 
+// Banda de desempeño por % de mitigación — misma escala que el panel web y el Excel exportado.
+const performanceBand = (percentage, hasData) => {
+  if (!hasData) return 'sin_datos';
+  if (percentage >= 80) return 'destacado';
+  if (percentage >= 40) return 'en_progreso';
+  return 'refuerzo';
+};
+
+const avg = (values) => {
+  const v = values.filter(x => x != null && !Number.isNaN(x));
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+};
+
+// Detalle de sesión para el panel admin: todo en 3 consultas (sesión+participantes, resultados
+// por riesgo de la sesión, intentos de nivel de la sesión) agrupadas en memoria por usuario —
+// antes era una consulta por participante.
 const getSessionProgressAdmin = async (sessionId) => {
   const session = await TrainingSession.findByPk(sessionId, {
     include: [
       { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name', 'email'] },
+      { model: Location, as: 'location', attributes: ['id', 'municipality', 'department'] },
       {
         model: SessionUser, as: 'participants',
         include: [{
           model: User, as: 'user',
           attributes: ['id', 'first_name', 'last_name', 'username', 'cedula'],
-          include: [{ association: 'varkProfile', attributes: ['dominant_style'] }]
+          include: [
+            { association: 'varkProfile', attributes: ['dominant_style'] },
+            { association: 'profile', attributes: ['organization_id'], include: [{ association: 'organization', attributes: ['id', 'name'] }] },
+          ]
         }]
       }
-    ]
+    ],
+    order: [[{ model: SessionUser, as: 'participants' }, 'joined_at', 'ASC']],
   })
 
   if (!session) {
@@ -186,52 +209,240 @@ const getSessionProgressAdmin = async (sessionId) => {
     throw error
   }
 
-  const participants = await Promise.all(
-    session.participants.map(async (su) => {
-      const progress = await UserRiskProgress.findAll({
-        where: { user_id: su.user_id, session_id: sessionId },
-        include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }]
+  const progressRows = await UserRiskProgress.findAll({
+    where: { session_id: sessionId },
+    include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }],
+    order: [['recorded_at', 'ASC']],
+  })
+  const attemptRows = await LevelAttempt.findAll({
+    where: { session_id: sessionId },
+    attributes: { exclude: ['summary'] },
+    order: [['started_at', 'ASC']],
+  })
+
+  const groupBy = (rows) => rows.reduce((acc, r) => ((acc[r.user_id] ||= []).push(r), acc), {})
+  const progressByUser = groupBy(progressRows)
+  const attemptsByUser = groupBy(attemptRows)
+
+  const participants = session.participants.map((su) => {
+    const progress  = progressByUser[su.user_id] ?? []
+    const attempts  = attemptsByUser[su.user_id] ?? []
+    const total     = progress.length
+    const mitigated = progress.filter(p => p.is_mitigated).length
+    const percentage = total > 0 ? Math.round((mitigated / total) * 100) : 0
+    const avgTime   = avg(progress.map(p => p.reaction_time_ms))
+
+    // Agrupa por nivel (se mantiene por compatibilidad)
+    const byLevel = {}
+    progress.forEach(p => {
+      const levelName = p.risk?.level?.name ?? 'Sin nivel'
+      const levelId   = p.risk?.level?.id   ?? 'unknown'
+      if (!byLevel[levelId]) byLevel[levelId] = { name: levelName, total: 0, mitigated: 0, risks: [] }
+      byLevel[levelId].total++
+      if (p.is_mitigated) byLevel[levelId].mitigated++
+      byLevel[levelId].risks.push({
+        risk_id:          p.risk_id,
+        risk_name:        p.risk?.name,
+        category:         p.risk?.category,
+        is_mitigated:     p.is_mitigated,
+        mistakes_count:   p.mistakes_count,
+        reaction_time_ms: p.reaction_time_ms,
+        recorded_at:      p.recorded_at,
       })
-
-      const total     = progress.length
-      const mitigated = progress.filter(p => p.is_mitigated).length
-      const avgTime   = total > 0
-        ? progress.reduce((acc, p) => acc + (p.reaction_time_ms || 0), 0) / total
-        : null
-
-      // Agrupa por nivel
-      const byLevel = {}
-      progress.forEach(p => {
-        const levelName = p.risk?.level?.name ?? 'Sin nivel'
-        const levelId   = p.risk?.level?.id   ?? 'unknown'
-        if (!byLevel[levelId]) byLevel[levelId] = { name: levelName, total: 0, mitigated: 0, risks: [] }
-        byLevel[levelId].total++
-        if (p.is_mitigated) byLevel[levelId].mitigated++
-        byLevel[levelId].risks.push({
-          risk_id:          p.risk_id,
-          risk_name:        p.risk?.name,
-          category:         p.risk?.category,
-          is_mitigated:     p.is_mitigated,
-          mistakes_count:   p.mistakes_count,
-          reaction_time_ms: p.reaction_time_ms,
-          recorded_at:      p.recorded_at,
-        })
-      })
-
-      return {
-        user:            su.user,
-        dominant_style:  su.user?.varkProfile?.dominant_style || null,
-        total_attempts:  total,
-        mitigated,
-        percentage:      total > 0 ? Math.round((mitigated / total) * 100) : 0,
-        avg_reaction_ms: avgTime ? Math.round(avgTime) : null,
-        by_level:        Object.values(byLevel),
-        progress,
-      }
     })
-  )
 
-  return { session, participants }
+    const risks  = summarizeRisks(progress)
+    const levels = summarizeAttempts(attempts)
+    const failReasons = {}
+    attempts.filter(a => a.outcome === 'failed').forEach(a => {
+      const k = a.fail_reason || 'desconocido'
+      failReasons[k] = (failReasons[k] || 0) + 1
+    })
+    const topFail = Object.entries(failReasons).sort((a, b) => b[1] - a[1])[0]
+
+    return {
+      user:            su.user,
+      organization:    su.user?.profile?.organization?.name ?? null,
+      joined_at:       su.joined_at,
+      dominant_style:  su.user?.varkProfile?.dominant_style || null,
+      total_attempts:  total,
+      mitigated,
+      percentage,
+      mistakes_total:  progress.reduce((a, p) => a + (p.mistakes_count || 0), 0),
+      avg_reaction_ms: avgTime != null ? Math.round(avgTime) : null,
+      band:            performanceBand(percentage, total > 0),
+      by_level:        Object.values(byLevel),
+      risks,
+      weakest_risk:    risks.find(r => r.failed > 0) || null,
+      telemetry: {
+        attempts:  attempts.length,
+        completed: attempts.filter(a => a.outcome === 'completed').length,
+        failed:    attempts.filter(a => a.outcome === 'failed').length,
+        abandoned: attempts.filter(a => a.outcome === 'abandoned').length,
+        best_time_ms:  levels.reduce((m, l) => (l.best_time_ms != null && (m == null || l.best_time_ms < m) ? l.best_time_ms : m), null),
+        total_time_ms: levels.reduce((a, l) => a + l.total_time_ms, 0),
+        top_fail_reason: topFail ? { reason: topFail[0], count: topFail[1] } : null,
+        levels,
+        // Recorrido intento a intento por nivel, para los puntos ✓/✗/↩ de la tabla
+        journeys: attempts.reduce((acc, a) => {
+          (acc[a.level_key] ||= []).push({
+            id: a.id, attempt_number: a.attempt_number, outcome: a.outcome,
+            fail_reason: a.fail_reason, fail_stage: a.fail_stage, duration_ms: a.duration_ms,
+          })
+          return acc
+        }, {}),
+      },
+    }
+  })
+
+  // Riesgos de la sesión completa, ordenados por tasa de fallo
+  const risks = summarizeRisks(progressRows)
+    .map(r => ({ ...r, fail_rate: r.results ? round((r.failed / r.results) * 100) : null }))
+    .sort((a, b) => (b.fail_rate ?? 0) - (a.fail_rate ?? 0))
+
+  const withData = participants.filter(p => p.total_attempts > 0)
+  const bands = { destacado: 0, en_progreso: 0, refuerzo: 0, sin_datos: 0 }
+  participants.forEach(p => { bands[p.band]++ })
+
+  const failReasons = {}
+  attemptRows.filter(a => a.outcome === 'failed').forEach(a => {
+    const key = `${a.level_key}|${a.fail_reason || 'desconocido'}|${a.fail_stage || ''}`
+    failReasons[key] = (failReasons[key] || 0) + 1
+  })
+
+  const levelAttempts  = attemptRows.length
+  const levelCompleted = attemptRows.filter(a => a.outcome === 'completed').length
+  const avgPct = avg(withData.map(p => p.percentage))
+  const avgReaction = avg(participants.map(p => p.avg_reaction_ms))
+
+  return {
+    session,
+    summary: {
+      participants:     participants.length,
+      with_data:        withData.length,
+      avg_percentage:   avgPct != null ? Math.round(avgPct) : null,
+      avg_reaction_ms:  avgReaction != null ? Math.round(avgReaction) : null,
+      risk_results:     progressRows.length,
+      risk_mitigated:   progressRows.filter(p => p.is_mitigated).length,
+      level_attempts:   levelAttempts,
+      level_completed:  levelCompleted,
+      level_failed:     attemptRows.filter(a => a.outcome === 'failed').length,
+      completion_rate:  levelAttempts ? Math.round((levelCompleted / levelAttempts) * 100) : null,
+      bands,
+    },
+    risks,
+    levels: summarizeAttempts(attemptRows),
+    fail_reasons: Object.entries(failReasons)
+      .map(([key, count]) => {
+        const [level_key, fail_reason, fail_stage] = key.split('|')
+        return { level_key, fail_reason, fail_stage: fail_stage || null, count }
+      })
+      .sort((a, b) => b.count - a.count),
+    participants,
+  }
 }
 
-module.exports = { getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin };
+const sumSummaryCounters = (attempts) => {
+  const totals = {}
+  attempts.forEach(a => {
+    Object.entries(a.summary || {}).forEach(([k, v]) => {
+      if (typeof v === 'number') totals[k] = (totals[k] || 0) + v
+    })
+  })
+  return totals
+}
+
+// Análisis completo de un participante dentro de una sesión: lo suyo + promedios del grupo para
+// comparar, más sus intentos (sin eventos — la línea de tiempo se pide aparte por intento).
+const getParticipantAnalysis = async (sessionId, userId) => {
+  const data = await getSessionProgressAdmin(sessionId)
+  const idx  = data.participants.findIndex(p => p.user?.id === userId)
+  if (idx === -1) {
+    const error = new Error('El usuario no participa en esta sesión')
+    error.status = 404
+    throw error
+  }
+  const participant = data.participants[idx]
+
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'first_name', 'last_name', 'username', 'cedula', 'email', 'age'],
+    include: [
+      { association: 'varkProfile', attributes: ['dominant_style', 'visual_score', 'auditory_score', 'reading_score'] },
+      { association: 'profile', include: [{ association: 'organization' }, { association: 'location' }] },
+    ],
+  })
+
+  const attempts = await LevelAttempt.findAll({
+    where: { session_id: sessionId, user_id: userId },
+    include: [{ model: Level, as: 'level' }],
+    order: [['started_at', 'ASC']],
+  })
+
+  const eventCounts = await GameEvent.findAll({
+    attributes: ['event_type', [fn('COUNT', col('GameEvent.id')), 'count']],
+    where: { user_id: userId },
+    include: [{ model: LevelAttempt, as: 'attempt', attributes: [], where: { session_id: sessionId } }],
+    group: ['event_type'],
+    raw: true,
+  })
+
+  // Tiempo leyendo paneles informativos: suyo y del grupo
+  const readTimes = await GameEvent.findAll({
+    attributes: ['user_id', [fn('AVG', literal("(payload->>'read_ms')::float")), 'avg_read_ms'], [fn('COUNT', col('GameEvent.id')), 'panels']],
+    where: { event_type: 'risk_info_closed' },
+    include: [{ model: LevelAttempt, as: 'attempt', attributes: [], where: { session_id: sessionId } }],
+    group: ['GameEvent.user_id'],
+    raw: true,
+  })
+  const myRead = readTimes.find(r => r.user_id === userId)
+
+  // Promedios del grupo (solo participantes con datos)
+  const others = data.participants.filter(p => p.total_attempts > 0 || p.telemetry.attempts > 0)
+  const levelGroup = {}
+  others.forEach(p => p.telemetry.levels.forEach(l => {
+    const g = levelGroup[l.level_key] ||= { firsts: [], bests: [] }
+    if (l.attempts_until_first_completion != null) g.firsts.push(l.attempts_until_first_completion)
+    if (l.best_time_ms != null) g.bests.push(l.best_time_ms)
+  }))
+  const roundOr = (v, d = 0) => (v == null ? null : round(v, d))
+
+  return {
+    session: {
+      id: data.session.id, name: data.session.name, code: data.session.code,
+      status: data.session.status, started_at: data.session.started_at, ended_at: data.session.ended_at,
+    },
+    user,
+    participant,
+    attempts,
+    summary_counters: sumSummaryCounters(attempts),
+    event_counts: Object.fromEntries(eventCounts.map(e => [e.event_type, Number(e.count)])),
+    reading: {
+      panels:      myRead ? Number(myRead.panels) : 0,
+      avg_read_ms: myRead ? roundOr(Number(myRead.avg_read_ms)) : null,
+      group_avg_read_ms: roundOr(avg(readTimes.map(r => Number(r.avg_read_ms)))),
+    },
+    group: {
+      participants:        data.summary.participants,
+      avg_percentage:      data.summary.avg_percentage,
+      avg_reaction_ms:     data.summary.avg_reaction_ms,
+      avg_mistakes_per_result: roundOr(avg(others.filter(p => p.total_attempts).map(p => p.mistakes_total / p.total_attempts)), 2),
+      avg_level_attempts:  roundOr(avg(others.map(p => p.telemetry.attempts)), 1),
+      rank:                1 + data.participants.filter(p => p.percentage > participant.percentage).length,
+      levels: Object.fromEntries(Object.entries(levelGroup).map(([k, g]) => [k, {
+        avg_attempts_until_first_completion: roundOr(avg(g.firsts), 1),
+        avg_best_time_ms: roundOr(avg(g.bests)),
+      }])),
+      risks: Object.fromEntries(data.risks.map(r => [r.risk_id, {
+        mitigation_rate: r.mitigation_rate, avg_reaction_ms: r.avg_reaction_ms,
+      }])),
+    },
+    navigation: {
+      index: idx,
+      total: data.participants.length,
+      prev: data.participants[idx - 1]?.user?.id ?? null,
+      next: data.participants[idx + 1]?.user?.id ?? null,
+    },
+  }
+}
+
+module.exports = { getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin, getParticipantAnalysis, performanceBand };

@@ -121,6 +121,31 @@ departamento against this catalog first (normalized + Levenshtein distance ≤2 
 create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
 frontend's bulk-import preview) only when nothing in the catalog is close enough.
 
+### Session detail for the admin panel (`session.service.js`)
+
+- `GET /api/sessions/:id/progress/admin` (`getSessionProgressAdmin`) — **3 queries total**
+  (session+participants, all `UserRiskProgress` of the session, all `LevelAttempt` of the session),
+  grouped in memory by `user_id`. It used to do one query per participant. Response keeps the old
+  per-participant fields (`total_attempts`, `mitigated`, `percentage`, `avg_reaction_ms`,
+  `by_level`) and adds `band`, `risks`, `weakest_risk`, `telemetry` (attempt totals, per-level
+  summary, `journeys` = attempt-by-attempt outcomes per level), plus top-level `summary`, `risks`
+  (per-risk session stats with `fail_rate`), `levels`, `fail_reasons`. The raw `progress` array is
+  no longer returned.
+- `performanceBand(pct, hasData)` — `destacado` ≥80 · `en_progreso` 40–79 · `refuerzo` <40 ·
+  `sin_datos`. The frontend (`modules/admin/sessions/bands.js`) and the Excel export use the same
+  cut-offs — change them together.
+- `GET /api/sessions/:id/participants/:userId/analysis` (`getParticipantAnalysis`) — one
+  participant's session-scoped data + group averages for comparison (`group`), summed `summary`
+  counters, event counts, panel reading time, and prev/next navigation. Reuses
+  `getSessionProgressAdmin`.
+- `GET /api/sessions/:id/export.xlsx` (`sessionExport.service.js`, **ExcelJS**, not `xlsx` —
+  SheetJS CE can't style cells) — sheets Resumen / Participantes / Riesgos de la sesión /
+  Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
+  tinted result cells. Dates are written in Colombia local time (UTC−5) since Excel has no
+  timezone. Spanish labels for game enums live in `utils/telemetry.labels.js`.
+- `telemetry.service.js` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
+  (used by `getUserSummary` and the session service) — don't duplicate those loops.
+
 ### Analytics — mines map (`GET /api/analytics/map`)
 
 `analyticsService.getMinesMap()` powers the frontend's Leaflet map of mining units. `Organization`
@@ -154,6 +179,13 @@ before assuming the model change took effect.
   (intentional anti-enumeration behavior — don't "simplify" this into a conditional response).
 
 ### Admin-created users
+
+`createByAdmin` normalizes `''` → `null` for optional fields (an empty email used to fail
+`isEmail`, an empty age broke the INTEGER column), defaults `username` to the cédula, and requires
+email only for `instructor`/`admin`. **Players never get the welcome email.** If the email send
+fails for staff, the user is still created and the response says `email_sent: false` instead of
+a 500 (which used to make the admin retry and hit "cédula ya registrada"). `update` returns 409 on
+duplicate cédula/username and creates the `UserProfile` row if it's missing.
 
 Admins never set a password when creating a user (`POST /api/users`, single-create) — this still
 matters for `admin`/`instructor` accounts, which log in through the web panel and do need a real

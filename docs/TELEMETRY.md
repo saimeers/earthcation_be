@@ -39,8 +39,8 @@ Vista global (o de una sesión de capacitación).
 }
 ```
 
-### `GET /api/telemetry/users/:userId/summary`
-Trazabilidad de un jugador.
+### `GET /api/telemetry/users/:userId/summary[?session_id=]`
+Trazabilidad de un jugador. Con `session_id` se limita a lo que hizo dentro de esa sesión.
 
 ```jsonc
 {
@@ -77,6 +77,15 @@ Un intento completo, para reconstruir la partida como línea de tiempo.
   "events": [ …game_events ordenados por t_ms… ]
 }
 ```
+
+### Vistas por sesión (rol `admin`)
+
+- `GET /api/sessions/:id/progress/admin` — todos los participantes con su telemetría resumida
+  (`telemetry.levels`, `telemetry.journeys`), riesgos por participante y de la sesión, bandas de
+  desempeño y causas de fallo. Lo usa la página de detalle de sesión del panel.
+- `GET /api/sessions/:id/participants/:userId/analysis` — análisis de un participante en la sesión
+  con promedios del grupo para comparar.
+- `GET /api/sessions/:id/export.xlsx` — exportación a Excel de los resultados de la sesión.
 
 Los endpoints anteriores de progreso y analítica (`/api/progress/*`, `/api/analytics/*`) siguen
 igual.

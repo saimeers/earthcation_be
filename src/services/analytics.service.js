@@ -15,39 +15,29 @@ const getOverview = async () => {
     group: ['dominant_style'],
   });
 
-  // Progreso por nivel
-  const risksByLevel = await Risk.findAll({
-    include: [{ model: Level, as: 'level', attributes: ['id', 'name'] }],
-    attributes: ['id', 'level_id'],
+  // Mitigación por nivel — resultados de riesgo agrupados por el nivel del riesgo.
+  // (Antes comparaba el id del riesgo contra level_id y siempre devolvía 0%.)
+  const levelRows = await UserRiskProgress.findAll({
+    attributes: [
+      [col('risk->level.id'), 'level_id'],
+      [col('risk->level.name'), 'level_name'],
+      [fn('COUNT', col('UserRiskProgress.id')), 'total'],
+      [fn('SUM', literal('CASE WHEN is_mitigated THEN 1 ELSE 0 END')), 'mitigated'],
+    ],
+    include: [{ model: Risk, as: 'risk', attributes: [], include: [{ model: Level, as: 'level', attributes: [] }] }],
+    group: [col('risk->level.id'), col('risk->level.name')],
+    order: [[col('risk->level.id'), 'ASC']],
+    raw: true,
   });
-
-  const levelStats = {};
-  risksByLevel.forEach(r => {
-    const name = r.level?.name ?? `Nivel ${r.level_id}`;
-    if (!levelStats[name]) levelStats[name] = { total: 0, mitigated: 0 };
-    levelStats[name].total++;
+  const progressByLevel = levelRows.map(r => {
+    const total = parseInt(r.total), mitigated = parseInt(r.mitigated || 0);
+    return {
+      level: r.level_name ?? 'Sin nivel',
+      percentage: total > 0 ? Math.round((mitigated / total) * 100) : 0,
+      mitigated,
+      total,
+    };
   });
-
-  const mitigatedByLevel = await UserRiskProgress.findAll({
-    where: { is_mitigated: true },
-    include: [{ model: Risk, as: 'risk', attributes: ['level_id'] }],
-    attributes: ['risk_id'],
-  });
-
-  mitigatedByLevel.forEach(p => {
-    const risk = p.risk;
-    if (!risk) return;
-    const level = risksByLevel.find(r => r.id === risk.level_id);
-    const name  = level?.level?.name ?? `Nivel ${risk.level_id}`;
-    if (levelStats[name]) levelStats[name].mitigated++;
-  });
-
-  const progressByLevel = Object.entries(levelStats).map(([name, s]) => ({
-    level: name,
-    percentage: s.total > 0 ? Math.round((s.mitigated / s.total) * 100) : 0,
-    mitigated: s.mitigated,
-    total: s.total,
-  }));
 
   // Riesgos más fallados — agrupado sobre columnas ya existentes (risk_id, is_mitigated),
   // sin necesitar campos nuevos en BD.
