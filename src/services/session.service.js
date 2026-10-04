@@ -274,7 +274,7 @@ const getSessionProgressAdmin = async (sessionId) => {
       mitigated,
       percentage,
       level_attempts:  latest.reduce((a, l) => a + l.attempts_count, 0),
-      mistakes_total:  progress.reduce((a, p) => a + (p.mistakes_count || 0), 0),
+      mistakes_total:  latestRows.reduce((a, p) => a + (p.mistakes_count || 0), 0), // mismo universo que total_attempts
       avg_reaction_ms: avgTime != null ? Math.round(avgTime) : null,
       band:            performanceBand(percentage, total > 0),
       by_level:        Object.values(byLevel),
