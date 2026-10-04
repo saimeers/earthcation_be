@@ -1,5 +1,26 @@
 const { User, UserProfile, UserRiskProgress, VarkResult, Organization, Location, TrainingSession, SessionUser, Risk, Level } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
+const { summarize, latestAttemptRows, latestAttemptByLevel } = require('../utils/attempt.utils');
+const { coordsFor } = require('../utils/geo.utils');
+
+// Todos los % de éxito usan el ÚLTIMO intento de cada jugador en cada nivel (ver
+// utils/attempt.utils.js): reintentar no promedia con lo anterior, reemplaza.
+const progressWithLevel = (where = {}) => UserRiskProgress.findAll({
+  where,
+  attributes: ['id', 'user_id', 'risk_id', 'attempt_id', 'session_id', 'is_mitigated', 'mistakes_count', 'reaction_time_ms', 'recorded_at'],
+  include: [{ model: Risk, as: 'risk', attributes: ['level_id', 'name', 'category'] }],
+});
+
+const userSummary = (rows) => {
+  const latest = latestAttemptByLevel(rows);
+  const s = summarize(latest.flatMap(l => l.rows));
+  return {
+    total_attempts: s.total,          // resultados de riesgo del último intento de cada nivel
+    mitigated: s.mitigated,
+    percentage: s.percentage,
+    level_attempts: latest.reduce((a, l) => a + l.attempts_count, 0), // intentos de nivel en total (incluye reintentos)
+  };
+};
 
 const getOverview = async () => {
   const totalUsers       = await User.count();
@@ -7,44 +28,35 @@ const getOverview = async () => {
   const totalInstructors = await User.count({ where: { role: 'instructor' } });
   const totalSessions    = await TrainingSession.count();
   const activeSessions   = await TrainingSession.count({ where: { status: 'active' } });
-  const totalAttempts    = await UserRiskProgress.count();
-  const totalMitigated   = await UserRiskProgress.count({ where: { is_mitigated: true } });
+  const allRows        = await progressWithLevel();
+  const latestByLevel  = latestAttemptByLevel(allRows);
+  const latestSummary  = summarize(latestByLevel.flatMap(l => l.rows));
 
   const varkCounts = await VarkResult.findAll({
     attributes: ['dominant_style', [fn('COUNT', col('id')), 'count']],
     group: ['dominant_style'],
   });
 
-  // Mitigación por nivel — resultados de riesgo agrupados por el nivel del riesgo.
-  // (Antes comparaba el id del riesgo contra level_id y siempre devolvía 0%.)
-  const levelRows = await UserRiskProgress.findAll({
-    attributes: [
-      [col('risk->level.id'), 'level_id'],
-      [col('risk->level.name'), 'level_name'],
-      [fn('COUNT', col('UserRiskProgress.id')), 'total'],
-      [fn('SUM', literal('CASE WHEN is_mitigated THEN 1 ELSE 0 END')), 'mitigated'],
-    ],
-    include: [{ model: Risk, as: 'risk', attributes: [], include: [{ model: Level, as: 'level', attributes: [] }] }],
-    group: [col('risk->level.id'), col('risk->level.name')],
-    order: [[col('risk->level.id'), 'ASC']],
-    raw: true,
-  });
-  const progressByLevel = levelRows.map(r => {
-    const total = parseInt(r.total), mitigated = parseInt(r.mitigated || 0);
+  // Progreso por nivel: último intento de cada jugador en ese nivel
+  const levels = await Level.findAll({ attributes: ['id', 'name'], order: [['id', 'ASC']] });
+  const progressByLevel = levels.map(level => {
+    const entries = latestByLevel.filter(l => l.level_id === level.id);
+    const s = summarize(entries.flatMap(l => l.rows));
     return {
-      level: r.level_name ?? 'Sin nivel',
-      percentage: total > 0 ? Math.round((mitigated / total) * 100) : 0,
-      mitigated,
-      total,
+      level: level.name,
+      percentage: s.percentage,
+      mitigated: s.mitigated,
+      total: s.total,
+      players: entries.length,
+      players_100: entries.filter(l => l.percentage === 100).length,
+      avg_attempts: entries.length ? Math.round((entries.reduce((a, l) => a + l.attempts_count, 0) / entries.length) * 10) / 10 : 0,
     };
   });
 
   // Riesgos más fallados — agrupado sobre columnas ya existentes (risk_id, is_mitigated),
   // sin necesitar campos nuevos en BD.
-  const allProgress = await UserRiskProgress.findAll({
-    attributes: ['risk_id', 'is_mitigated', 'mistakes_count'],
-    include: [{ model: Risk, as: 'risk', attributes: ['name', 'category'] }],
-  });
+  // (este sí usa todo el historial: mide qué tan difícil es cada riesgo, incluidos los reintentos)
+  const allProgress = allRows;
   const riskStats = {};
   allProgress.forEach(p => {
     const key = p.risk_id;
@@ -95,9 +107,11 @@ const getOverview = async () => {
     users: { total: totalUsers, players: totalPlayers, instructors: totalInstructors },
     sessions: { total: totalSessions, active: activeSessions },
     progress: {
-      total_attempts:    totalAttempts,
-      total_mitigated:   totalMitigated,
-      global_percentage: totalAttempts > 0 ? Math.round((totalMitigated / totalAttempts) * 100) : 0,
+      total_attempts:    latestSummary.total,      // resultados del último intento de cada jugador por nivel
+      total_mitigated:   latestSummary.mitigated,
+      global_percentage: latestSummary.percentage,
+      history_results:   allRows.length,           // todos los resultados, con reintentos
+      level_attempts:    latestByLevel.reduce((a, l) => a + l.attempts_count, 0),
     },
     vark_distribution: varkCounts.map(v => ({
       style: v.dominant_style ?? 'Sin completar',
@@ -117,15 +131,12 @@ const getByOrganization = async (organizationId) => {
   if (!profiles.length) return [];
 
   return Promise.all(profiles.map(async p => {
-    const progress  = await UserRiskProgress.findAll({ where: { user_id: p.user_id } });
+    const progress  = await progressWithLevel({ user_id: p.user_id });
     const vark      = await VarkResult.findOne({ where: { user_id: p.user_id } });
-    const mitigated = progress.filter(r => r.is_mitigated).length;
     return {
       user: p.user,
       dominant_style: vark?.dominant_style ?? null,
-      total_attempts: progress.length,
-      mitigated,
-      percentage: progress.length > 0 ? Math.round((mitigated / progress.length) * 100) : 0,
+      ...userSummary(progress),
     };
   }));
 };
@@ -149,15 +160,12 @@ const getByLocation = async ({ department, municipality }) => {
   if (!profiles.length) return [];
 
   return Promise.all(profiles.map(async p => {
-    const progress  = await UserRiskProgress.findAll({ where: { user_id: p.user_id } });
+    const progress  = await progressWithLevel({ user_id: p.user_id });
     const vark      = await VarkResult.findOne({ where: { user_id: p.user_id } });
-    const mitigated = progress.filter(r => r.is_mitigated).length;
     return {
       user: p.user, location: p.location,
       dominant_style: vark?.dominant_style ?? null,
-      total_attempts: progress.length,
-      mitigated,
-      percentage: progress.length > 0 ? Math.round((mitigated / progress.length) * 100) : 0,
+      ...userSummary(progress),
     };
   }));
 };
@@ -177,13 +185,7 @@ const getMinesMap = async () => {
     ],
   });
 
-  const progress = await UserRiskProgress.findAll({ attributes: ['user_id', 'is_mitigated'] });
-  const progressByUser = {};
-  progress.forEach(p => {
-    if (!progressByUser[p.user_id]) progressByUser[p.user_id] = { total: 0, mitigated: 0 };
-    progressByUser[p.user_id].total++;
-    if (p.is_mitigated) progressByUser[p.user_id].mitigated++;
-  });
+  const latestRows = latestAttemptRows(await progressWithLevel({ user_id: { [Op.in]: profiles.map(p => p.user_id) } }));
 
   return organizations.map(org => {
     const orgProfiles = profiles.filter(p => p.organization_id === org.id);
@@ -196,19 +198,21 @@ const getMinesMap = async () => {
     const topLocationKey = Object.entries(locationCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
     const [municipality, department] = topLocationKey ? topLocationKey.split('|') : [null, null];
 
-    let total = 0, mitigated = 0;
-    orgProfiles.forEach(p => {
-      const stats = progressByUser[p.user_id];
-      if (stats) { total += stats.total; mitigated += stats.mitigated; }
-    });
+    const orgUserIds = new Set(orgProfiles.map(p => p.user_id));
+    const s = summarize(latestRows.filter(r => orgUserIds.has(r.user_id)));
+    const coords = municipality ? coordsFor(municipality, department) : null;
 
     return {
       id: org.id,
       name: org.name,
       municipality,
       department,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
+      location_exact: coords?.exact ?? false, // false: el municipio no está en DIVIPOLA, se ubicó en la capital
       player_count: orgProfiles.length,
-      percentage: total > 0 ? Math.round((mitigated / total) * 100) : 0,
+      results: s.total,
+      percentage: s.percentage,
     };
   }).filter(o => o.department);
 };

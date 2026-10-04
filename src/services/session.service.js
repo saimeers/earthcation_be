@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { fn, col, literal } = require('sequelize');
 const { TrainingSession, SessionUser, User, UserRiskProgress, Risk, Level, Location, LevelAttempt, GameEvent } = require('../models');
 const { summarizeAttempts, summarizeRisks, round } = require('./telemetry.service');
+const { summarize, latestAttemptByLevel } = require('../utils/attempt.utils');
 const { generateSessionCode } = require('../utils/session.utils');
 
 const createSession = async (instructorId, { name, location_id }) => {
@@ -91,10 +92,12 @@ const getSessionProgress = async (sessionId, instructorId) => {
         include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }]
       });
 
-      const total     = progress.length;
-      const mitigated = progress.filter(p => p.is_mitigated).length;
+      // % del último intento de cada nivel dentro de la sesión (reintentar reemplaza, no promedia)
+      const latest     = latestAttemptByLevel(progress);
+      const latestRows = latest.flatMap(l => l.rows);
+      const { total, mitigated } = summarize(latestRows);
       const avgTime   = total > 0
-        ? progress.reduce((acc, p) => acc + (p.reaction_time_ms || 0), 0) / total
+        ? latestRows.reduce((acc, p) => acc + (p.reaction_time_ms || 0), 0) / total
         : null;
 
       return {
@@ -103,6 +106,7 @@ const getSessionProgress = async (sessionId, instructorId) => {
         total_attempts: total,
         mitigated,
         percentage:     total > 0 ? Math.round((mitigated / total) * 100) : 0,
+        level_attempts: latest.reduce((a, l) => a + l.attempts_count, 0),
         avg_reaction_ms: avgTime ? Math.round(avgTime) : null,
         progress
       };
@@ -227,19 +231,20 @@ const getSessionProgressAdmin = async (sessionId) => {
   const participants = session.participants.map((su) => {
     const progress  = progressByUser[su.user_id] ?? []
     const attempts  = attemptsByUser[su.user_id] ?? []
-    const total     = progress.length
-    const mitigated = progress.filter(p => p.is_mitigated).length
-    const percentage = total > 0 ? Math.round((mitigated / total) * 100) : 0
-    const avgTime   = avg(progress.map(p => p.reaction_time_ms))
+    // % del último intento de cada nivel (reintentar reemplaza, no promedia); el detalle de
+    // riesgos y la telemetría siguen mostrando todo el historial de la sesión
+    const latest     = latestAttemptByLevel(progress)
+    const latestRows = latest.flatMap(l => l.rows)
+    const { total, mitigated, percentage } = summarize(latestRows)
+    const avgTime   = avg(latestRows.map(p => p.reaction_time_ms))
 
     // Agrupa por nivel (se mantiene por compatibilidad)
     const byLevel = {}
-    progress.forEach(p => {
-      const levelName = p.risk?.level?.name ?? 'Sin nivel'
+    latest.forEach(l => {
+      byLevel[l.level_id ?? 'unknown'] = { name: l.rows[0]?.risk?.level?.name ?? 'Sin nivel', total: l.total, mitigated: l.mitigated, attempts: l.attempts_count, risks: [] }
+    })
+    latestRows.forEach(p => {
       const levelId   = p.risk?.level?.id   ?? 'unknown'
-      if (!byLevel[levelId]) byLevel[levelId] = { name: levelName, total: 0, mitigated: 0, risks: [] }
-      byLevel[levelId].total++
-      if (p.is_mitigated) byLevel[levelId].mitigated++
       byLevel[levelId].risks.push({
         risk_id:          p.risk_id,
         risk_name:        p.risk?.name,
@@ -268,6 +273,7 @@ const getSessionProgressAdmin = async (sessionId) => {
       total_attempts:  total,
       mitigated,
       percentage,
+      level_attempts:  latest.reduce((a, l) => a + l.attempts_count, 0),
       mistakes_total:  progress.reduce((a, p) => a + (p.mistakes_count || 0), 0),
       avg_reaction_ms: avgTime != null ? Math.round(avgTime) : null,
       band:            performanceBand(percentage, total > 0),

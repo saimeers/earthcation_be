@@ -170,6 +170,23 @@ to a constraint here, dropping the index directly fails). If a unique/not-null f
 change again, verify with a raw query against `pg_constraint` that the old constraint actually left
 before assuming the model change took effect.
 
+### Success percentages = latest attempt (`utils/attempt.utils.js`)
+
+Every success % (analytics overview/by level/by organization/by location, mines map, session
+participants, `GET /api/progress/level/:levelId`) uses only the **latest attempt of each player in each
+level** (`level_attempts`, via `user_risk_progress.attempt_id`). Retrying replaces the %, it does
+not average with older tries. Rows without `attempt_id` are grouped per session + day.
+`riesgos_mas_fallados` and `tendencia_temporal` still use the full history on purpose (difficulty /
+trend). The frontend mirrors this in `earthcation_fe/src/lib/attempts.js`.
+
+### Mines map coordinates (`utils/geo.utils.js`)
+
+`src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
+`gdxc-w37w`). `coordsFor(municipality, department)` matches catalog names tolerant to accents,
+articles and official vs popular names (1104 of the 1105 catalog municipios resolve); unmatched
+ones fall back to the department capital (`location_exact: false`). `GET /api/analytics/map`
+returns `lat`, `lng`, `location_exact` and `results` per organization.
+
 ### Known gaps (don't "fix" without being asked — these are accepted current state)
 
 - No pagination on any `findAll` list endpoint.
