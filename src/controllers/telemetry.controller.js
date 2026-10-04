@@ -47,7 +47,7 @@ const attemptDetail = async (req, res, next) => {
 
 const userSummary = async (req, res, next) => {
   try {
-    res.json(await telemetryService.getUserSummary(req.params.userId));
+    res.json(await telemetryService.getUserSummary(req.params.userId, req.query));
   } catch (err) { next(err); }
 };
 

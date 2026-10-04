@@ -1,3 +1,4 @@
+const sequelize = require('../config/database')
 const { User, UserProfile, VarkResult, Organization, Location, SessionUser, TrainingSession } = require('../models');
 const { sendWelcomeEmail }       = require('../utils/email.utils');
 const { hashPassword }           = require('../utils/hash.utils');
@@ -20,52 +21,77 @@ const defaultIncludes = [
   }
 ]
 
-const createByAdmin = async ({ username, email, first_name, last_name, cedula, age, role, organization_id, location_id }) => {
-  const existing = await User.findOne({ where: { username } })
-  if (existing) {
-    const error = new Error('El nombre de usuario ya está en uso')
-    error.status = 409
-    throw error
-  }
+// Los formularios mandan '' en los campos opcionales vacíos — '' rompe la validación isEmail,
+// el INTEGER de edad y los UUID de organización/localidad, así que se convierten a null.
+const blankToNull = (v) => (typeof v === 'string' && v.trim() === '' ? null : v)
+const clean = (data, keys) => {
+  const out = {}
+  keys.forEach(k => {
+    if (data[k] === undefined) return
+    const v = blankToNull(data[k])
+    out[k] = typeof v === 'string' ? v.trim() : v
+  })
+  return out
+}
+const conflict = (msg) => Object.assign(new Error(msg), { status: 409 })
+const badRequest = (msg) => Object.assign(new Error(msg), { status: 400 })
 
-  if (cedula) {
-    const cedulaExists = await User.findOne({ where: { cedula } })
-    if (cedulaExists) {
-      const error = new Error('La cédula ya está registrada')
-      error.status = 409
-      throw error
-    }
-  }
+const createByAdmin = async (data) => {
+  const { email, first_name, last_name, cedula, age, role, organization_id, location_id, username: rawUsername } =
+    clean(data, ['username', 'email', 'first_name', 'last_name', 'cedula', 'age', 'role', 'organization_id', 'location_id'])
+  const finalRole = role || 'player'
+  // Igual que la importación masiva: si no se da usuario, se usa la cédula (el jugador entra con ella).
+  const username = rawUsername || cedula
+
+  if (!username) throw badRequest('La cédula o el nombre de usuario son requeridos')
+  // Admin/instructor entran al panel con contraseña — se la mandamos por correo, así que es obligatorio.
+  if (finalRole !== 'player' && !email) throw badRequest('El correo es obligatorio para instructores y administradores')
+
+  if (await User.findOne({ where: { username } })) throw conflict('El nombre de usuario ya está en uso')
+  if (cedula && await User.findOne({ where: { cedula } })) throw conflict('La cédula ya está registrada')
 
   const temporaryPassword = generateRandomPassword()
   const password_hash     = await hashPassword(temporaryPassword)
 
   const rawToken    = generateResetToken()
-  const hashedToken = hashToken(rawToken)  
+  const hashedToken = hashToken(rawToken)
   const expires     = new Date(Date.now() + 15 * 60 * 1000)
 
-  const user = await User.create({
-    username, email, first_name, last_name, cedula, age,
-    role: role || 'player',
-    password_hash,
-    reset_token_hash:    hashedToken,
-    reset_token_expires: expires
+  const user = await sequelize.transaction(async (transaction) => {
+    const created = await User.create({
+      username, email, first_name, last_name, cedula, age,
+      role: finalRole,
+      password_hash,
+      reset_token_hash:    finalRole === 'player' ? null : hashedToken,
+      reset_token_expires: finalRole === 'player' ? null : expires,
+    }, { transaction })
+
+    await UserProfile.create({
+      user_id:         created.id,
+      organization_id: organization_id || null,
+      location_id:     location_id     || null
+    }, { transaction })
+    return created
   })
 
-  await UserProfile.create({
-    user_id:         user.id,
-    organization_id: organization_id || null,
-    location_id:     location_id     || null
-  })
+  // Los jugadores entran solo con la cédula — nunca se les envía la contraseña generada.
+  if (finalRole === 'player') {
+    return { message: 'Usuario creado', user_id: user.id, email_sent: false }
+  }
 
-  await sendWelcomeEmail({
-    to:                email,
-    username:          first_name || username,
-    temporaryPassword,
-    resetToken:        rawToken
-  })
-
-  return { message: 'Usuario creado y correo enviado', user_id: user.id }
+  try {
+    await sendWelcomeEmail({
+      to:                email,
+      username:          first_name || username,
+      temporaryPassword,
+      resetToken:        rawToken
+    })
+    return { message: 'Usuario creado y correo enviado', user_id: user.id, email_sent: true }
+  } catch (err) {
+    // El usuario ya existe — no devolver 500 (el admin reintentaría y chocaría con "cédula ya registrada").
+    console.error(`[EMAIL] No se pudo enviar el correo de bienvenida: ${err.message}`)
+    return { message: 'Usuario creado, pero no se pudo enviar el correo', user_id: user.id, email_sent: false }
+  }
 }
 
 const getAll = async ({ role, organization_id, location_id } = {}) => {
@@ -127,18 +153,24 @@ const update = async (id, requesterId, requesterRole, data) => {
     throw error
   }
 
-  const allowed = ['first_name', 'last_name', 'age', 'cedula', 'email', 'username', 'role']
-  const updateData = {}
-  allowed.forEach(k => { if (data[k] !== undefined) updateData[k] = data[k] })
+  const updateData = clean(data, ['first_name', 'last_name', 'age', 'cedula', 'email', 'username', 'role'])
+
+  if (updateData.username && updateData.username !== user.username &&
+      await User.findOne({ where: { username: updateData.username } })) {
+    throw conflict('El nombre de usuario ya está en uso')
+  }
+  if (updateData.cedula && updateData.cedula !== user.cedula &&
+      await User.findOne({ where: { cedula: updateData.cedula } })) {
+    throw conflict('La cédula ya está registrada')
+  }
+  if (updateData.username === null) delete updateData.username // username es NOT NULL
 
   await user.update(updateData)
 
-  const { organization_id, location_id } = data
-  if (organization_id !== undefined || location_id !== undefined) {
-    await UserProfile.update(
-      { organization_id, location_id },
-      { where: { user_id: id } }
-    )
+  const profileData = clean(data, ['organization_id', 'location_id'])
+  if (Object.keys(profileData).length) {
+    const [profile] = await UserProfile.findOrCreate({ where: { user_id: id }, defaults: { user_id: id } })
+    await profile.update(profileData)
   }
 
   return getById(id)

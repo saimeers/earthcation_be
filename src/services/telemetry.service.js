@@ -97,19 +97,14 @@ const getAttemptDetail = async (attemptId) => {
 
 const round = (v, d = 1) => (v == null ? null : Math.round(Number(v) * 10 ** d) / 10 ** d);
 
-// Resumen de trazabilidad de un jugador: por nivel, por riesgo y dónde se equivoca.
-const getUserSummary = async (userId) => {
-  const attempts = await LevelAttempt.findAll({ where: { user_id: userId }, order: [['started_at', 'ASC']] });
-  const riskRows = await UserRiskProgress.findAll({
-    where: { user_id: userId },
-    include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }],
-    order: [['recorded_at', 'ASC']],
-  });
-
+// Agrega intentos de nivel (filas de level_attempts, en orden cronológico) por level_key:
+// reintentos, intentos hasta completar, mejor tiempo, causas y etapas de fallo. Puro — lo usan
+// el resumen por jugador y el detalle de sesión.
+const summarizeAttempts = (attempts) => {
   const levels = {};
   for (const a of attempts) {
     const l = levels[a.level_key] ||= {
-      level_key: a.level_key, attempts: 0, completed: 0, failed: 0, abandoned: 0,
+      level_key: a.level_key, attempts: 0, completed: 0, failed: 0, abandoned: 0, in_progress: 0,
       retries: 0, attempts_until_first_completion: null, best_time_ms: null,
       total_time_ms: 0, fail_reasons: {}, fail_stages: {},
     };
@@ -126,8 +121,14 @@ const getUserSummary = async (userId) => {
       l.fail_reasons[reason] = (l.fail_reasons[reason] || 0) + 1;
       if (a.fail_stage) l.fail_stages[a.fail_stage] = (l.fail_stages[a.fail_stage] || 0) + 1;
     } else if (a.outcome === 'abandoned') l.abandoned++;
+    else l.in_progress++;
   }
+  return Object.values(levels).sort((a, b) => a.level_key.localeCompare(b.level_key));
+};
 
+// Agrega resultados por riesgo (filas de user_risk_progress con `risk` y `risk.level` incluidos,
+// en orden cronológico). Ordenado por fallos: el primero es donde más se equivoca.
+const summarizeRisks = (riskRows) => {
   const risks = {};
   for (const r of riskRows) {
     const k = risks[r.risk_id] ||= {
@@ -143,18 +144,34 @@ const getUserSummary = async (userId) => {
     k.last_result = r.is_mitigated ? 'mitigated' : 'failed';
     k.last_recorded_at = r.recorded_at;
   }
-  const riskList = Object.values(risks).map(k => ({
+  return Object.values(risks).map(k => ({
     risk_id: k.risk_id, risk_name: k.risk_name, category: k.category, level_name: k.level_name,
     results: k.results, mitigated: k.mitigated, failed: k.failed,
     mitigation_rate: k.results ? round((k.mitigated / k.results) * 100) : null,
     mistakes_total: k.mistakes_total,
     avg_reaction_ms: k.reaction_n ? round(k.reaction_sum / k.reaction_n, 0) : null,
     last_result: k.last_result, last_recorded_at: k.last_recorded_at,
-  })).sort((a, b) => b.failed - a.failed);
+  })).sort((a, b) => b.failed - a.failed || (a.mitigation_rate ?? 0) - (b.mitigation_rate ?? 0));
+};
+
+// Resumen de trazabilidad de un jugador: por nivel, por riesgo y dónde se equivoca.
+// Con `session_id` se limita a lo que hizo dentro de esa sesión de capacitación.
+const getUserSummary = async (userId, { session_id } = {}) => {
+  const where = { user_id: userId };
+  if (session_id) where.session_id = session_id;
+
+  const attempts = await LevelAttempt.findAll({ where, order: [['started_at', 'ASC']] });
+  const riskRows = await UserRiskProgress.findAll({
+    where,
+    include: [{ model: Risk, as: 'risk', include: [{ model: Level, as: 'level' }] }],
+    order: [['recorded_at', 'ASC']],
+  });
+  const riskList = summarizeRisks(riskRows);
 
   const eventCounts = await GameEvent.findAll({
     where: { user_id: userId },
-    attributes: ['event_type', [fn('COUNT', col('id')), 'count']],
+    attributes: ['event_type', [fn('COUNT', col('GameEvent.id')), 'count']],
+    include: session_id ? [{ model: LevelAttempt, as: 'attempt', attributes: [], where: { session_id } }] : [],
     group: ['event_type'],
     raw: true,
   });
@@ -162,7 +179,7 @@ const getUserSummary = async (userId) => {
   return {
     user_id: userId,
     total_attempts: attempts.length,
-    levels: Object.values(levels),
+    levels: summarizeAttempts(attempts),
     risks: riskList,
     weakest_risk: riskList.find(r => r.failed > 0) || null,
     event_counts: Object.fromEntries(eventCounts.map(e => [e.event_type, Number(e.count)])),
@@ -250,4 +267,7 @@ const getOverview = async ({ session_id } = {}) => {
   };
 };
 
-module.exports = { startAttempt, endAttempt, saveEvents, listAttempts, getAttemptDetail, getUserSummary, getOverview };
+module.exports = {
+  startAttempt, endAttempt, saveEvents, listAttempts, getAttemptDetail, getUserSummary, getOverview,
+  summarizeAttempts, summarizeRisks, round,
+};

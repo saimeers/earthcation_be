@@ -12,5 +12,7 @@ router.patch('/:id/start',  auth, requireRole('instructor', 'admin'), sessionCon
 router.patch('/:id/end',    auth, requireRole('instructor', 'admin'), sessionController.end);
 router.get('/:id/progress', auth, requireRole('instructor', 'admin'), sessionController.getProgress);
 router.get('/:id/progress/admin', auth, requireRole('admin'), sessionController.getProgressAdmin)
+router.get('/:id/participants/:userId/analysis', auth, requireRole('admin'), sessionController.getParticipantAnalysis)
+router.get('/:id/export.xlsx',    auth, requireRole('admin'), sessionController.exportXlsx)
 
 module.exports = router;
