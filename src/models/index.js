@@ -8,6 +8,8 @@ const Location       = require('./Location');
 const UserProfile    = require('./UserProfile');
 const TrainingSession = require('./TrainingSession');
 const SessionUser    = require('./SessionUser');
+const LevelAttempt   = require('./LevelAttempt');
+const GameEvent      = require('./GameEvent');
 
 // Usuario
 User.hasOne(VarkResult,     { foreignKey: 'user_id', as: 'varkProfile' });
@@ -42,7 +44,22 @@ Location.hasMany(TrainingSession, { foreignKey: 'location_id', as: 'sessions' })
 SessionUser.belongsTo(TrainingSession, { foreignKey: 'session_id', as: 'session' });
 UserRiskProgress.belongsTo(TrainingSession, { foreignKey: 'session_id', as: 'session' });
 
+// Telemetría: intentos por nivel y eventos dentro de cada intento
+User.hasMany(LevelAttempt, { foreignKey: 'user_id', as: 'attempts' });
+LevelAttempt.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Level.hasMany(LevelAttempt, { foreignKey: 'level_id', as: 'attempts' });
+LevelAttempt.belongsTo(Level, { foreignKey: 'level_id', as: 'level' });
+TrainingSession.hasMany(LevelAttempt, { foreignKey: 'session_id', as: 'attempts' });
+LevelAttempt.belongsTo(TrainingSession, { foreignKey: 'session_id', as: 'session' });
+LevelAttempt.hasMany(GameEvent, { foreignKey: 'attempt_id', as: 'events' });
+GameEvent.belongsTo(LevelAttempt, { foreignKey: 'attempt_id', as: 'attempt' });
+User.hasMany(GameEvent, { foreignKey: 'user_id', as: 'events' });
+GameEvent.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+LevelAttempt.hasMany(UserRiskProgress, { foreignKey: 'attempt_id', as: 'riskResults' });
+UserRiskProgress.belongsTo(LevelAttempt, { foreignKey: 'attempt_id', as: 'attempt' });
+
 module.exports = {
+    LevelAttempt, GameEvent,
     User, VarkResult, Level, Risk, UserRiskProgress,
     Organization, Location, UserProfile,
     TrainingSession, SessionUser

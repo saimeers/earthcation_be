@@ -1,6 +1,6 @@
 const { UserRiskProgress, Risk, Level } = require('../models');
 
-const saveProgress = async (userId, { risk_id, session_id, is_mitigated, mistakes_count, reaction_time_ms }) => {
+const saveProgress = async (userId, { risk_id, session_id, attempt_id, is_mitigated, mistakes_count, reaction_time_ms, detail }) => {
   const risk = await Risk.findByPk(risk_id);
   if (!risk) {
     const error = new Error('Riesgo no encontrado');
@@ -12,6 +12,8 @@ const saveProgress = async (userId, { risk_id, session_id, is_mitigated, mistake
     user_id:          userId,
     risk_id,
     session_id:       session_id       || null,
+    attempt_id:       attempt_id       || null,
+    detail:           detail           || null,
     is_mitigated:     is_mitigated     ?? false,
     mistakes_count:   mistakes_count   ?? 0,
     reaction_time_ms: reaction_time_ms ?? null

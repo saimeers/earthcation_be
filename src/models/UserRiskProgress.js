@@ -18,6 +18,10 @@ const UserRiskProgress = sequelize.define('UserRiskProgress', {
   reaction_time_ms: {
     type: DataTypes.FLOAT,
     allowNull: true,
+  },
+  detail: {
+    type: DataTypes.JSONB, // contexto del resultado (etapa, causa, equipo calibrado, vida al terminar...)
+    allowNull: true,
   }
 }, {
   tableName: 'user_risk_progress',

@@ -33,8 +33,8 @@ models/<Resource>.js              → Sequelize model definitions
 models/index.js                   → all associations (read this first to understand relations)
 ```
 
-Resources: `analytics`, `auth`, `level`, `location`, `organization`, `progress`, `session`, `user`,
-`vark`. When adding a feature, follow this same four-file pattern — don't put query logic in
+Resources: `analytics`, `auth`, `level`, `location`, `organization`, `progress`, `session`,
+`telemetry` (level attempts + in-game events, see `docs/TELEMETRY.md`), `user`, `vark`. When adding a feature, follow this same four-file pattern — don't put query logic in
 controllers.
 
 `middleware/auth.middleware.js` validates the JWT from `Authorization` header and attaches

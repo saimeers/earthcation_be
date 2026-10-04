@@ -2,14 +2,14 @@ const progressService = require('../services/progress.service');
 
 const save = async (req, res, next) => {
   try {
-    const { risk_id, session_id, is_mitigated, mistakes_count, reaction_time_ms } = req.body;
+    const { risk_id, session_id, attempt_id, is_mitigated, mistakes_count, reaction_time_ms, detail } = req.body;
 
     if (!risk_id) {
       return res.status(400).json({ error: 'risk_id es requerido' });
     }
 
     const progress = await progressService.saveProgress(req.user.id, {
-      risk_id, session_id, is_mitigated, mistakes_count, reaction_time_ms
+      risk_id, session_id, attempt_id, is_mitigated, mistakes_count, reaction_time_ms, detail
     });
 
     res.status(201).json({ message: 'Progreso guardado', progress });
