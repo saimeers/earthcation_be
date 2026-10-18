@@ -44,7 +44,10 @@ const stageLabel = (stage) => {
   return stage;
 };
 
+const CHALLENGES = { reto_reaccion: 'Reto de reacción', reto_memoria: 'Reto de memoria' };
+
 const levelLabel = (key) => {
+  if (CHALLENGES[key]) return CHALLENGES[key];
   const n = String(key || '').replace(/\D/g, '');
   return n ? `Nivel ${n}` : (key || '');
 };

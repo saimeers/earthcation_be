@@ -187,3 +187,25 @@ Solo Nivel 2:
 - `POST /api/telemetry/events` `{ attempt_id, events: [ { event_type, risk_id?, stage?, t_ms?, pos_x?, health?, fatigue?, payload? } ] }`
 - `PATCH /api/telemetry/attempts/:id` `{ outcome, fail_reason?, fail_risk_id?, fail_stage?, duration_ms?, final_health?, device_calibrated?, gas_brand?, summary? }`
 - `POST /api/progress/save` acepta además `attempt_id` y `detail` (JSON).
+
+## Evento de la manguera suelta (Nivel 1 y 2, CR-03)
+
+| event_type | risk_id | payload | Contador |
+|---|---|---|---|
+| `qte_hose_dodged` | CR-03 | `reaction_ms` | `hose_dodged` |
+| `qte_hose_hit` | CR-03 | — | `hose_hit` |
+
+Si el jugador muere por el impacto, `fail_reason = impacto_proyeccion`, `fail_risk_id = CR-03`.
+
+## Retos de transición (GC-05 memoria, GC-07 reacción)
+
+Cada reto es un intento propio: `level_key` = `reto_reaccion` o `reto_memoria`
+(sin dígitos, así `resolveLevelId` no lo asocia a ningún nivel y no cambia los % de éxito). Se cierra
+con `completed` (superado) o `failed` (`fail_reason = reto_no_superado`, `fail_stage` = tipo de reto).
+
+| event_type | stage | payload |
+|---|---|---|
+| `challenge_round` | `Reaccion` | `round`, `passed`, `avg_ms`, `best_ms`, `false_alarms`, `misses`, `hits` |
+| `challenge_round` | `Memoria` | `round`, `passed`, `errors`, `max_length`, `precision`, `correct_taps`, `total_taps` |
+
+Contadores en `summary`: `challenge_passed`, `challenge_failed`.
