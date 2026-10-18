@@ -10,7 +10,6 @@ const User = sequelize.define('User', {
   username: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
   },
   password_hash: {
     type: DataTypes.STRING,
@@ -35,7 +34,6 @@ const User = sequelize.define('User', {
   },
   cedula: {
     type: DataTypes.STRING,
-    unique: true,
     allowNull: true,
   },
   role: {
@@ -51,6 +49,12 @@ const User = sequelize.define('User', {
 }, {
   tableName: 'users',
   timestamps: true,
+  // Unicidad como índices CON NOMBRE: `unique: true` en la columna hacía que sync({ alter }) agregara
+  // una restricción UNIQUE nueva en cada arranque (había 92 en username y 88 en cédula)
+  indexes: [
+    { name: 'users_username_unique', unique: true, fields: ['username'] },
+    { name: 'users_cedula_unique', unique: true, fields: ['cedula'] },
+  ],
   createdAt: 'created_at',
   updatedAt: 'updated_at'
 });

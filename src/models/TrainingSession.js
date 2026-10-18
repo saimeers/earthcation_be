@@ -9,7 +9,8 @@ const TrainingSession = sequelize.define('TrainingSession', {
     name: { type: DataTypes.STRING, allowNull: false },
     code: {
         type: DataTypes.STRING(8),
-        unique: true,
+        // Único solo entre salas no finalizadas (índice parcial en scripts/dbMaintenance.js): una sala
+        // finalizada libera su código, necesario con solo 1000 combinaciones
         allowNull: true // la sesión libre no tiene código: no se une por código
     },
     is_free_play: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

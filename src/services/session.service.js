@@ -25,7 +25,12 @@ const createSession = async (instructorId, { name, location_id }) => {
 };
 
 const joinSession = async (userId, code) => {
-  const session = await TrainingSession.findOne({ where: { code, is_free_play: false } });
+  // Los códigos se reciclan: una sala finalizada puede compartir código con una viva, así que se busca
+  // primero la viva
+  const session = await TrainingSession.findOne({
+    where: { code, is_free_play: false },
+    order: [[literal(`CASE WHEN status = 'finished' THEN 1 ELSE 0 END`), 'ASC'], ['created_at', 'DESC']],
+  });
   if (!session) {
     const error = new Error('Código de sesión inválido');
     error.status = 404;
@@ -62,6 +67,17 @@ const canSeeSession = async (session, instructorId) => {
   if (session.instructor_id === instructorId) return true;
   if (!session.is_free_play) return false;
   return session.location_id === await profileLocationId(instructorId);
+};
+
+// Sala viva con ese código (para el QR: el juego muestra el nombre antes de unirse). Sin inscribir.
+const getLiveByCode = async (code) => {
+  const session = await TrainingSession.findOne({
+    where: { code, is_free_play: false, status: { [Op.ne]: 'finished' } },
+    attributes: ['id', 'name', 'code', 'status'],
+    include: [{ model: User, as: 'instructor', attributes: ['first_name', 'last_name'] }],
+  });
+  if (!session) throw Object.assign(new Error('Código de sesión inválido o la sesión ya finalizó'), { status: 404 });
+  return session;
 };
 
 const startSession = async (sessionId, instructorId) => {
@@ -491,4 +507,4 @@ const assertCanView = async (sessionId, user) => {
   }
 };
 
-module.exports = { assertCanView, getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin, getParticipantAnalysis, performanceBand };
+module.exports = { getLiveByCode, assertCanView, getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin, getParticipantAnalysis, performanceBand };

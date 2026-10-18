@@ -17,8 +17,32 @@ const STATEMENTS = [
   'CREATE INDEX IF NOT EXISTS game_events_created_at ON game_events (created_at)',
 ];
 
+// Restricciones UNIQUE que sync({ alter }) apiló por `unique: true` en la columna (una por arranque).
+// La unicidad ahora la dan índices con nombre (modelos) o el índice parcial de abajo.
+const STACKED_UNIQUES = [
+  { table: 'users', column: 'username' },
+  { table: 'users', column: 'cedula' },
+  { table: 'training_sessions', column: 'code' },
+];
+
+const dropStackedUniques = async () => {
+  for (const { table, column } of STACKED_UNIQUES) {
+    const [rows] = await sequelize.query(
+      `SELECT conname FROM pg_constraint WHERE conrelid = '${table}'::regclass AND contype = 'u'
+         AND conname ~ '^${table}_${column}_key[0-9]*$'`);
+    if (!rows.length) continue;
+    const list = rows.map(r => `DROP CONSTRAINT "${r.conname}"`).join(', ');
+    await sequelize.query(`ALTER TABLE ${table} ${list}`);
+    console.log(`🧹 ${table}.${column}: ${rows.length} restricciones UNIQUE apiladas eliminadas`);
+  }
+};
+
 const runDbMaintenance = async () => {
   for (const sql of STATEMENTS) await sequelize.query(sql);
+  await dropStackedUniques();
+  // Código de sala único solo entre salas vivas (una finalizada libera su código)
+  await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS training_sessions_code_live
+    ON training_sessions (code) WHERE code IS NOT NULL AND status <> 'finished'`);
 };
 
 module.exports = { runDbMaintenance };

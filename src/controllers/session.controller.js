@@ -92,4 +92,11 @@ const exportXlsx = async (req, res, next) => {
   } catch (err) { next(err) }
 }
 
-module.exports = { getParticipantAnalysis, exportXlsx, getAll, create, join, start, end, getProgress, getMySessions, getByLocation, getProgressAdmin };
+const getByCode = async (req, res, next) => {
+  try {
+    if (!/^\d{3}$/.test(req.params.code)) return res.status(400).json({ error: 'El código de sala tiene 3 dígitos' });
+    res.json(await sessionService.getLiveByCode(req.params.code));
+  } catch (err) { next(err); }
+};
+
+module.exports = { getByCode, getParticipantAnalysis, exportXlsx, getAll, create, join, start, end, getProgress, getMySessions, getByLocation, getProgressAdmin };

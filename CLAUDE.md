@@ -169,7 +169,11 @@ computed the same way as `getByOrganization`).
 auto-alter the table on next server start — there's no versioned rollback path, so be careful with
 destructive column changes against the Railway production DB.
 
-**Known `alter: true` footgun (already hit once):** toggling a column's `unique: true` on and off
+**Known `alter: true` footgun (hit twice):** fixed 2026-10-18 — `users.username` (92), `users.cedula`
+(88) and `training_sessions.code` (82) had stacked UNIQUE constraints; `dbMaintenance.js` now drops
+them on boot and the models declare uniqueness as **named indexes** (`users_username_unique`,
+`users_cedula_unique`) instead of column `unique: true`. Never use column-level `unique: true`.
+Original note: toggling a column's `unique: true` on and off
 across model edits does **not** drop the old unique constraint on next sync — Sequelize just adds
 a new uniquely-suffixed one (`users_email_key`, `_key1`, `_key2`, ...) and leaves the previous ones
 in place. `users.email` had accumulated **48 stacked unique constraints** this way before they were

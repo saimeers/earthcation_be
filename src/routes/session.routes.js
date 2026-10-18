@@ -5,6 +5,8 @@ const sessionController = require('../controllers/session.controller');
 
 router.post('/',            auth, requireRole('instructor', 'admin'), sessionController.create);
 router.post('/join',        auth, sessionController.join);
+// El juego valida el código que llegó por QR y muestra el nombre de la sala (sin inscribir al jugador)
+router.get('/code/:code',   auth, sessionController.getByCode);
 router.get('/mine',         auth, requireRole('instructor', 'admin'), sessionController.getMySessions);
 router.get('/all',          auth, requireRole('admin'), sessionController.getAll);
 router.get('/by-location',    auth, requireRole('instructor', 'admin'), sessionController.getByLocation);
