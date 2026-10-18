@@ -2,9 +2,9 @@ const telemetryService = require('../services/telemetry.service');
 
 const startAttempt = async (req, res, next) => {
   try {
-    const { level_key, session_id, vark_style, gas_brand } = req.body;
+    const { level_key, session_id, vark_style, gas_brand, game_version } = req.body;
     if (!level_key) return res.status(400).json({ error: 'level_key es requerido' });
-    const attempt = await telemetryService.startAttempt(req.user.id, { level_key, session_id, vark_style, gas_brand });
+    const attempt = await telemetryService.startAttempt(req.user.id, { level_key, session_id, vark_style, gas_brand, game_version });
     res.status(201).json({ message: 'Intento iniciado', attempt });
   } catch (err) { next(err); }
 };

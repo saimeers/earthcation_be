@@ -19,7 +19,7 @@ const resolveLevelId = async (levelKey) => {
 
 // ─── Escritura (la usa el juego) ─────────────────────────────────────────────────
 
-const startAttempt = async (userId, { level_key, session_id, vark_style, gas_brand }) => {
+const startAttempt = async (userId, { level_key, session_id, vark_style, gas_brand, game_version }) => {
   // Un intento anterior que quedó abierto (cerró el juego, recargó) se marca como abandonado.
   // Las 4 consultas son independientes: en paralelo (en fila era lo más lento con 50 jugadores
   // entrando a la vez)
@@ -40,6 +40,7 @@ const startAttempt = async (userId, { level_key, session_id, vark_style, gas_bra
     attempt_number: previous + 1,
     vark_style: vark_style || null,
     gas_brand: gas_brand || null,
+    game_version: typeof game_version === 'string' ? game_version.slice(0, 20) : null,
   });
 };
 

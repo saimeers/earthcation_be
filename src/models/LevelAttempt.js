@@ -51,6 +51,10 @@ const LevelAttempt = sequelize.define('LevelAttempt', {
     type: DataTypes.STRING, // detector multigás elegido
     allowNull: true,
   },
+  game_version: {
+    type: DataTypes.STRING(20), // Application.version del build que jugó (soporte: qué versión tenía)
+    allowNull: true,
+  },
   device_calibrated: {
     type: DataTypes.BOOLEAN,
     allowNull: true,
