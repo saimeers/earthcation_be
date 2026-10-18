@@ -67,6 +67,7 @@ const getAll = async (req, res, next) => {
 
 const getProgressAdmin = async (req, res, next) => {
   try {
+    await sessionService.assertCanView(req.params.id, req.user)
     const data = await sessionService.getSessionProgressAdmin(req.params.id)
     res.json(data)
   } catch (err) { next(err) }
@@ -74,12 +75,14 @@ const getProgressAdmin = async (req, res, next) => {
 
 const getParticipantAnalysis = async (req, res, next) => {
   try {
+    await sessionService.assertCanView(req.params.id, req.user)
     res.json(await sessionService.getParticipantAnalysis(req.params.id, req.params.userId))
   } catch (err) { next(err) }
 }
 
 const exportXlsx = async (req, res, next) => {
   try {
+    await sessionService.assertCanView(req.params.id, req.user)
     const { workbook, session } = await buildSessionWorkbook(req.params.id)
     const date = new Date().toISOString().slice(0, 10)
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

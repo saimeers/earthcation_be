@@ -474,4 +474,13 @@ const getParticipantAnalysis = async (sessionId, userId) => {
   }
 }
 
-module.exports = { getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin, getParticipantAnalysis, performanceBand };
+// Admin ve todo; el instructor, sus salas y la sesión "Juego libre" de su ubicación (403 si no)
+const assertCanView = async (sessionId, user) => {
+  if (user.role === 'admin') return;
+  const session = await TrainingSession.findByPk(sessionId);
+  if (!(await canSeeSession(session, user.id))) {
+    throw Object.assign(new Error('Sesión no encontrada o sin permiso'), { status: 403 });
+  }
+};
+
+module.exports = { assertCanView, getAllSessions, createSession, joinSession, startSession, endSession, getSessionProgress, getMySessions, getSessionsByLocation, getSessionProgressAdmin, getParticipantAnalysis, performanceBand };

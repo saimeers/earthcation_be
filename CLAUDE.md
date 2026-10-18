@@ -62,6 +62,9 @@ is actually the user's **cédula**, not a chosen username.
   `/api/sessions/mine`, for instructors of the same location. `instructor_id`/`location_id` are nullable;
   `index.js` drops their NOT NULL explicitly after `sync` because `alter` does not do it for FK columns.
   Old rows with a null session were left as they were.
+- Instructor access: `GET /:id/progress/admin`, `/:id/participants/:userId/analysis` and
+  `/:id/export.xlsx` allow `instructor` too, guarded by `sessionService.assertCanView` (admin: all;
+  instructor: own rooms + the "Juego libre" session of their profile location; else 403).
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
 - `analyticsService.getOverview()` also returns `riesgos_mas_fallados` (top failed risks by fail
