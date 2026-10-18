@@ -18,7 +18,15 @@ const sequelize = new Sequelize(
           }
         }
       : {},
-    logging: false
+    logging: false,
+    // Por defecto Sequelize abre máx. 5 conexiones: con ~50 jugadores escribiendo a la vez las
+    // peticiones hacían cola. Railway Postgres admite ~100; dejamos margen para otras réplicas.
+    pool: {
+      max: Number(process.env.DB_POOL_MAX) || 20,
+      min: Number(process.env.DB_POOL_MIN) || 2,
+      idle: 10000,
+      acquire: 30000,
+    }
   }
 );
 

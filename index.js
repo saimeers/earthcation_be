@@ -4,16 +4,39 @@ const express   = require('express');
 const cors      = require('cors');
 const helmet    = require('helmet');
 const morgan    = require('morgan');
+const compression = require('compression');
 const sequelize = require('./src/config/database');
 require('./src/models');
 const { seedMunicipios } = require('./src/scripts/seedMunicipios');
+const { runDbMaintenance } = require('./src/scripts/dbMaintenance');
+const { globalLimiter, authLimiter } = require('./src/middleware/rateLimit.middleware');
+const { metrics } = require('./src/middleware/metrics.middleware');
+const { getHealth } = require('./src/services/health.service');
 
 const app = express();
 
+// Detrás del proxy de Cloudflare/Railway: req.ip es el del proxy (la IP del visitante sale de
+// CF-Connecting-IP, ver utils/clientIp.js)
+app.set('trust proxy', 1);
+
+// ALLOWED_ORIGINS admite varios separados por coma (panel, juego); sin definir, cualquiera
+const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean);
 app.use(helmet());
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS || '*' }));
-app.use(express.json());
-app.use(morgan('dev'));
+app.use(cors({ origin: origins?.length ? origins : '*' }));
+app.use(compression());
+app.use(express.json({ limit: '1mb' }));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));
+app.use(metrics);
+
+// Estado público mínimo (para monitores externos y Railway); el detalle va en /api/health/details
+app.get('/api/health', async (_, res) => {
+  const h = await getHealth();
+  res.status(h.status === 'ok' ? 200 : 503).json({ status: h.status, version: h.version, uptime_s: h.uptime_s });
+});
+
+app.use('/api', globalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
 
 app.use('/api/auth',      require('./src/routes/auth.routes'));
 app.use('/api/users',     require('./src/routes/user.routes'));
@@ -26,6 +49,7 @@ app.use('/api/analytics', require('./src/routes/analytics.routes'));
 app.use('/api/telemetry', require('./src/routes/telemetry.routes'));
 app.use('/api/locations',     require('./src/routes/location.routes'));
 app.use('/api/organizations', require('./src/routes/organization.routes'));
+app.use('/api/health',    require('./src/routes/health.routes'));
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
@@ -49,9 +73,7 @@ sequelize.authenticate()
   })
   .then(() => {
     console.log('✅ Tablas sincronizadas.');
-    // alter no quita el NOT NULL de columnas con llave foránea: la sesión "Juego libre" no tiene
-    // instructor y la global no tiene ubicación (idempotente)
-    return sequelize.query('ALTER TABLE training_sessions ALTER COLUMN instructor_id DROP NOT NULL, ALTER COLUMN location_id DROP NOT NULL');
+    return runDbMaintenance(); // NOT NULL de sesión libre + índices (idempotente)
   })
   .then(() => {
     return seedMunicipios();

@@ -1,4 +1,5 @@
 const { TrainingSession, SessionUser, UserProfile, Location } = require('../models');
+const { remember } = require('../services/cache.service');
 
 // Sesión común "Juego libre": quien juega sin código de sala cae en la de su ubicación (la del
 // perfil); sin ubicación, en una global. No tiene instructor ni código (no se une por código), siempre
@@ -25,7 +26,9 @@ const getOrCreateFreeSession = async (userId) => {
   return session.id;
 };
 
-// session_id que llega del juego, o la sesión libre si vino vacío
-const resolveSessionId = async (userId, sessionId) => sessionId || getOrCreateFreeSession(userId);
+// session_id que llega del juego, o la sesión libre si vino vacío. La sesión libre de cada jugador se
+// cachea 10 min: cada intento y cada resultado de riesgo la necesitan (antes ~4 consultas cada vez).
+const resolveSessionId = async (userId, sessionId) =>
+  sessionId || remember('free-session', userId, 600, () => getOrCreateFreeSession(userId));
 
 module.exports = { getOrCreateFreeSession, resolveSessionId };

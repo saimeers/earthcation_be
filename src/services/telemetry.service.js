@@ -2,6 +2,7 @@ const { LevelAttempt, GameEvent, UserRiskProgress, Risk, Level, User } = require
 const { Op, fn, col, literal } = require('sequelize');
 
 const { resolveSessionId } = require('../utils/freeSession.utils');
+const { remember } = require('./cache.service');
 
 const notFound = (msg) => Object.assign(new Error(msg), { status: 404 });
 
@@ -9,25 +10,33 @@ const notFound = (msg) => Object.assign(new Error(msg), { status: 404 });
 const resolveLevelId = async (levelKey) => {
   const n = String(levelKey || '').replace(/\D/g, '');
   if (!n) return null;
-  const level = await Level.findOne({ where: { name: { [Op.iLike]: `Nivel ${n}%` } } });
-  return level ? level.id : null;
+  // Los niveles casi no cambian: se cachea 1 h
+  return remember('levels', `by-number:${n}`, 3600, async () => {
+    const level = await Level.findOne({ where: { name: { [Op.iLike]: `Nivel ${n}%` } } });
+    return level ? level.id : null;
+  });
 };
 
 // ─── Escritura (la usa el juego) ─────────────────────────────────────────────────
 
 const startAttempt = async (userId, { level_key, session_id, vark_style, gas_brand }) => {
   // Un intento anterior que quedó abierto (cerró el juego, recargó) se marca como abandonado.
-  await LevelAttempt.update(
-    { outcome: 'abandoned', ended_at: new Date() },
-    { where: { user_id: userId, level_key, outcome: 'in_progress' } }
-  );
-
-  const previous = await LevelAttempt.count({ where: { user_id: userId, level_key } });
+  // Las 4 consultas son independientes: en paralelo (en fila era lo más lento con 50 jugadores
+  // entrando a la vez)
+  const [, previous, levelId, sessionId] = await Promise.all([
+    LevelAttempt.update(
+      { outcome: 'abandoned', ended_at: new Date() },
+      { where: { user_id: userId, level_key, outcome: 'in_progress' } }
+    ),
+    LevelAttempt.count({ where: { user_id: userId, level_key } }),
+    resolveLevelId(level_key),
+    resolveSessionId(userId, session_id), // sin sala = sesión "Juego libre"
+  ]);
   return LevelAttempt.create({
     user_id: userId,
     level_key,
-    level_id: await resolveLevelId(level_key),
-    session_id: await resolveSessionId(userId, session_id), // sin sala = sesión "Juego libre"
+    level_id: levelId,
+    session_id: sessionId,
     attempt_number: previous + 1,
     vark_style: vark_style || null,
     gas_brand: gas_brand || null,

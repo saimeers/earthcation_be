@@ -2,6 +2,7 @@ const { User, UserProfile, UserRiskProgress, VarkResult, Organization, Location,
 const { Op, fn, col, literal } = require('sequelize');
 const { summarize, latestAttemptRows, latestAttemptByLevel } = require('../utils/attempt.utils');
 const { coordsFor } = require('../utils/geo.utils');
+const { remember } = require('./cache.service');
 
 // Todos los % de éxito usan el ÚLTIMO intento de cada jugador en cada nivel (ver
 // utils/attempt.utils.js): reintentar no promedia con lo anterior, reemplaza.
@@ -22,13 +23,30 @@ const userSummary = (rows) => {
   };
 };
 
-const getOverview = async () => {
-  const totalUsers       = await User.count();
-  const totalPlayers     = await User.count({ where: { role: 'player' } });
-  const totalInstructors = await User.count({ where: { role: 'instructor' } });
-  const totalSessions    = await TrainingSession.count();
-  const activeSessions   = await TrainingSession.count({ where: { status: 'active' } });
-  const allRows        = await progressWithLevel();
+// Resumen por jugador para muchos usuarios con 2 consultas (antes eran 2 por usuario: N+1)
+const summariesByUser = async (userIds) => {
+  const [rows, varks] = await Promise.all([
+    progressWithLevel({ user_id: { [Op.in]: userIds } }),
+    VarkResult.findAll({ where: { user_id: { [Op.in]: userIds } }, attributes: ['user_id', 'dominant_style'] }),
+  ]);
+  const byUser = new Map(userIds.map(id => [id, []]));
+  rows.forEach(r => byUser.get(r.user_id)?.push(r));
+  const varkByUser = new Map(varks.map(v => [v.user_id, v.dominant_style]));
+  return (userId) => ({ dominant_style: varkByUser.get(userId) ?? null, ...userSummary(byUser.get(userId) ?? []) });
+};
+
+// Recorre todo el historial: se cachea 60 s (lo consultan el panel y sus refrescos)
+const getOverview = () => remember('analytics', 'overview', 60, computeOverview);
+
+const computeOverview = async () => {
+  const [totalUsers, totalPlayers, totalInstructors, totalSessions, activeSessions, allRows] = await Promise.all([
+    User.count(),
+    User.count({ where: { role: 'player' } }),
+    User.count({ where: { role: 'instructor' } }),
+    TrainingSession.count(),
+    TrainingSession.count({ where: { status: 'active' } }),
+    progressWithLevel(),
+  ]);
   const latestByLevel  = latestAttemptByLevel(allRows);
   const latestSummary  = summarize(latestByLevel.flatMap(l => l.rows));
 
@@ -130,15 +148,8 @@ const getByOrganization = async (organizationId) => {
   });
   if (!profiles.length) return [];
 
-  return Promise.all(profiles.map(async p => {
-    const progress  = await progressWithLevel({ user_id: p.user_id });
-    const vark      = await VarkResult.findOne({ where: { user_id: p.user_id } });
-    return {
-      user: p.user,
-      dominant_style: vark?.dominant_style ?? null,
-      ...userSummary(progress),
-    };
-  }));
+  const summaryOf = await summariesByUser(profiles.map(p => p.user_id));
+  return profiles.map(p => ({ user: p.user, ...summaryOf(p.user_id) }));
 };
 
 const getByLocation = async ({ department, municipality }) => {
@@ -159,21 +170,16 @@ const getByLocation = async ({ department, municipality }) => {
   });
   if (!profiles.length) return [];
 
-  return Promise.all(profiles.map(async p => {
-    const progress  = await progressWithLevel({ user_id: p.user_id });
-    const vark      = await VarkResult.findOne({ where: { user_id: p.user_id } });
-    return {
-      user: p.user, location: p.location,
-      dominant_style: vark?.dominant_style ?? null,
-      ...userSummary(progress),
-    };
-  }));
+  const summaryOf = await summariesByUser(profiles.map(p => p.user_id));
+  return profiles.map(p => ({ user: p.user, location: p.location, ...summaryOf(p.user_id) }));
 };
 
 // Mapa de unidades mineras — Organization no tiene location_id propio, así que la ubicación se
 // infiere como el departamento/municipio más frecuente entre los perfiles de sus jugadores
 // (una organización con gente repartida en varios sitios se ubica donde tiene más jugadores).
-const getMinesMap = async () => {
+const getMinesMap = () => remember('analytics', 'mines-map', 60, computeMinesMap);
+
+const computeMinesMap = async () => {
   const organizations = await Organization.findAll({ where: { is_active: true } });
   if (!organizations.length) return [];
 

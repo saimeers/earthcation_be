@@ -218,3 +218,24 @@ password. The service generates a secure random password, creates a reset token 
 15-min expiry), and emails the temporary password + set-password link via Resend
 (`utils/email.utils.js`). Bulk-imported `player` accounts (see above) skip the email entirely — a
 generated password is stored but never surfaced, since players never need one.
+
+### Concurrency & performance (built for ~50 players per session)
+
+- **Pool**: Sequelize `max 20, min 2` (`DB_POOL_MAX/MIN`); the default 5 queued requests.
+- **Indexes**: `src/scripts/dbMaintenance.js` (run on every boot, idempotent) creates the indexes the
+  write tables lacked (`level_attempts(session_id)`, `(user_id, level_key)`, `user_risk_progress`
+  by session/user/attempt/recorded_at, `game_events(created_at)`) and drops the free-session NOT NULLs.
+- **Redis optional** (`src/config/redis.js`, `REDIS_URL`; copied from gameploy): without it every
+  user falls back to memory. `src/services/cache.service.js` `remember(ns, key, ttl, fn)` / `bump(ns)`
+  (versioned keys). Cached: session detail `getSessionProgressAdmin` 10 s per session (bumped on
+  start/end), analytics overview and mines map 60 s, a player's free session 10 min, level ids 1 h.
+- **Rate limits** (`src/middleware/rateLimit.middleware.js`): requests with a token count **per user**
+  (1500/15 min), anonymous ones per visitor IP (3000) — a whole classroom shares one public IP.
+  Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: `src/utils/clientIp.js`.
+- `trust proxy`, `compression`, `ALLOWED_ORIGINS` accepts a comma-separated list.
+- **Health**: `GET /api/health` (public, minimal) and `GET /api/health/details` (DB/Redis ping, pool,
+  p50/p95 and errors per route over 15 min from `src/middleware/metrics.middleware.js`, in memory).
+- **Load test**: `node scripts/load/simulate-players.js [--players 50 --seconds 60 --panels 2]`
+  (signs tokens for existing players, writes rows tagged `level_key = 'loadtest'`;
+  `--cleanup` deletes them). 2026-10-18, local API → Railway DB, 50 players + 2 panels:
+  p95 1878 ms → 282 ms, startAttempt p50 6809 ms → 217 ms, 0 errors.

@@ -4,6 +4,7 @@ const { TrainingSession, SessionUser, User, UserProfile, UserRiskProgress, Risk,
 const { summarizeAttempts, summarizeRisks, round } = require('./telemetry.service');
 const { summarize, latestAttemptByLevel } = require('../utils/attempt.utils');
 const { generateSessionCode } = require('../utils/session.utils');
+const { remember, bump } = require('./cache.service');
 
 const createSession = async (instructorId, { name, location_id }) => {
   let code, exists;
@@ -71,6 +72,7 @@ const startSession = async (sessionId, instructorId) => {
     error.status = 403;
     throw error;
   }
+  await bump(`session:${sessionId}`);
   return session.update({ status: 'active', started_at: new Date() });
 };
 
@@ -82,6 +84,7 @@ const endSession = async (sessionId, instructorId) => {
     error.status = 403;
     throw error;
   }
+  await bump(`session:${sessionId}`);
   return session.update({ status: 'finished', ended_at: new Date() });
 };
 
@@ -210,7 +213,12 @@ const avg = (values) => {
 // Detalle de sesión para el panel admin: todo en 3 consultas (sesión+participantes, resultados
 // por riesgo de la sesión, intentos de nivel de la sesión) agrupadas en memoria por usuario —
 // antes era una consulta por participante.
-const getSessionProgressAdmin = async (sessionId) => {
+// Lo consultan el detalle (cada 15 s por pestaña mientras la sesión está activa), el análisis por
+// participante y el Excel: se calcula una vez cada 10 s por sesión y se comparte.
+const getSessionProgressAdmin = (sessionId) =>
+  remember(`session:${sessionId}`, "progress-admin", 10, () => computeSessionProgressAdmin(sessionId))
+
+const computeSessionProgressAdmin = async (sessionId) => {
   const session = await TrainingSession.findByPk(sessionId, {
     include: [
       { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name', 'email'] },
