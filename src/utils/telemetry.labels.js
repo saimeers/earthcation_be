@@ -7,6 +7,7 @@ const FAIL_REASONS = {
   mordedura_ofidio:     'Mordedura de serpiente',
   infeccion_por_hongos: 'Infección por hongos',
   lesion_por_fatiga:    'Lesión por fatiga',
+  impacto_proyeccion:   'Impacto por proyección de fragmentos',
   fatiga:               'Lesión por fatiga',
   desconocido:          'Desconocida',
 };
