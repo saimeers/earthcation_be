@@ -40,6 +40,9 @@ app.get('/api/health', async (_, res) => {
   res.status(h.status === 'ok' ? 200 : 503).json({ status: h.status, version: h.version, uptime_s: h.uptime_s });
 });
 
+// Antes del límite global: todas las visitas llegan desde las IP del Worker de Cloudflare
+app.use('/api/visits', require('./src/routes/visit.routes'));
+
 app.use('/api', globalLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);

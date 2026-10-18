@@ -272,3 +272,15 @@ Storage (`src/config/deployStorage.js`): originals in AWS S3 (`AWS_S3_BUCKET`, `
 files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). Without
 them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
 published game at `/play-local/` (mounted before helmet, no token check) — dev only. `DEPLOY_MAX_MB` (500).
+
+### Visits & login locations (`visit.service.js`)
+
+`POST /api/visits/ingest` (no token; header `x-ingest-secret` = `VISITS_INGEST_SECRET`, shared with the
+Worker; mounted **before** the global rate limit since every visit comes from Cloudflare's IPs) stores a
+`GameVisit` per opening of the live game: Cloudflare country/region/city/colo/coordinates, device/OS/browser
+(`utils/userAgent.js`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
+`HMAC(VISIT_SALT, ip)` — no IP is stored; `is_unique` = first opening of that visitor in 30 min
+(`setIfAbsent`). Successful logins write a `LoginEvent` (role, `cf-ipcountry`/`cf-region`/`cf-ipcity`
+— trusted only when `req.ip` is Cloudflare; region/city need the zone's "Add visitor location headers"
+managed transform) without blocking the response. `GET /api/visits/stats?days=7|30|90` (admin,
+developer) aggregates everything, cached 60 s.

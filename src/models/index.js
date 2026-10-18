@@ -12,6 +12,8 @@ const LevelAttempt   = require('./LevelAttempt');
 const GameEvent      = require('./GameEvent');
 const GameVersion    = require('./GameVersion');
 const GameSetting    = require('./GameSetting');
+const GameVisit      = require('./GameVisit');
+const LoginEvent     = require('./LoginEvent');
 
 // Usuario
 User.hasOne(VarkResult,     { foreignKey: 'user_id', as: 'varkProfile' });
@@ -64,7 +66,7 @@ UserRiskProgress.belongsTo(LevelAttempt, { foreignKey: 'attempt_id', as: 'attemp
 GameVersion.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader', constraints: false });
 
 module.exports = {
-    GameVersion, GameSetting,
+    GameVersion, GameSetting, GameVisit, LoginEvent,
     LevelAttempt, GameEvent,
     User, VarkResult, Level, Risk, UserRiskProgress,
     Organization, Location, UserProfile,

@@ -1,4 +1,5 @@
 const authService = require('../services/auth.service');
+const { recordLogin } = require('../services/visit.service');
 
 const register = async (req, res, next) => {
   try {
@@ -20,6 +21,7 @@ const login = async (req, res, next) => {
       return res.status(400).json({ error: 'La cédula es requerida' });
     }
     const result = await authService.login({ cedula, password });
+    recordLogin(req, result.user); // ubicación del login (no bloquea la respuesta)
     res.json({ message: 'Login exitoso', ...result });
   } catch (err) { next(err); }
 };
