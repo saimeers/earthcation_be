@@ -8,7 +8,7 @@ const compression = require('compression');
 const sequelize = require('./src/config/database');
 require('./src/models');
 const { seedMunicipios } = require('./src/scripts/seedMunicipios');
-const { runDbMaintenance } = require('./src/scripts/dbMaintenance');
+const { runDbMaintenance, ensureEnumValues } = require('./src/scripts/dbMaintenance');
 const { globalLimiter, authLimiter } = require('./src/middleware/rateLimit.middleware');
 const { metrics } = require('./src/middleware/metrics.middleware');
 const { getHealth } = require('./src/services/health.service');
@@ -69,6 +69,9 @@ const PORT = process.env.PORT || 3000;
 sequelize.authenticate()
   .then(() => {
     console.log('✅ Conexión a PostgreSQL exitosa.');
+    return ensureEnumValues(); // valores nuevos de ENUM antes del sync (alter no los agrega bien)
+  })
+  .then(() => {
     return sequelize.sync({ alter: true });
   })
   .then(() => {

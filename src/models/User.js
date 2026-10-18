@@ -37,7 +37,7 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
   role: {
-    type: DataTypes.ENUM('player', 'instructor', 'admin'),
+    type: DataTypes.ENUM('player', 'instructor', 'admin', 'developer'), // developer = soporte: despliegues + lectura del panel
     defaultValue: 'player',
   },
   is_active: {

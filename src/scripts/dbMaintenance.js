@@ -37,6 +37,16 @@ const dropStackedUniques = async () => {
   }
 };
 
+// Valores de ENUM que sync({ alter }) no agrega de forma fiable en Postgres. Va ANTES del sync; ADD VALUE
+// no puede ir en una transacción y la tabla puede no existir aún en una BD nueva (de ahí el IF EXISTS).
+const ensureEnumValues = async () => {
+  await sequelize.query(`DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_users_role') THEN
+      ALTER TYPE "enum_users_role" ADD VALUE IF NOT EXISTS 'developer';
+    END IF;
+  END $$;`);
+};
+
 const runDbMaintenance = async () => {
   for (const sql of STATEMENTS) await sequelize.query(sql);
   await dropStackedUniques();
@@ -45,4 +55,4 @@ const runDbMaintenance = async () => {
     ON training_sessions (code) WHERE code IS NOT NULL AND status <> 'finished'`);
 };
 
-module.exports = { runDbMaintenance };
+module.exports = { runDbMaintenance, ensureEnumValues };

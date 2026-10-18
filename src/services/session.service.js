@@ -500,7 +500,7 @@ const getParticipantAnalysis = async (sessionId, userId) => {
 
 // Admin ve todo; el instructor, sus salas y la sesión "Juego libre" de su ubicación (403 si no)
 const assertCanView = async (sessionId, user) => {
-  if (user.role === 'admin') return;
+  if (user.role === 'admin' || user.role === 'developer') return; // el desarrollador consulta todo (solo lectura)
   const session = await TrainingSession.findByPk(sessionId);
   if (!(await canSeeSession(session, user.id))) {
     throw Object.assign(new Error('Sesión no encontrada o sin permiso'), { status: 403 });

@@ -10,9 +10,9 @@ router.post('/events',         auth, c.saveEvents);
 router.get('/me/attempts',     auth, c.myAttempts);
 
 // Lectura — panel web
-router.get('/overview',               auth, requireRole('admin', 'instructor'), c.overview);
-router.get('/users/:userId/attempts', auth, requireRole('admin', 'instructor'), c.userAttempts);
-router.get('/users/:userId/summary',  auth, requireRole('admin', 'instructor'), c.userSummary);
-router.get('/attempts/:id',           auth, requireRole('admin', 'instructor'), c.attemptDetail);
+router.get('/overview',               auth, requireRole('admin', 'instructor', 'developer'), c.overview);
+router.get('/users/:userId/attempts', auth, requireRole('admin', 'instructor', 'developer'), c.userAttempts);
+router.get('/users/:userId/summary',  auth, requireRole('admin', 'instructor', 'developer'), c.userSummary);
+router.get('/attempts/:id',           auth, requireRole('admin', 'instructor', 'developer'), c.attemptDetail);
 
 module.exports = router;

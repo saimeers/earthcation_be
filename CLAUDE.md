@@ -54,7 +54,10 @@ is actually the user's **cédula**, not a chosen username.
 - `TrainingSession.code` is a **3-digit numeric** room code (`utils/session.utils.js`), easy to
   read/dictate in a classroom. Retry-until-unique only checks against non-`finished` sessions
   (`session.service.js#createSession`) — a finished session frees its code, needed since 3 digits
-  only gives 1000 combinations.
+  only gives 1000 combinations. Uniqueness is a **partial unique index** `training_sessions_code_live`
+  (non-finished sessions only, created in `scripts/dbMaintenance.js`), and `joinSession` prefers the
+  live session for a reused code. `GET /api/sessions/code/:code` (any logged-in user) returns the live
+  session (name, instructor) without enrolling — used by the game when the code comes from a QR.
 - `UserRiskProgress.session_id` / `LevelAttempt.session_id`: when the game sends none,
   `utils/freeSession.utils.js` assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
   player's profile location (a global one if the player has no location) and enrolls the player. Free sessions
@@ -243,3 +246,11 @@ generated password is stored but never surfaced, since players never need one.
   (signs tokens for existing players, writes rows tagged `level_key = 'loadtest'`;
   `--cleanup` deletes them). 2026-10-18, local API → Railway DB, 50 players + 2 panels:
   p95 1878 ms → 282 ms, startAttempt p50 6809 ms → 217 ms, 0 errors.
+
+### Developer role (`developer`, "Desarrollador/Soporte")
+
+Manages game deployments and supports live sessions. **Read-only** on everything the admin can read:
+every `router.get` that allows `admin` also allows `developer`; all writes stay admin-only (403).
+`assertCanView` lets it see any session. The Postgres ENUM value is added by
+`dbMaintenance.ensureEnumValues()` **before** `sync` (alter does not add ENUM values reliably).
+Deploy/visits/health endpoints allow `admin` and `developer`.

@@ -7,6 +7,6 @@ router.post('/save',           auth, save);
 router.get('/full',              auth, getFullMeProgress);
 router.get('/me/:id',              auth, getSessionProgress);
 router.get('/level/:levelId',  auth, getProgressByLevel);
-router.get('/user/:userId/history', auth, requireRole('admin', 'instructor'), getHistoryByUser)
+router.get('/user/:userId/history', auth, requireRole('admin', 'instructor', 'developer'), getHistoryByUser)
 
 module.exports = router;
