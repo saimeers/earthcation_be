@@ -12,6 +12,8 @@ const { runDbMaintenance, ensureEnumValues } = require('./src/scripts/dbMaintena
 const { globalLimiter, authLimiter } = require('./src/middleware/rateLimit.middleware');
 const { metrics } = require('./src/middleware/metrics.middleware');
 const { getHealth } = require('./src/services/health.service');
+const { getPublished } = require('./src/config/deployStorage');
+const { recoverInterrupted } = require('./src/services/deploy.service');
 
 const app = express();
 
@@ -21,6 +23,10 @@ app.set('trust proxy', 1);
 
 // ALLOWED_ORIGINS admite varios separados por coma (panel, juego); sin definir, cualquiera
 const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean);
+// Sin R2 (desarrollo) la API sirve el juego publicado como lo haría el Worker. Va antes de helmet:
+// su CSP bloquea el wasm y los workers de Unity.
+if (getPublished().driver === 'local') app.use('/play-local', require('./src/routes/playLocal.routes'));
+
 app.use(helmet());
 app.use(cors({ origin: origins?.length ? origins : '*' }));
 app.use(compression());
@@ -50,6 +56,7 @@ app.use('/api/telemetry', require('./src/routes/telemetry.routes'));
 app.use('/api/locations',     require('./src/routes/location.routes'));
 app.use('/api/organizations', require('./src/routes/organization.routes'));
 app.use('/api/health',    require('./src/routes/health.routes'));
+app.use('/api/deploy',    require('./src/routes/deploy.routes'));
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
@@ -77,6 +84,9 @@ sequelize.authenticate()
   .then(() => {
     console.log('✅ Tablas sincronizadas.');
     return runDbMaintenance(); // NOT NULL de sesión libre + índices (idempotente)
+  })
+  .then(() => {
+    return recoverInterrupted(); // publicaciones cortadas por el reinicio → fallidas
   })
   .then(() => {
     return seedMunicipios();

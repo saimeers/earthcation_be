@@ -10,6 +10,8 @@ const TrainingSession = require('./TrainingSession');
 const SessionUser    = require('./SessionUser');
 const LevelAttempt   = require('./LevelAttempt');
 const GameEvent      = require('./GameEvent');
+const GameVersion    = require('./GameVersion');
+const GameSetting    = require('./GameSetting');
 
 // Usuario
 User.hasOne(VarkResult,     { foreignKey: 'user_id', as: 'varkProfile' });
@@ -58,7 +60,11 @@ GameEvent.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 LevelAttempt.hasMany(UserRiskProgress, { foreignKey: 'attempt_id', as: 'riskResults' });
 UserRiskProgress.belongsTo(LevelAttempt, { foreignKey: 'attempt_id', as: 'attempt' });
 
+// Despliegue del juego
+GameVersion.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader', constraints: false });
+
 module.exports = {
+    GameVersion, GameSetting,
     LevelAttempt, GameEvent,
     User, VarkResult, Level, Risk, UserRiskProgress,
     Organization, Location, UserProfile,

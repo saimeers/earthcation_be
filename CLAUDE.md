@@ -254,3 +254,21 @@ every `router.get` that allows `admin` also allows `developer`; all writes stay 
 `assertCanView` lets it see any session. The Postgres ENUM value is added by
 `dbMaintenance.ensureEnumValues()` **before** `sync` (alter does not add ENUM values reliably).
 Deploy/visits/health endpoints allow `admin` and `developer`.
+
+### Game deployment (`/api/deploy/*`, `deploy.service.js`, admin + developer)
+
+`GameVersion` (status `uploading → processing → ready | failed`) + `GameSetting` key
+`active_version_id` (single pointer, changed in a transaction). Flow: `POST /versions` creates the row and
+returns where to `PUT` the ZIP (S3 presigned URL, or `/versions/:id/upload` through the API when there is
+no S3) → `POST /versions/:id/complete` (atomic `uploading|failed → processing`) queues the publish
+(in-process, one at a time): unzip (`inspectBuild`, same rules as the panel's `buildCheck.js`), upload each
+file to `builds/<id>/` with `headersFor` (`x.wasm.br` = `application/wasm` + `Content-Encoding: br`,
+everything immutable except `index.html`) → `ready` with `manifest` (files, compression, Unity
+`productVersion`, warnings). `POST /:id/activate` writes `current.json` (read by the Worker) inside the
+transaction; rollback = activate an older one. `GET /:id/preview` = `<PLAY_URL>/v/<id>/?t=<exp>.<hmac>`
+(`PLAY_SIGNING_SECRET`, shared with the Worker). On boot, `processing` rows become `failed` (retryable).
+Storage (`src/config/deployStorage.js`): originals in AWS S3 (`AWS_S3_BUCKET`, `AWS_REGION`,
+`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`; bucket CORS must allow PUT from the panel) and published
+files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). Without
+them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
+published game at `/play-local/` (mounted before helmet, no token check) — dev only. `DEPLOY_MAX_MB` (500).
