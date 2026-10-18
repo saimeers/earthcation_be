@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { fn, col, literal } = require('sequelize');
-const { TrainingSession, SessionUser, User, UserRiskProgress, Risk, Level, Location, LevelAttempt, GameEvent } = require('../models');
+const { TrainingSession, SessionUser, User, UserProfile, UserRiskProgress, Risk, Level, Location, LevelAttempt, GameEvent } = require('../models');
 const { summarizeAttempts, summarizeRisks, round } = require('./telemetry.service');
 const { summarize, latestAttemptByLevel } = require('../utils/attempt.utils');
 const { generateSessionCode } = require('../utils/session.utils');
@@ -24,7 +24,7 @@ const createSession = async (instructorId, { name, location_id }) => {
 };
 
 const joinSession = async (userId, code) => {
-  const session = await TrainingSession.findOne({ where: { code } });
+  const session = await TrainingSession.findOne({ where: { code, is_free_play: false } });
   if (!session) {
     const error = new Error('Código de sesión inválido');
     error.status = 404;
@@ -47,8 +47,25 @@ const joinSession = async (userId, code) => {
   return { session, joined: true };
 };
 
+const freePlayLocked = () => Object.assign(new Error('La sesión de juego libre siempre está activa'), { status: 400 });
+
+// Ubicación del perfil de un usuario (los instructores ven la sesión "Juego libre" de la suya)
+const profileLocationId = async (userId) => {
+  const profile = await UserProfile.findOne({ where: { user_id: userId }, attributes: ['location_id'] });
+  return profile?.location_id || null;
+};
+
+// Dueño de la sala, o instructor de la misma ubicación si es la sesión "Juego libre"
+const canSeeSession = async (session, instructorId) => {
+  if (!session) return false;
+  if (session.instructor_id === instructorId) return true;
+  if (!session.is_free_play) return false;
+  return session.location_id === await profileLocationId(instructorId);
+};
+
 const startSession = async (sessionId, instructorId) => {
   const session = await TrainingSession.findByPk(sessionId);
+  if (session?.is_free_play) throw freePlayLocked();
   if (!session || session.instructor_id !== instructorId) {
     const error = new Error('Sesión no encontrada o sin permiso');
     error.status = 403;
@@ -59,6 +76,7 @@ const startSession = async (sessionId, instructorId) => {
 
 const endSession = async (sessionId, instructorId) => {
   const session = await TrainingSession.findByPk(sessionId);
+  if (session?.is_free_play) throw freePlayLocked();
   if (!session || session.instructor_id !== instructorId) {
     const error = new Error('Sesión no encontrada o sin permiso');
     error.status = 403;
@@ -79,7 +97,7 @@ const getSessionProgress = async (sessionId, instructorId) => {
     }]
   });
 
-  if (!session || session.instructor_id !== instructorId) {
+  if (!(await canSeeSession(session, instructorId))) {
     const error = new Error('Sesión no encontrada o sin permiso');
     error.status = 403;
     throw error;
@@ -117,8 +135,13 @@ const getSessionProgress = async (sessionId, instructorId) => {
 };
 
 const getMySessions = async (instructorId) => {
+  // Sus salas + la sesión "Juego libre" de su ubicación
+  const locationId = await profileLocationId(instructorId);
+  const where = locationId
+    ? { [Op.or]: [{ instructor_id: instructorId }, { is_free_play: true, location_id: locationId }] }
+    : { instructor_id: instructorId };
   return TrainingSession.findAll({
-    where: { instructor_id: instructorId },
+    where,
     include: [{ association: 'participants' }],
     order: [['created_at', 'DESC']]
   });
@@ -414,7 +437,7 @@ const getParticipantAnalysis = async (sessionId, userId) => {
 
   return {
     session: {
-      id: data.session.id, name: data.session.name, code: data.session.code,
+      id: data.session.id, name: data.session.name, code: data.session.code, is_free_play: data.session.is_free_play,
       status: data.session.status, started_at: data.session.started_at, ended_at: data.session.ended_at,
     },
     user,

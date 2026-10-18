@@ -1,5 +1,6 @@
-const { UserRiskProgress, Risk, Level } = require('../models');
+const { UserRiskProgress, Risk, Level, LevelAttempt } = require('../models');
 const { latestAttemptByLevel } = require('../utils/attempt.utils');
+const { resolveSessionId } = require('../utils/freeSession.utils');
 
 const saveProgress = async (userId, { risk_id, session_id, attempt_id, is_mitigated, mistakes_count, reaction_time_ms, detail }) => {
   const risk = await Risk.findByPk(risk_id);
@@ -9,10 +10,18 @@ const saveProgress = async (userId, { risk_id, session_id, attempt_id, is_mitiga
     throw error;
   }
 
+  // Sin sala: la del intento (si se envió) o la sesión "Juego libre" del jugador
+  let sessionId = session_id || null;
+  if (!sessionId && attempt_id) {
+    const attempt = await LevelAttempt.findOne({ where: { id: attempt_id, user_id: userId }, attributes: ['session_id'] });
+    sessionId = attempt?.session_id || null;
+  }
+  sessionId = await resolveSessionId(userId, sessionId);
+
   return UserRiskProgress.create({
     user_id:          userId,
     risk_id,
-    session_id:       session_id       || null,
+    session_id:       sessionId,
     attempt_id:       attempt_id       || null,
     detail:           detail           || null,
     is_mitigated:     is_mitigated     ?? false,

@@ -55,8 +55,13 @@ is actually the user's **cédula**, not a chosen username.
   read/dictate in a classroom. Retry-until-unique only checks against non-`finished` sessions
   (`session.service.js#createSession`) — a finished session frees its code, needed since 3 digits
   only gives 1000 combinations.
-- `UserRiskProgress.session_id` is optional — progress can be recorded freely or tied to a live
-  instructor-led session.
+- `UserRiskProgress.session_id` / `LevelAttempt.session_id`: when the game sends none,
+  `utils/freeSession.utils.js` assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
+  player's profile location (a global one if the player has no location) and enrolls the player. Free sessions
+  have no instructor or code, are always `active` (start/end return 400), are listed for admins and, in
+  `/api/sessions/mine`, for instructors of the same location. `instructor_id`/`location_id` are nullable;
+  `index.js` drops their NOT NULL explicitly after `sync` because `alter` does not do it for FK columns.
+  Old rows with a null session were left as they were.
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
 - `analyticsService.getOverview()` also returns `riesgos_mas_fallados` (top failed risks by fail

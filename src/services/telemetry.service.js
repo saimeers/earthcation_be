@@ -1,6 +1,8 @@
 const { LevelAttempt, GameEvent, UserRiskProgress, Risk, Level, User } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 
+const { resolveSessionId } = require('../utils/freeSession.utils');
+
 const notFound = (msg) => Object.assign(new Error(msg), { status: 404 });
 
 // 'level2' -> fila Level cuyo nombre empieza por "Nivel 2" (el id interno puede no coincidir).
@@ -25,7 +27,7 @@ const startAttempt = async (userId, { level_key, session_id, vark_style, gas_bra
     user_id: userId,
     level_key,
     level_id: await resolveLevelId(level_key),
-    session_id: session_id || null,
+    session_id: await resolveSessionId(userId, session_id), // sin sala = sesión "Juego libre"
     attempt_number: previous + 1,
     vark_style: vark_style || null,
     gas_brand: gas_brand || null,

@@ -49,6 +49,11 @@ sequelize.authenticate()
   })
   .then(() => {
     console.log('✅ Tablas sincronizadas.');
+    // alter no quita el NOT NULL de columnas con llave foránea: la sesión "Juego libre" no tiene
+    // instructor y la global no tiene ubicación (idempotente)
+    return sequelize.query('ALTER TABLE training_sessions ALTER COLUMN instructor_id DROP NOT NULL, ALTER COLUMN location_id DROP NOT NULL');
+  })
+  .then(() => {
     return seedMunicipios();
   })
   .then(({ created }) => {

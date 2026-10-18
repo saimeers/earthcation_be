@@ -3,14 +3,16 @@ const sequelize = require('../config/database');
 
 const TrainingSession = sequelize.define('TrainingSession', {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-    instructor_id: { type: DataTypes.UUID, allowNull: false },
-    location_id: { type: DataTypes.UUID, allowNull: false }, // <-- NUEVO CAMPO AÑADIDO
+    // null en las sesiones "Juego libre" (is_free_play): no tienen instructor; sin ubicación = la global
+    instructor_id: { type: DataTypes.UUID, allowNull: true },
+    location_id: { type: DataTypes.UUID, allowNull: true },
     name: { type: DataTypes.STRING, allowNull: false },
     code: {
         type: DataTypes.STRING(8),
         unique: true,
-        allowNull: false
+        allowNull: true // la sesión libre no tiene código: no se une por código
     },
+    is_free_play: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     status: {
         type: DataTypes.ENUM('waiting', 'active', 'finished'),
         defaultValue: 'waiting'

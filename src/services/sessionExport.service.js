@@ -76,7 +76,7 @@ const buildSessionWorkbook = async (sessionId) => {
     ? Math.round((new Date(session.ended_at) - new Date(session.started_at)) / 60000) : null;
   const info = [
     ['Sesión', session.name],
-    ['Código de sala', session.code],
+    ['Código de sala', session.is_free_play ? 'Juego libre (sin sala)' : session.code],
     ['Estado', { waiting: 'En espera', active: 'En curso', finished: 'Finalizada' }[session.status] ?? session.status],
     ['Instructor', fullName(session.instructor) || '—'],
     ['Localidad', session.location ? `${session.location.municipality}, ${session.location.department}` : '—'],
