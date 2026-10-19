@@ -50,4 +50,35 @@ const authLimiter = createLimiter('rl:auth:', {
   limit: Number(process.env.RATE_LIMIT_AUTH_MAX) || 300,
 });
 
-module.exports = { createLimiter, globalLimiter, authLimiter };
+// Login: solo cuentan los intentos fallidos (skipSuccessfulRequests), así 50 jugadores que entran bien
+// desde la IP del salón no se bloquean, pero adivinar cédulas sí.
+const FAILED_WINDOW_MS = 15 * 60 * 1000;
+const hashCedula = (req) => require('crypto').createHash('sha256').update(String(req.body?.cedula ?? '')).digest('hex');
+
+// Por cédula: frena que alguien pruebe muchas veces una misma cuenta
+const loginCedulaLimiter = createLimiter('rl:login-cedula:', {
+  windowMs: FAILED_WINDOW_MS,
+  limit: Number(process.env.RATE_LIMIT_LOGIN_CEDULA_MAX) || 10,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `c:${hashCedula(req)}`,
+  message: { error: 'Demasiados intentos con esa cédula, intenta de nuevo en unos minutos.' },
+});
+
+// Por IP: frena que desde un mismo lugar se prueben muchas cédulas que no existen (adivinar). Las
+// cédulas registradas no cuentan ni se bloquean aquí: si no, los errores de tipeo de un salón entero
+// (todos con la misma IP) dejarían sin entrar también a quienes escriben bien la suya.
+const cedulaExists = async (req) => {
+  const cedula = String(req.body?.cedula ?? '').trim();
+  if (!cedula) return false;
+  const { User } = require('../models');
+  return (await User.count({ where: { cedula } })) > 0;
+};
+const loginIpFailLimiter = createLimiter('rl:login-ip:', {
+  windowMs: FAILED_WINDOW_MS,
+  limit: Number(process.env.RATE_LIMIT_LOGIN_IP_FAIL_MAX) || 60,
+  skip: cedulaExists,
+  keyGenerator: (req) => `ip:${ipKeyGenerator(clientIp(req))}`,
+  message: { error: 'Demasiados intentos fallidos desde esta red, intenta de nuevo en unos minutos.' },
+});
+
+module.exports = { createLimiter, globalLimiter, authLimiter, loginCedulaLimiter, loginIpFailLimiter };

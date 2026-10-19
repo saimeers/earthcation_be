@@ -206,7 +206,6 @@ returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 - No pagination on any `findAll` list endpoint.
 - No validation library (Joi/Zod/express-validator) — validation is manual/inline in controllers.
-- No rate limiting, despite exposing `/api/auth/login` and `/api/auth/forgot-password` publicly.
 - `forgot-password` always returns the same response regardless of whether the email/cédula exists
   (intentional anti-enumeration behavior — don't "simplify" this into a conditional response).
 
@@ -292,3 +291,16 @@ developer) aggregates everything, cached 60 s.
 - **Bots**: visits with a bot user-agent or from a datacenter network (`as_organization` from the Worker, e.g.
   OVH/Hetzner/AWS — certificate-transparency scanners arrive with a fake Chrome UA) are stored with
   `is_bot = true` and excluded from `/api/visits/stats` (`totals.bots` = how many were dropped).
+
+### Security hardening (2026-10-19, fase 0)
+
+-  (any logged-in user, for their own record): non-admins can only change ,
+  , , ; , , , ,  are silently ignored
+  (before, a player could send ). Admins keep the full field list.
+- Login limits (, mounted on  after ):
+   10 failed attempts / 15 min per SHA-256 of the cédula ();
+   60 / 15 min per IP counting **only cédulas that don't exist** ( = cédula exists), so a
+  classroom's typos never lock out players with valid cédulas. Env: ,
+  . Verified: 50 valid logins from one blocked IP all 200.
+- Error handler: 5xx answer  (stack only in logs); 4xx keep their message.
+- JWT:  pinned on sign and verify; boot exits if  is missing or shorter than 32 chars.

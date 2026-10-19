@@ -153,7 +153,12 @@ const update = async (id, requesterId, requesterRole, data) => {
     throw error
   }
 
-  const updateData = clean(data, ['first_name', 'last_name', 'age', 'cedula', 'email', 'username', 'role'])
+  // Quien no es admin solo edita sus datos personales: rol, cédula, usuario, organización y localidad
+  // se ignoran (antes un jugador podía mandar {role:'admin'} y volverse administrador)
+  const isAdmin = requesterRole === 'admin'
+  const updateData = clean(data, isAdmin
+    ? ['first_name', 'last_name', 'age', 'cedula', 'email', 'username', 'role']
+    : ['first_name', 'last_name', 'age', 'email'])
 
   if (updateData.username && updateData.username !== user.username &&
       await User.findOne({ where: { username: updateData.username } })) {
@@ -167,7 +172,7 @@ const update = async (id, requesterId, requesterRole, data) => {
 
   await user.update(updateData)
 
-  const profileData = clean(data, ['organization_id', 'location_id'])
+  const profileData = isAdmin ? clean(data, ['organization_id', 'location_id']) : {}
   if (Object.keys(profileData).length) {
     const [profile] = await UserProfile.findOrCreate({ where: { user_id: id }, defaults: { user_id: id } })
     await profile.update(profileData)
