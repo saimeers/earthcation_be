@@ -2,16 +2,24 @@ const { Op, fn, col, literal } = require('sequelize');
 const { GameVisit, LoginEvent, GameVersion } = require('../models');
 const { remember, setIfAbsent } = require('./cache.service');
 const { parseUserAgent } = require('../utils/userAgent');
-const { isCloudflare } = require('../utils/clientIp');
+const { fromCloudflare } = require('../utils/clientIp');
 
 const str = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 const num = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
 
+// Escáneres y robots: user-agent declarado, o red de un centro de datos (llegan con UA de Chrome falso
+// apenas se emite el certificado de un dominio nuevo). Se guardan marcados y no cuentan en el panel.
+const BOT_UA = /bot|crawl|spider|slurp|preview|headless|lighthouse|pingdom|uptime|monitor|curl|wget|python|go-http|java\/|okhttp|axios|node-fetch|scan|facebookexternalhit|whatsapp|telegram|slack|discord/i;
+const DATACENTER = /amazon|aws|google|microsoft|azure|ovh|hetzner|digitalocean|linode|akamai|oracle|alibaba|tencent|contabo|vultr|choopa|leaseweb|m247|scaleway|hostinger|datacamp|cdn77|g-core|hosting|data ?center|server|cloud/i;
+const isBot = (ua, asOrg) => !ua || BOT_UA.test(ua) || (asOrg ? DATACENTER.test(asOrg) : false);
+
 /** Visita que reporta el Worker al servir el index de la versión en línea. */
 const ingest = async (body) => {
   const visitor = str(body.visitor, 64);
+  const asOrg = str(body.as_organization, 120);
+  const bot = isBot(body.user_agent, asOrg);
   // Recargar o volver a abrir en menos de 30 min no es otra visita única
-  const isUnique = visitor ? await setIfAbsent(`visit:${visitor}`, 1800) : true;
+  const isUnique = bot ? false : visitor ? await setIfAbsent(`visit:${visitor}`, 1800) : true;
   const uuid = /^[0-9a-f-]{36}$/i;
   await GameVisit.create({
     visitor,
@@ -24,6 +32,9 @@ const ingest = async (body) => {
     latitude: num(body.latitude),
     longitude: num(body.longitude),
     session_code: /^\d{3}$/.test(body.session_code ?? '') ? body.session_code : null,
+    asn: Number.isInteger(body.asn) ? body.asn : null,
+    as_org: asOrg,
+    is_bot: bot,
     ...parseUserAgent(body.user_agent),
   });
 };
@@ -34,7 +45,7 @@ const ingest = async (body) => {
  * No bloquea el login: si falla, solo se registra en consola.
  */
 const recordLogin = (req, user) => {
-  const fromCf = isCloudflare(req.ip);
+  const fromCf = fromCloudflare(req);
   const h = (name, max) => (fromCf ? str(req.headers[name], max) : null);
   const country = h('cf-ipcountry', 2);
   LoginEvent.create({
@@ -63,11 +74,12 @@ const countBy = async (Model, where, field, limit = 12) => {
 
 const computeStats = async (days) => {
   const since = new Date(Date.now() - days * 86400000);
-  const where = { created_at: { [Op.gte]: since } };
+  const loginWhere = { created_at: { [Op.gte]: since } };
+  const where = { ...loginWhere, is_bot: false }; // visitas de personas
   const day = literal(`date_trunc('day', "created_at" AT TIME ZONE 'America/Bogota')`);
 
   const [
-    totals, perDay, countries, regions, cities, devices, os, browsers, byVersion,
+    totals, bots, perDay, countries, regions, cities, devices, os, browsers, byVersion,
     loginTotals, loginsPerDay, loginRegions, loginDevices,
   ] = await Promise.all([
     GameVisit.findOne({
@@ -80,6 +92,7 @@ const computeStats = async (days) => {
       ],
       raw: true,
     }),
+    GameVisit.count({ where: { ...loginWhere, is_bot: true } }),
     GameVisit.findAll({
       where,
       attributes: [[day, 'day'], [fn('COUNT', col('id')), 'visits'], [fn('COUNT', literal('CASE WHEN is_unique THEN 1 END')), 'unique']],
@@ -104,19 +117,19 @@ const computeStats = async (days) => {
     countBy(GameVisit, where, 'browser'),
     countBy(GameVisit, where, 'version_id'),
     LoginEvent.findAll({
-      where, attributes: ['role', [fn('COUNT', col('id')), 'count'], [fn('COUNT', fn('DISTINCT', col('user_id'))), 'users']],
+      where: loginWhere, attributes: ['role', [fn('COUNT', col('id')), 'count'], [fn('COUNT', fn('DISTINCT', col('user_id'))), 'users']],
       group: ['role'], raw: true,
     }),
     LoginEvent.findAll({
-      where, attributes: [[day, 'day'], [fn('COUNT', col('id')), 'count']],
+      where: loginWhere, attributes: [[day, 'day'], [fn('COUNT', col('id')), 'count']],
       group: [day], order: [[day, 'ASC']], raw: true,
     }),
     LoginEvent.findAll({
-      where: { ...where, region: { [Op.ne]: null } },
+      where: { ...loginWhere, region: { [Op.ne]: null } },
       attributes: ['country', 'region', [fn('COUNT', col('id')), 'count']],
       group: ['country', 'region'], order: [[literal('count'), 'DESC']], limit: 20, raw: true,
     }),
-    countBy(LoginEvent, where, 'device'),
+    countBy(LoginEvent, loginWhere, 'device'),
   ]);
 
   const versionIds = byVersion.map(v => v.key);
@@ -133,6 +146,7 @@ const computeStats = async (days) => {
       unique: Number(totals?.unique ?? 0),
       via_qr: Number(totals?.via_qr ?? 0),
       visitors: Number(totals?.visitors ?? 0),
+      bots, // escáneres/robots descartados
     },
     per_day: perDay.map(r => ({ day: dayKey(r.day), visits: Number(r.visits), unique: Number(r.unique) })),
     countries,

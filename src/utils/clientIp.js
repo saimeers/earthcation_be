@@ -27,6 +27,19 @@ for (const range of CLOUDFLARE_IPV6) {
 
 const normalize = (ip) => (typeof ip === 'string' ? ip.replace(/^::ffff:(?=\d+\.)/, '') : '');
 
+/**
+ * La petición pasó por el proxy de Cloudflare. Detrás de Railway, req.ip no siempre es la IP de
+ * Cloudflare, así que una Transform Rule de la zona agrega x-earthcation-edge con CF_EDGE_SECRET a
+ * todo lo que va a api-earthcation; quien llame directo al origen no conoce ese valor.
+ */
+const fromCloudflare = (req) => {
+  const secret = process.env.CF_EDGE_SECRET;
+  const got = req.headers['x-earthcation-edge'];
+  if (secret && typeof got === 'string' && got.length === secret.length &&
+      require('crypto').timingSafeEqual(Buffer.from(got), Buffer.from(secret))) return true;
+  return isCloudflare(req.ip);
+};
+
 const isCloudflare = (ip) => {
   const clean = normalize(ip);
   const version = isIP(clean);
@@ -43,8 +56,8 @@ const isCloudflare = (ip) => {
  */
 const clientIp = (req) => {
   const forwarded = normalize(req.headers['cf-connecting-ip']?.trim());
-  if (forwarded && isIP(forwarded) && isCloudflare(req.ip)) return forwarded;
+  if (forwarded && isIP(forwarded) && fromCloudflare(req)) return forwarded;
   return normalize(req.ip) || req.ip;
 };
 
-module.exports = { clientIp, isCloudflare };
+module.exports = { clientIp, isCloudflare, fromCloudflare };

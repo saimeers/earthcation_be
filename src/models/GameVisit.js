@@ -19,6 +19,10 @@ const GameVisit = sequelize.define('GameVisit', {
   os: { type: DataTypes.STRING(20), allowNull: true },
   browser: { type: DataTypes.STRING(20), allowNull: true },
   session_code: { type: DataTypes.STRING(3), allowNull: true },     // llegó por el QR de una sala
+  asn: { type: DataTypes.INTEGER, allowNull: true },                // red de origen (Cloudflare)
+  as_org: { type: DataTypes.STRING(120), allowNull: true },
+  // Escáner/robot (UA o red de centro de datos): se guarda pero no cuenta en las estadísticas
+  is_bot: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 }, {
   tableName: 'game_visits',
   timestamps: true,
