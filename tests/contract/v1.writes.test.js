@@ -4,6 +4,9 @@ import { describe, it, expect, inject, beforeAll } from 'vitest'
 const require = createRequire(import.meta.url)
 const { send, contract, app } = require('../support/contract.cjs')
 const request = require('supertest')
+const XLSX = require('xlsx')
+const email = require('../../dist/src/utils/email.utils')
+const { tokenFor } = require('../support/auth.cjs')
 
 // Contrato de las escrituras de v1: permisos por rol (estado) y forma de la respuesta. Cada caso crea
 // sus propias entidades para no alterar la semilla que leen los snapshots de lectura.
@@ -59,6 +62,137 @@ describe('usuarios', () => {
     expect(after.body).toMatchObject({ role: 'player', cedula: p3.cedula, first_name: 'Editado' })
   })
   it('admin edita otro usuario', () => snap(send('put', `/api/users/${p2.id}`, s.admin, { last_name: 'Cambiado' })))
+})
+
+describe('identidad: alta de staff, restablecer contraseña y conflictos', () => {
+  const lastEmailTo = (to) => email.outbox.filter((m) => m.to === to).at(-1)
+
+  it('instructor nuevo: correo de bienvenida, define su contraseña y entra', async () => {
+    const created = await send('post', '/api/users', s.admin, {
+      cedula: '40000010', first_name: 'Ana', last_name: 'Instructora', role: 'instructor', email: 'ana@earthcation.test', age: '',
+    })
+    expect(contract(created)).toMatchSnapshot()
+    expect(created.body.email_sent).toBe(true)
+    const welcome = lastEmailTo('ana@earthcation.test')
+    expect(welcome).toMatchObject({ name: 'sendWelcomeEmail', username: 'Ana' })
+    const reset = await send('post', '/api/auth/reset-password', null, { token: welcome.resetToken, new_password: 'Clave-nueva-123' })
+    expect(contract(reset)).toMatchSnapshot()
+    expect(contract(await send('post', '/api/auth/reset-password', null, { token: welcome.resetToken, new_password: 'Otra-1234' }))).toMatchSnapshot()
+    const login = await send('post', '/api/auth/login', null, { cedula: '40000010', password: 'Clave-nueva-123' })
+    expect(contract(login)).toMatchSnapshot()
+    expect(login.body.user).toMatchObject({ role: 'instructor', vark_completed: false, organization: null })
+  })
+
+  it('olvidé mi contraseña con correo registrado manda token', async () => {
+    await send('post', '/api/auth/forgot-password', null, { email: 'instructor@earthcation.test' })
+    expect(lastEmailTo('instructor@earthcation.test')).toMatchObject({ name: 'sendPasswordResetEmail' })
+    expect(contract(await send('post', '/api/auth/forgot-password', null, {}))).toMatchSnapshot()
+    expect(contract(await send('post', '/api/auth/reset-password', null, { token: 'x' }))).toMatchSnapshot()
+  })
+
+  it('usuario deshabilitado no entra', async () => {
+    const { body } = await send('post', '/api/users', s.admin, { cedula: '40000011', first_name: 'Inactivo', role: 'player' })
+    await send('patch', `/api/users/${body.user_id}/disable`, s.admin)
+    expect(contract(await send('post', '/api/auth/login', null, { cedula: '40000011' }))).toMatchSnapshot()
+  })
+
+  it('jugador del juego entra con su perfil completo', async () => {
+    const login = await send('post', '/api/auth/login', null, { cedula: p1.cedula, password: 'lo-que-sea' })
+    expect(login.body.user).toMatchObject({ role: 'player', vark_completed: true })
+    expect(login.body.user.organization).toMatchObject({ id: s.org.id })
+  })
+
+  it('conflictos, permisos y no encontrados al editar', async () => {
+    const missing = '00000000-0000-0000-0000-000000000000'
+    expect(contract(await send('put', `/api/users/${p2.id}`, s.admin, { cedula: p1.cedula }))).toMatchSnapshot()
+    expect(contract(await send('put', `/api/users/${p2.id}`, s.admin, { username: s.admin.cedula }))).toMatchSnapshot()
+    expect(contract(await send('put', `/api/users/${p2.id}`, p1, { first_name: 'X' }))).toMatchSnapshot()
+    expect(contract(await send('put', `/api/users/${missing}`, s.admin, { first_name: 'X' }))).toMatchSnapshot()
+    expect(contract(await send('get', `/api/users/${missing}`, s.admin))).toMatchSnapshot()
+    expect(contract(await send('patch', `/api/users/${missing}/enable`, s.admin))).toMatchSnapshot()
+  })
+
+  it('admin cambia organización, localidad y rol; los vacíos quedan en null', async () => {
+    const { body } = await send('post', '/api/users', s.admin, { cedula: '40000012', first_name: 'Movido', role: 'player' })
+    const res = await send('put', `/api/users/${body.user_id}`, s.admin, {
+      organization_id: s.org.id, location_id: s.location.id, age: '', email: '  ', username: '', role: 'developer',
+    })
+    expect(contract(res)).toMatchSnapshot()
+    expect(res.body.user).toMatchObject({ role: 'developer', age: null, email: null, username: '40000012' })
+    expect(res.body.user.profile).toMatchObject({ organization_id: s.org.id, location_id: s.location.id })
+  })
+
+  it('crear sin cédula ni usuario', () => snap(send('post', '/api/users', s.admin, { first_name: 'Nadie' })))
+  it('listar por organización', async () => {
+    const res = await send('get', `/api/users?organization_id=${s.org.id}&role=player`, s.admin)
+    expect(res.body.length).toBeGreaterThan(0)
+    expect(res.body.every((u) => u.profile.organization_id === s.org.id && u.role === 'player')).toBe(true)
+  })
+})
+
+// Libro con el formato ANM: título, encabezado de dos filas (secciones combinadas + subencabezados) y datos
+const anmWorkbook = (rows) => {
+  const sheet = XLSX.utils.aoa_to_sheet([
+    ['BASE DE DATOS ANUAL DE PERSONAL CAPACITADO'],
+    ['DOCUMENTO DE IDENTIDAD', '', 'NOMBRE(S) Y APELLIDOS', 'EDAD', 'EMPRESA', '', 'DATOS DEL SOCORREDOR', '', ''],
+    ['TIPO', 'NÚMERO', '', '', 'NOMBRE', 'CORREO\r\nELECTRÓNICO', 'MUNICIPIO DE RESIDENCIA', 'DEPARTAMENTO DE RESIDENCIA', 'CORREO ELECTRONICO'],
+    ...rows,
+  ])
+  const book = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(book, sheet, 'Hoja1')
+  return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' })
+}
+const upload = (file) => request(app).post('/api/users/bulk-import/parse')
+  .set('Authorization', `Bearer ${tokenFor(s.admin)}`).attach('file', file, 'anm.xlsx')
+
+describe('importación masiva con datos', () => {
+  it('parse marca nuevos, repetidos en archivo, ya registrados y sin nombre', async () => {
+    const res = await upload(anmWorkbook([
+      ['CC', '50000001', 'Pedro Pablo Pérez', 41, 'Mina Excel SAS', 'empresa@x.co', 'Cucuta', 'Norte de Santander', 'pedro@x.co'],
+      ['CC', '50000001', 'Pedro Repetido', '', '', '', '', '', ''],
+      ['CC', p1.cedula, 'Ya Existe', '', '', '', '', '', ''],
+      ['CC', '50000002', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', '', ''],
+    ]))
+    expect(contract(res)).toMatchSnapshot()
+    expect(res.body.rows.map((r) => r.status)).toEqual(['ok', 'duplicate_in_file', 'duplicate_in_db', 'missing_required'])
+    expect(res.body.rows[0]).toMatchObject({
+      first_name: 'Pedro Pablo', last_name: 'Pérez', age: 41, email: 'pedro@x.co', organization_name: 'Mina Excel SAS',
+      location_municipality: 'Cucuta', location_department: 'Norte de Santander',
+    })
+  })
+
+  it('parse de un archivo sin el formato ANM', async () => {
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet([['otra cosa']]), 'Hoja1')
+    await snap(upload(XLSX.write(book, { type: 'buffer', bookType: 'xlsx' })))
+  })
+
+  it('parse sin columna de nombre', async () => {
+    const sheet = XLSX.utils.aoa_to_sheet([['DOCUMENTO DE IDENTIDAD'], ['NÚMERO'], ['123']])
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, sheet, 'Hoja1')
+    const res = await upload(XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }))
+    expect(contract(res)).toMatchSnapshot()
+    expect(res.body.error).toBe('No se encontraron las columnas requeridas en el Excel: nombre completo')
+  })
+
+  it('confirm crea, reutiliza catálogo y reporta omitidos', async () => {
+    const res = await send('post', '/api/users/bulk-import/confirm', s.admin, { rows: [
+      { cedula: '50000003', first_name: 'Luz', last_name: 'Mar', age: 30, email: '', organization_name: 'mina excel nueva',
+        location_municipality: 'CUCUTA', location_department: 'Norte de Santender' },
+      { cedula: '50000004', first_name: 'Sol', organization_name: 'MINA EXCEL NUEVA',
+        location_municipality: 'Pueblo Inventado', location_department: 'Departamento Falso' },
+      { cedula: p1.cedula, first_name: 'Ya Existe' },
+      { cedula: '', first_name: 'Sin cédula' },
+    ] })
+    expect(contract(res)).toMatchSnapshot()
+    expect(res.body.created.map((c) => [c.organization_created, c.location_created, c.location_no_match])).toEqual([
+      ['mina excel nueva', null, null],
+      [null, 'Pueblo Inventado, Departamento Falso', 'Pueblo Inventado, Departamento Falso'],
+    ])
+    expect(res.body.skipped.map((x) => x.reason)).toEqual(['Cédula ya registrada', 'Datos incompletos'])
+  })
 })
 
 describe('organizaciones y localidades', () => {
