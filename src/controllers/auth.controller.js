@@ -1,5 +1,5 @@
 const authService = require('../services/auth.service');
-const { recordLogin } = require('../services/visit.service');
+const { recordLogin } = require('../contexts/observability');
 
 const register = async (req, res, next) => {
   try {

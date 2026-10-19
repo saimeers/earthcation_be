@@ -170,6 +170,96 @@ exports[`importación masiva, despliegue y visitas > crear versión sin datos 1`
 }
 `;
 
+exports[`importación masiva, despliegue y visitas > ingesta de visitas con secreto y estadísticas 1`] = `
+{
+  "body": {
+    "browsers": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "cities": [
+      {
+        "city": "string",
+        "count": "number",
+        "country": "string",
+        "lat": "number",
+        "lng": "number",
+        "region": "string",
+      },
+    ],
+    "countries": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "days": "number",
+    "devices": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "logins": {
+      "by_role": [
+        {
+          "count": "number",
+          "role": "string",
+          "users": "number",
+        },
+      ],
+      "devices": [],
+      "per_day": [
+        {
+          "count": "number",
+          "day": "string",
+        },
+      ],
+      "regions": [],
+    },
+    "os": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "per_day": [
+      {
+        "day": "string",
+        "unique": "number",
+        "visits": "number",
+      },
+    ],
+    "regions": [
+      {
+        "count": "number",
+        "country": "string",
+        "region": "string",
+      },
+    ],
+    "since": "date",
+    "totals": {
+      "bots": "number",
+      "unique": "number",
+      "via_qr": "number",
+      "visitors": "number",
+      "visits": "number",
+    },
+    "versions": [
+      {
+        "count": "number",
+        "id": "uuid",
+        "label": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
 exports[`importación masiva, despliegue y visitas > ingesta de visitas sin secreto 1`] = `
 {
   "body": {

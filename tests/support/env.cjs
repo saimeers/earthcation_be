@@ -7,6 +7,7 @@ const loadTestEnv = () => {
   process.env.NODE_ENV = 'test';
   process.env.JWT_SECRET ||= 'test-only-secret-0123456789abcdef0123456789abcdef';
   process.env.RESEND_API_KEY ||= 're_test_sin_envio';
+  process.env.VISITS_INGEST_SECRET = 'secreto-de-ingesta-de-prueba';
   delete process.env.REDIS_URL;
   // Las pruebas borran y recrean el esquema: nunca contra una BD que no sea de pruebas
   if (!/test/i.test(process.env.DB_NAME || '')) {

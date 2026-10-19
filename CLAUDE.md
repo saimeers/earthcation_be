@@ -44,11 +44,15 @@ npm test           # builds, then vitest: unit + v1 contract tests against a dis
 (`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
 contract snapshots must stay identical in every migration PR.
 
-Migrated: **catalog** (organizations, locations) and **vark** (scoring is the pure `scoreVark`; the panel
-listings are a v1 read model of raw rows). Their old routes/controllers/services/utils were deleted.
+Migrated: **catalog** (organizations, locations), **vark** (scoring is the pure `scoreVark`; the panel
+listings are a v1 read model of raw rows) and **observability** (visits, login locations, health, metrics: pure
+`toVisit`/`loginPlace`/`parseUserAgent` and `metrics.ts#summarize`; `runtime.ts` holds the only mutable state, the
+per-minute buckets; the stats are a read model cached under namespace `visit-stats`). Their old
+routes/controllers/services/utils were deleted. Cross-context ports live in `src/ports/` (`Cache`, adapter
+`src/adapters/cache` over `services/cache.service.js`).
 Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
 (`name`, `type` / `municipality`, `department`, `country`); before, the whole body reached the model.
-Next: observability → identity → deployment → learning → sessions.
+Next: identity → deployment → learning → sessions.
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
@@ -303,7 +307,7 @@ generated password is stored but never surfaced, since players never need one.
   Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: `src/utils/clientIp.js`.
 - `trust proxy`, `compression`, `ALLOWED_ORIGINS` accepts a comma-separated list.
 - **Health**: `GET /api/health` (public, minimal) and `GET /api/health/details` (DB/Redis ping, pool,
-  p50/p95 and errors per route over 15 min from `src/middleware/metrics.middleware.js`, in memory).
+  p50/p95 and errors per route over 15 min from `src/contexts/observability/runtime.ts`, in memory).
 - **Load test**: `node scripts/load/simulate-players.js [--players 50 --seconds 60 --panels 2]`
   (signs tokens for existing players, writes rows tagged `level_key = 'loadtest'`;
   `--cleanup` deletes them). 2026-10-18, local API → Railway DB, 50 players + 2 panels:
@@ -335,12 +339,12 @@ files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SE
 them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
 published game at `/play-local/` (mounted before helmet, no token check) — dev only. `DEPLOY_MAX_MB` (500).
 
-### Visits & login locations (`visit.service.js`)
+### Visits & login locations (`src/contexts/observability/`)
 
 `POST /api/visits/ingest` (no token; header `x-ingest-secret` = `VISITS_INGEST_SECRET`, shared with the
 Worker; mounted **before** the global rate limit since every visit comes from Cloudflare's IPs) stores a
 `GameVisit` per opening of the live game: Cloudflare country/region/city/colo/coordinates, device/OS/browser
-(`utils/userAgent.js`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
+(`userAgent.ts`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
 `HMAC(VISIT_SALT, ip)` — no IP is stored; `is_unique` = first opening of that visitor in 30 min
 (`setIfAbsent`). Successful logins write a `LoginEvent` (role, `cf-ipcountry`/`cf-region`/`cf-ipcity`
 — trusted only when `req.ip` is Cloudflare; region/city need the zone's "Add visitor location headers"

@@ -2,7 +2,8 @@ import { createRequire } from 'node:module'
 import { describe, it, expect, inject, beforeAll } from 'vitest'
 
 const require = createRequire(import.meta.url)
-const { send, contract } = require('../support/contract.cjs')
+const { send, contract, app } = require('../support/contract.cjs')
+const request = require('supertest')
 
 // Contrato de las escrituras de v1: permisos por rol (estado) y forma de la respuesta. Cada caso crea
 // sus propias entidades para no alterar la semilla que leen los snapshots de lectura.
@@ -143,4 +144,27 @@ describe('importación masiva, despliegue y visitas', () => {
   it('activar versión inexistente', () =>
     snap(send('post', '/api/deploy/versions/00000000-0000-0000-0000-000000000000/activate', s.admin)))
   it('ingesta de visitas sin secreto', () => snap(send('post', '/api/visits/ingest', null, { path: '/' })))
+
+  // Visitas de persona y de robot como las manda el Worker; las estadísticas se piden a 90 días para no
+  // reusar la caché de 7 días que llenó el snapshot de lectura
+  const ingest = (visit) =>
+    request(app).post('/api/visits/ingest').set('x-ingest-secret', process.env.VISITS_INGEST_SECRET).send(visit)
+  const CHROME = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36'
+  it('ingesta de visitas con secreto y estadísticas', async () => {
+    const human = {
+      visitor: 'a'.repeat(64), version_id: s.session.id, country: 'CO', region: 'Norte de Santander Department',
+      city: 'Cúcuta', colo: 'BOG', latitude: '7.89', longitude: -72.5, session_code: '123', asn: 27951,
+      as_organization: 'Media Commerce', user_agent: CHROME,
+    }
+    expect((await ingest(human)).status).toBe(204)
+    expect((await ingest(human)).status).toBe(204)
+    expect((await ingest({ visitor: 'b'.repeat(64), user_agent: 'curl/8.0' })).status).toBe(204)
+    expect((await ingest({ visitor: 'c'.repeat(64), user_agent: CHROME, as_organization: 'Hetzner Online' })).status).toBe(204)
+    const stats = await send('get', '/api/visits/stats?days=90', s.admin)
+    expect(stats.body.totals).toEqual({ visits: 2, unique: 1, via_qr: 2, visitors: 1, bots: 2 })
+    expect(stats.body.regions).toEqual([{ country: 'CO', region: 'Norte de Santander', count: 2 }])
+    expect(stats.body.versions).toEqual([{ id: s.session.id, label: 'Borrada', count: 2 }])
+    expect(stats.body.devices).toEqual([{ key: 'mobile', count: 2 }])
+    expect(contract(stats)).toMatchSnapshot()
+  })
 })
