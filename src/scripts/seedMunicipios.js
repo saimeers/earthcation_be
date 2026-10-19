@@ -6,7 +6,7 @@ const catalog = require('../data/colombia-municipios.json');
 // como su propio departamento "Bogotá D.C." en vez de un municipio de Cundinamarca. Se corre en
 // cada boot — es idempotente (findOrCreate por municipio+departamento normalizado), así que no
 // hace falta un flag de "ya sembrado". Necesario para que el import por Excel deje de crear filas
-// nuevas libres (ver `bulkImport.service.js#findOrCreateLocation`) y en cambio mapee contra este
+// nuevas libres (ver `contexts/identity/places.ts#placeQuery`) y en cambio mapee contra este
 // catálogo cerrado.
 const seedMunicipios = async () => {
   const existing = await Location.findAll({ attributes: ['municipality', 'department'] });

@@ -47,12 +47,19 @@ contract snapshots must stay identical in every migration PR.
 Migrated: **catalog** (organizations, locations), **vark** (scoring is the pure `scoreVark`; the panel
 listings are a v1 read model of raw rows) and **observability** (visits, login locations, health, metrics: pure
 `toVisit`/`loginPlace`/`parseUserAgent` and `metrics.ts#summarize`; `runtime.ts` holds the only mutable state, the
-per-minute buckets; the stats are a read model cached under namespace `visit-stats`). Their old
+per-minute buckets; the stats are a read model cached under namespace `visit-stats`) and **identity** (auth, users,
+bulk import: `domain.ts` field rules, `anm.ts` pure Excel reading, `places.ts` catalog matching, `bulkImport.ts`;
+crypto/JWT/email/xlsx adapters in `adapters.ts` over `utils/hash|jwt|email.utils.js`, which stay because the auth
+middleware, rate limiter and tests use them). Their old
 routes/controllers/services/utils were deleted. Cross-context ports live in `src/ports/` (`Cache`, adapter
 `src/adapters/cache` over `services/cache.service.js`).
 Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
 (`name`, `type` / `municipality`, `department`, `country`); before, the whole body reached the model.
-Next: identity → deployment → learning → sessions.
+Behavior changes in identity (contract unchanged): an inactive staff user with a wrong password now gets
+"Credenciales inválidas" (the password is checked before revealing "Usuario inactivo"); the bulk-import preview
+looks up registered cédulas in one query; confirm resolves organization/location first and creates user + profile
+in one transaction (no user without profile if a later step fails).
+Next: deployment → learning → sessions.
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
@@ -145,13 +152,12 @@ of the user found in the DB**, not on what the client sends:
 
 `is_active` is also checked on login now (previously a disabled user could still log in — fixed
 alongside this change). Public self-registration (`POST /api/auth/register`) is **removed** — the
-route is no longer mounted in `auth.routes.js` (the `register()` service function itself is left
-alone as unused dead code, not deleted, in case it's reused later). All account creation now goes
+route does not exist (the old unused `register()` was deleted with the identity migration). All account creation now goes
 through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow below.
 
 ### Bulk user import (ANM Excel format)
 
-`src/services/bulkImport.service.js` + `src/routes/bulkImport.routes.js`, mounted at
+`src/contexts/identity/` (`anm.ts`, `places.ts`, `bulkImport.ts`, routes in `httpV1.ts`), mounted at
 `/api/users/bulk-import` (both routes `auth` + `requireRole('admin','instructor')`):
 
 - `POST /parse` (multipart, `multer` in-memory, field name `file`) — parses the official ANM
@@ -161,13 +167,12 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
 - `POST /confirm` (JSON `{ rows }`, the — possibly admin-edited — array from `/parse`) — actually
   creates the `User` + `UserProfile` rows. Organizations/Locations are found-or-created by
   case-insensitive match (`Op.iLike`, not exact string match — the Excel almost never matches the
-  DB's exact casing/punctuation) via local `findOrCreateOrganization`/`findOrCreateLocation`
-  helpers in this file, **not** `organization.service.js#create`/`location.service.js#create`
-  (those throw 409 on an existing name, which would break a batch with a repeated org across rows).
+  DB's exact casing/punctuation) via the identity `ImportDirectory` port, **not** the catalog context's
+  `create` (it answers 409 on an existing name, which would break a batch with a repeated org across rows).
 - The ANM template has a two-row merged header (title/format rows before it) — the parser locates
   the header by searching for the literal text `"DOCUMENTO DE IDENTIDAD"` rather than assuming a
   fixed row index, and reconstructs which section each column belongs to via "carry-forward" of the
-  last non-blank cell in the title row (`buildSectionTitles`) — needed because the sheet has two
+  last non-blank cell in the title row (`sectionTitles`) — needed because the sheet has two
   different "CORREO ELECTRÓNICO" columns (company vs. worker) that are otherwise indistinguishable
   without knowing which section they're under. All header text comparisons go through a `normalize()`
   helper (strips accents, collapses `\r\n`/whitespace, uppercases) because the real file's headers
@@ -185,7 +190,7 @@ inserts rows that don't already exist by normalized municipality+department matc
 real production issue: `locations` had accumulated 3 separate rows for "Norte de Santander" from
 free-text Excel imports ("Norte de Santander" / "NORTE DE SANTANDER" / "Norte de Santender").
 
-`bulkImport.service.js#findOrCreateLocation` now matches the Excel's free-text municipio/
+`contexts/identity/places.ts#placeQuery` matches the Excel's free-text municipio/
 departamento against this catalog first (normalized + Levenshtein distance ≤2 for typo tolerance,
 `DEPT_ALIASES` for common abbreviations like "Bogota" → "Bogotá D.C."), falling back to
 create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
@@ -278,7 +283,7 @@ returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 ### Admin-created users
 
-`createByAdmin` normalizes `''` → `null` for optional fields (an empty email used to fail
+`POST /api/users` (`toNewUser` in `contexts/identity/domain.ts`) normalizes `''` → `null` for optional fields (an empty email used to fail
 `isEmail`, an empty age broke the INTEGER column), defaults `username` to the cédula, and requires
 email only for `instructor`/`admin`. **Players never get the welcome email.** If the email send
 fails for staff, the user is still created and the response says `email_sent: false` instead of
