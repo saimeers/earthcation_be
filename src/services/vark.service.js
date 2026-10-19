@@ -1,11 +1,10 @@
 const { VarkResult, User, UserProfile, Location } = require('../models');
 const { calculateVarkScores } = require('../utils/vark.utils');
-const { Op } = require('sequelize');
 
 const submitVark = async (userId, answers) => {
   const scores = calculateVarkScores(answers);
 
-  const [result, created] = await VarkResult.upsert(
+  const [, created] = await VarkResult.upsert(
     { user_id: userId, ...scores },
     { returning: true }
   );
