@@ -109,8 +109,10 @@ igual.
 
 ### Contadores en `summary`
 
-`coal_collected`, `fatigue_injuries`, `risks_mitigated`, `risks_failed`, `lantern_warnings`, y en Nivel 2 además
-`device_opened`, `calibrations_valid`, `calibrations_invalid`, `exits_uncalibrated`,
+`coal_collected`, `fatigue_injuries`, `risks_mitigated`, `risks_failed`, `lantern_warnings`,
+`lantern_switched_on` / `lantern_switched_off` (cada vez que el jugador enciende o apaga la linterna),
+`device_opened` / `device_closed`, `device_powered_on` / `device_powered_off` (niveles 1 y 2), y en Nivel 2 además
+`calibrations_valid`, `calibrations_invalid`, `exits_uncalibrated`,
 `damage_methane` (vida perdida por metano), `damage_biohazard` (vida perdida por mordedura o esporas).
 
 ## Campos de `game_events`
@@ -139,6 +141,8 @@ del evento), `created_at`.
 | `level_complete` / `level_failed` / `level_abandoned` | Cierre del intento | `fail_reason` |
 | `lantern_warning` | Se alejó del inicio con la linterna apagada (CR-08); se le advierte una vez | — |
 | `lantern_on` | Enciende la linterna por primera vez (CR-08 mitigado si no hubo advertencia) | `after_warning`, `elapsed_ms` |
+| `lantern_toggled` | Cada vez que enciende o apaga la linterna | `on` |
+| `device_powered_off` | Apaga el detector (cualquier marca) | — |
 
 Solo Nivel 2:
 
