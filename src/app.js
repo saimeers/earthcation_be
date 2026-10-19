@@ -39,9 +39,9 @@ app.use('/api', globalLimiter);
 app.use('/api/auth/login', authLimiter, loginIpFailLimiter, loginCedulaLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 
-app.use('/api/auth',      require('./routes/auth.routes'));
-app.use('/api/users',     require('./routes/user.routes'));
-app.use('/api/users/bulk-import', require('./routes/bulkImport.routes'));
+app.use('/api/auth',      require('./contexts/identity').authRoutesV1);
+app.use('/api/users',     require('./contexts/identity').userRoutesV1);
+app.use('/api/users/bulk-import', require('./contexts/identity').bulkImportRoutesV1);
 app.use('/api/vark',      require('./contexts/vark').varkRoutesV1);
 app.use('/api/progress',  require('./routes/progress.routes'));
 app.use('/api/levels',    require('./routes/level.routes'));

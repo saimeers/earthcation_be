@@ -130,6 +130,274 @@ exports[`auth > reset-password con token inválido 1`] = `
 }
 `;
 
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > admin cambia organización, localidad y rol; los vacíos quedan en null 1`] = `
+{
+  "body": {
+    "message": "string",
+    "user": {
+      "age": "null",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "null",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": "null",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 3`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 4`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 6`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > crear sin cédula ni usuario 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 1`] = `
+{
+  "body": {
+    "email_sent": "boolean",
+    "message": "string",
+    "user_id": "uuid",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 2`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 3`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 4`] = `
+{
+  "body": {
+    "message": "string",
+    "token": "string",
+    "user": {
+      "cedula": "string",
+      "dominant_style": "null",
+      "email": "string",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "location": "null",
+      "organization": "null",
+      "role": "string",
+      "username": "string",
+      "vark_completed": "boolean",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > olvidé mi contraseña con correo registrado manda token 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > olvidé mi contraseña con correo registrado manda token 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > usuario deshabilitado no entra 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > confirm crea, reutiliza catálogo y reporta omitidos 1`] = `
+{
+  "body": {
+    "created": [
+      {
+        "cedula": "string",
+        "location_created": "null | string",
+        "location_no_match": "null | string",
+        "organization_created": "null | string",
+        "user_id": "uuid",
+      },
+    ],
+    "errors": [],
+    "skipped": [
+      {
+        "cedula": "string",
+        "reason": "string",
+      },
+    ],
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > parse de un archivo sin el formato ANM 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > parse marca nuevos, repetidos en archivo, ya registrados y sin nombre 1`] = `
+{
+  "body": {
+    "rows": [
+      {
+        "age": "null | number",
+        "cedula": "string",
+        "email": "string",
+        "first_name": "string",
+        "last_name": "string",
+        "location_department": "string",
+        "location_municipality": "string",
+        "message": "string",
+        "organization_name": "string",
+        "status": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > parse sin columna de nombre 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
 exports[`importación masiva, despliegue y visitas > activar versión inexistente 1`] = `
 {
   "body": {

@@ -15,10 +15,15 @@ const loadTestEnv = () => {
   }
 };
 
-// Los servicios desestructuran las funciones de correo al importarse: se reemplazan antes por no-ops
+// Los servicios desestructuran las funciones de correo al importarse: se reemplazan antes por no-ops que
+// guardan lo "enviado" en email.outbox (las pruebas leen de ahí el token de restablecimiento)
 const stubEmails = () => {
   const email = require('../../dist/src/utils/email.utils');
-  for (const name of Object.keys(email)) email[name] = async () => ({ id: 'correo-de-prueba' });
+  const outbox = [];
+  for (const name of Object.keys(email)) {
+    email[name] = async (message) => { outbox.push({ name, ...message }); return { id: 'correo-de-prueba' }; };
+  }
+  email.outbox = outbox;
 };
 
 loadTestEnv();
