@@ -4,13 +4,13 @@
 
 | Rama | Para qué | Sale de | Vuelve a |
 |---|---|---|---|
-| `master` | Producción. Solo recibe merges de `release/*` y `hotfix/*` | — | — |
-| `develop` | Integración de lo que va en la próxima versión | `master` | — |
+| `main` | Producción. Solo recibe merges de `release/*` y `hotfix/*` | — | — |
+| `develop` | Integración de lo que va en la próxima versión | `main` | — |
 | `feature/<tema>` | Un cambio (funcionalidad, refactor, docs) | `develop` | `develop` por PR |
-| `release/vX.Y.Z` | Estabilizar una versión (solo correcciones) | `develop` | `master` y `develop`, con tag `vX.Y.Z` |
-| `hotfix/<tema>` | Arreglo urgente en producción | `master` | `master` y `develop`, con tag de parche |
+| `release/vX.Y.Z` | Estabilizar una versión (solo correcciones) | `develop` | `main` y `develop`, con tag `vX.Y.Z` |
+| `hotfix/<tema>` | Arreglo urgente en producción | `main` | `main` y `develop`, con tag de parche |
 
-- Todo entra por **pull request** con el CI en verde; no se hace push directo a `master` ni a `develop`.
+- Todo entra por **pull request** con el CI en verde; no se hace push directo a `main` ni a `develop`.
 - Las versiones siguen **SemVer**: mayor = cambio incompatible de contrato, menor = funcionalidad, parche = corrección.
 
 ## Commits
