@@ -21,8 +21,9 @@ const app = express();
 // CF-Connecting-IP, ver utils/clientIp.js)
 app.set('trust proxy', 1);
 
-// ALLOWED_ORIGINS admite varios separados por coma (panel, juego); sin definir, cualquiera
-const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean);
+// ALLOWED_ORIGINS admite varios separados por coma (panel, juego); sin definir o con '*', cualquiera
+// ('*' dentro de una lista no es comodín para cors: se compararía literal y no saldría el header)
+const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(o => o && o !== '*');
 // Sin R2 (desarrollo) la API sirve el juego publicado como lo haría el Worker. Va antes de helmet:
 // su CSP bloquea el wasm y los workers de Unity.
 if (getPublished().driver === 'local') app.use('/play-local', require('./src/routes/playLocal.routes'));
