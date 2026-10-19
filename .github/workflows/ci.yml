@@ -42,11 +42,8 @@ jobs:
 
       - run: npm ci
 
-      - name: Sintaxis de todos los archivos
-        run: find index.js src scripts -name '*.js' -print0 | xargs -0 -n1 node --check
-
       - name: Carga de rutas y modelos (sin BD)
-        run: node -e "['auth','user','session','telemetry','progress','analytics','vark','level','location','organization','bulkImport','deploy','visit','health'].forEach(r => require('./src/routes/' + r + '.routes'))"
+        run: npm run build && node -e "['auth','user','session','telemetry','progress','analytics','vark','level','location','organization','bulkImport','deploy','visit','health'].forEach(r => require('./dist/src/routes/' + r + '.routes'))"
         env:
           JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
           RESEND_API_KEY: ci-sin-envio-de-correos
@@ -54,7 +51,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Pruebas de contrato v1
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Pruebas (unitarias y de contrato v1, sobre dist/)
         run: npm test
         env:
           DB_HOST: localhost

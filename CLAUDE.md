@@ -13,11 +13,27 @@ what's specific to working inside this folder.
 ## Commands
 
 ```
-npm run dev     # nodemon index.js — hot reload, use this for local dev
-npm start       # node index.js — plain start
-npm run lint    # eslint (recommended base; functional/size rules arrive with TypeScript)
-npm test        # vitest: v1 contract tests against a disposable Postgres (see "Tests")
+npm run dev        # tsx watch src/main.ts — hot reload (JS and TS)
+npm run build      # tsc → dist/ (Railway runs it before `npm start`)
+npm start          # node index.js → dist/src/main.js
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint: base rules on JS, functional + size rules on TS
+npm test           # builds, then vitest: unit + v1 contract tests against a disposable Postgres
 ```
+
+### TypeScript (fase 3, 2026-10-19)
+
+- JS (v1, migrated context by context) and TS (new code) coexist: `tsconfig.json` has `allowJs` and compiles
+  `src/**` to `dist/src/**` (CommonJS). Root `index.js` only requires `dist/src/main.js`; the real entry is
+  `src/main.ts` (validates env with `infrastructure/env.ts`, zod, then `server.js#start`). **Production needs
+  the build** — `npm start` on a fresh clone without `npm run build` fails.
+- Contract tests load `dist/` (`pretest` builds), so they check the artifact that is deployed.
+- `shared/result.ts`: `Result<T, E>` (`ok`, `err`, `map`, `flatMap`, `andThen`, `fromNullable`) — domain and
+  application never throw. `shared/errors.ts`: `DomainError { kind, code, message, details? }` and
+  `httpStatusOf` (v2 maps business rules to 422).
+- ESLint on `src/**/*.ts`: typescript-eslint strict-type-checked + eslint-plugin-functional, `max-lines-per-function`
+  10 (blank lines and comments excluded), `complexity` 5, `max-params` 3, `max-depth` 2, no `let`, no mutation,
+  no classes, no `throw`, no loops. TypeScript is pinned to 6.0.x (typescript-eslint does not support 7 yet).
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).

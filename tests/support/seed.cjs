@@ -1,10 +1,10 @@
 require('./env.cjs');
 const request = require('supertest');
-const sequelize = require('../../src/config/database');
-const app = require('../../src/app');
-const { prepareDatabase } = require('../../src/server');
-const { User, UserProfile, Level, Risk } = require('../../src/models');
-const { hashPassword } = require('../../src/utils/hash.utils');
+const sequelize = require('../../dist/src/config/database');
+const app = require('../../dist/src/app');
+const { prepareDatabase } = require('../../dist/src/server');
+const { User, UserProfile, Level, Risk } = require('../../dist/src/models');
+const { hashPassword } = require('../../dist/src/utils/hash.utils');
 const { tokenFor } = require('./auth.cjs');
 
 // Semilla fija para los contratos: misma forma en cada corrida. Lo que el juego y el panel escriben
