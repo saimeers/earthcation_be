@@ -16,7 +16,7 @@ const loadTestEnv = () => {
 
 // Los servicios desestructuran las funciones de correo al importarse: se reemplazan antes por no-ops
 const stubEmails = () => {
-  const email = require('../../src/utils/email.utils');
+  const email = require('../../dist/src/utils/email.utils');
   for (const name of Object.keys(email)) email[name] = async () => ({ id: 'correo-de-prueba' });
 };
 

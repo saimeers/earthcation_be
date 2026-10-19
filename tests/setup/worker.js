@@ -7,5 +7,5 @@ const require = createRequire(import.meta.url)
 require('../support/env.cjs')
 
 afterAll(async () => {
-  await require('../../src/config/database').close()
+  await require('../../dist/src/config/database').close()
 })
