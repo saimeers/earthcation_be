@@ -207,10 +207,18 @@ computed the same way as `getByOrganization`).
 
 ### Schema management
 
-**No migrations folder, no Sequelize CLI.** The schema is synced on every boot via
-`sequelize.sync({ alter: true })` in `index.js`. If you add/change a model field, it will
-auto-alter the table on next server start — there's no versioned rollback path, so be careful with
-destructive column changes against the Railway production DB.
+**Versioned migrations with Umzug (since fase 3).** `src/infrastructure/migrations/index.ts` runs the pending
+migrations on boot (`server.js#prepareDatabase`) and records them in `schema_migrations`. `sync({ alter: true })`
+is gone: **changing a model no longer changes the database** — every schema change needs a new migration
+file (`0002_<what>.ts` exporting `name` and `up({ context: sequelize })`, added to the explicit `MIGRATIONS`
+list; no glob, so it works from `src/` and `dist/`).
+- `0001_baseline` = `ensureEnumValues` + `sync()` (no alter) + `runDbMaintenance`. Verified 2026-10-19 on a
+  schema-only copy of production: the only change is the new `schema_migrations` table, and a second run applies
+  nothing. A fresh database gets the same schema as production (column order aside).
+- Pending (fase 5): run migrations as a separate pre-deploy step with a DDL user, and the app with a user
+  without DDL rights.
+
+Historical notes (the `alter` era, still relevant for existing constraints):
 
 **Known `alter: true` footgun (hit twice):** fixed 2026-10-18 — `users.username` (92), `users.cedula`
 (88) and `training_sessions.code` (82) had stacked UNIQUE constraints; `dbMaintenance.js` now drops

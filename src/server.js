@@ -1,17 +1,16 @@
 const sequelize = require('./config/database');
 const app = require('./app');
 const { seedMunicipios } = require('./scripts/seedMunicipios');
-const { runDbMaintenance, ensureEnumValues } = require('./scripts/dbMaintenance');
+const { migrate } = require('./infrastructure/migrations');
 const { recoverInterrupted } = require('./services/deploy.service');
 
 // Esquema + datos base que la API necesita antes de atender. Las pruebas lo reutilizan sobre su BD.
 const prepareDatabase = async () => {
   await sequelize.authenticate();
   console.log('✅ Conexión a PostgreSQL exitosa.');
-  await ensureEnumValues(); // valores nuevos de ENUM antes del sync (alter no los agrega bien)
-  await sequelize.sync({ alter: true });
-  console.log('✅ Tablas sincronizadas.');
-  await runDbMaintenance(); // NOT NULL de sesión libre + índices (idempotente)
+  // Esquema por migraciones versionadas (infrastructure/migrations); ya no hay sync({ alter: true }) al arrancar
+  const applied = await migrate(sequelize);
+  console.log(applied.length ? `✅ Migraciones aplicadas: ${applied.join(', ')}` : '✅ Esquema al día.');
   await recoverInterrupted(); // publicaciones cortadas por el reinicio → fallidas
   const { created } = await seedMunicipios();
   if (created > 0) console.log(`✅ Catálogo de municipios: ${created} filas nuevas sembradas.`);
