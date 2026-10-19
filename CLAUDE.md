@@ -294,13 +294,13 @@ developer) aggregates everything, cached 60 s.
 
 ### Security hardening (2026-10-19, fase 0)
 
--  (any logged-in user, for their own record): non-admins can only change ,
-  , , ; , , , ,  are silently ignored
-  (before, a player could send ). Admins keep the full field list.
-- Login limits (, mounted on  after ):
-   10 failed attempts / 15 min per SHA-256 of the cédula ();
-   60 / 15 min per IP counting **only cédulas that don't exist** ( = cédula exists), so a
-  classroom's typos never lock out players with valid cédulas. Env: ,
-  . Verified: 50 valid logins from one blocked IP all 200.
-- Error handler: 5xx answer  (stack only in logs); 4xx keep their message.
-- JWT:  pinned on sign and verify; boot exits if  is missing or shorter than 32 chars.
+- `PUT /api/users/:id` (any logged-in user, for their own record): non-admins can only change `first_name`,
+  `last_name`, `age`, `email`; `role`, `cedula`, `username`, `organization_id`, `location_id` are silently
+  ignored (before, a player could send `{role:'admin'}`). Admins keep the full field list.
+- Login limits (`rateLimit.middleware.js`, mounted on `/api/auth/login` after `authLimiter`):
+  `loginCedulaLimiter` 10 failed attempts / 15 min per SHA-256 of the cédula (`skipSuccessfulRequests`);
+  `loginIpFailLimiter` 60 / 15 min per IP counting **only cédulas that don't exist** (`skip` = cédula exists),
+  so a classroom's typos never lock out players with valid cédulas. Env: `RATE_LIMIT_LOGIN_CEDULA_MAX`,
+  `RATE_LIMIT_LOGIN_IP_FAIL_MAX`. Verified: 50 valid logins from one blocked IP all 200.
+- Error handler: 5xx answer `{ error: 'Error interno del servidor' }` (stack only in logs); 4xx keep their message.
+- JWT: `HS256` pinned on sign and verify; boot exits if `JWT_SECRET` is missing or shorter than 32 chars.
