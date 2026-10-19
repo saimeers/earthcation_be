@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read # gitleaks lee los commits del PR
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -37,6 +38,7 @@ jobs:
         run: node -e "['auth','user','session','telemetry','progress','analytics','vark','level','location','organization','bulkImport','deploy','visit','health'].forEach(r => require('./src/routes/' + r + '.routes'))"
         env:
           JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
+          RESEND_API_KEY: ci-sin-envio-de-correos
 
       # Informativo hasta la fase de seguridad (hoy hay vulnerabilidades conocidas en xlsx, multer, proxy-addr)
       - name: Auditoría de dependencias
