@@ -35,6 +35,20 @@ npm test           # builds, then vitest: unit + v1 contract tests against a dis
   10 (blank lines and comments excluded), `complexity` 5, `max-params` 3, `max-depth` 2, no `let`, no mutation,
   no classes, no `throw`, no loops. TypeScript is pinned to 6.0.x (typescript-eslint does not support 7 yet).
 
+### Bounded contexts (strangler, one PR per context)
+
+`src/contexts/<context>/`: `domain.ts` (types, pure validation, `DomainError` factories), `ports.ts`
+(repository types), `application.ts` (use cases as factories over their ports, returning `Result`),
+`sequelizeRepositories.ts` (rows ↔ domain), `httpV1.ts` (v1 routes, same snake_case responses), `index.ts`
+(composition root mounted by `app.js`). `adapters/http/v1/respond.ts#sendV1` answers an `Err` the v1 way
+(`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
+contract snapshots must stay identical in every migration PR.
+
+Migrated: **catalog** (organizations, locations; the old routes/controllers/services were deleted).
+Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
+(`name`, `type` / `municipality`, `department`, `country`); before, the whole body reached the model.
+Next: vark → observability → identity → deployment → learning → sessions.
+
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
 
