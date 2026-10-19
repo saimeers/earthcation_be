@@ -46,7 +46,7 @@ app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth',      require('./routes/auth.routes'));
 app.use('/api/users',     require('./routes/user.routes'));
 app.use('/api/users/bulk-import', require('./routes/bulkImport.routes'));
-app.use('/api/vark',      require('./routes/vark.routes'));
+app.use('/api/vark',      require('./contexts/vark').varkRoutesV1);
 app.use('/api/progress',  require('./routes/progress.routes'));
 app.use('/api/levels',    require('./routes/level.routes'));
 app.use('/api/sessions',  require('./routes/session.routes'));
