@@ -284,3 +284,11 @@ Worker; mounted **before** the global rate limit since every visit comes from Cl
 — trusted only when `req.ip` is Cloudflare; region/city need the zone's "Add visitor location headers"
 managed transform) without blocking the response. `GET /api/visits/stats?days=7|30|90` (admin,
 developer) aggregates everything, cached 60 s.
+- **Trusting `cf-*` headers**: behind Railway, `req.ip` is not reliably a Cloudflare address. A zone Transform
+  Rule (`http_request_late_transform`, host `api-earthcation.saimers.dev`) sets `x-earthcation-edge` to
+  `CF_EDGE_SECRET`; `utils/clientIp.js#fromCloudflare(req)` checks it (falls back to `isCloudflare(req.ip)`).
+  Node reads headers as latin1 and Cloudflare sends `cf-ipcity`/`cf-region` in UTF-8 → `utf8Header()`;
+  " Department" is stripped from Colombian region names.
+- **Bots**: visits with a bot user-agent or from a datacenter network (`as_organization` from the Worker, e.g.
+  OVH/Hetzner/AWS — certificate-transparency scanners arrive with a fake Chrome UA) are stored with
+  `is_bot = true` and excluded from `/api/visits/stats` (`totals.bots` = how many were dropped).
