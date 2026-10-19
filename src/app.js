@@ -52,8 +52,8 @@ app.use('/api/levels',    require('./routes/level.routes'));
 app.use('/api/sessions',  require('./routes/session.routes'));
 app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/telemetry', require('./routes/telemetry.routes'));
-app.use('/api/locations',     require('./routes/location.routes'));
-app.use('/api/organizations', require('./routes/organization.routes'));
+app.use('/api/locations',     require('./contexts/catalog').locationRoutesV1);
+app.use('/api/organizations', require('./contexts/catalog').organizationRoutesV1);
 app.use('/api/health',    require('./routes/health.routes'));
 app.use('/api/deploy',    require('./routes/deploy.routes'));
 

@@ -43,7 +43,7 @@ jobs:
       - run: npm ci
 
       - name: Carga de rutas y modelos (sin BD)
-        run: npm run build && node -e "['auth','user','session','telemetry','progress','analytics','vark','level','location','organization','bulkImport','deploy','visit','health'].forEach(r => require('./dist/src/routes/' + r + '.routes'))"
+        run: npm run build && node -e "['auth','user','session','telemetry','progress','analytics','vark','level','bulkImport','deploy','visit','health'].forEach(r => require('./dist/src/routes/' + r + '.routes'))"
         env:
           JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
           RESEND_API_KEY: ci-sin-envio-de-correos
