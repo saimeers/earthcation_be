@@ -6,6 +6,14 @@ const { fromCloudflare } = require('../utils/clientIp');
 
 const str = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 const num = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
+// Cloudflare llama "Norte de Santander Department" a los departamentos de Colombia
+const place = (v, max) => str(v, max)?.replace(/\s+Department$/i, '') ?? null;
+// Node lee los headers como latin1 y Cloudflare manda cf-ipcity/cf-region en UTF-8 ("CÃºcuta")
+const utf8Header = (v) => {
+  if (typeof v !== 'string' || !/[À-ÿ]/.test(v)) return v;
+  const fixed = Buffer.from(v, 'latin1').toString('utf8');
+  return fixed.includes('�') ? v : fixed;
+};
 
 // Escáneres y robots: user-agent declarado, o red de un centro de datos (llegan con UA de Chrome falso
 // apenas se emite el certificado de un dominio nuevo). Se guardan marcados y no cuentan en el panel.
@@ -26,7 +34,7 @@ const ingest = async (body) => {
     is_unique: isUnique,
     version_id: uuid.test(body.version_id ?? '') ? body.version_id : null,
     country: str(body.country, 2),
-    region: str(body.region, 80),
+    region: place(body.region, 80),
     city: str(body.city, 80),
     colo: str(body.colo, 8),
     latitude: num(body.latitude),
@@ -46,13 +54,13 @@ const ingest = async (body) => {
  */
 const recordLogin = (req, user) => {
   const fromCf = fromCloudflare(req);
-  const h = (name, max) => (fromCf ? str(req.headers[name], max) : null);
+  const h = (name, max) => (fromCf ? str(utf8Header(req.headers[name]), max) : null);
   const country = h('cf-ipcountry', 2);
   LoginEvent.create({
     user_id: user.id,
     role: user.role,
     country: country === 'XX' || country === 'T1' ? null : country,
-    region: h('cf-region', 80),
+    region: fromCf ? place(utf8Header(req.headers['cf-region']), 80) : null,
     city: h('cf-ipcity', 80),
     ...parseUserAgent(req.headers['user-agent']),
   }).catch(err => console.error('[login-event]', err.message));
