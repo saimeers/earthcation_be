@@ -15,11 +15,35 @@ what's specific to working inside this folder.
 ```
 npm run dev     # nodemon index.js — hot reload, use this for local dev
 npm start       # node index.js — plain start
+npm run lint    # eslint (recommended base; functional/size rules arrive with TypeScript)
+npm test        # vitest: v1 contract tests against a disposable Postgres (see "Tests")
 ```
 
-No test framework, no lint config, no `.env.example` file in the repo — env vars must be inferred
-from `src/config/database.js` and usages of `process.env` (DB connection, JWT secret, Resend API
-key, `NODE_ENV`).
+No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
+usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
+
+`index.js` only checks `JWT_SECRET` and calls `src/server.js#start` (`prepareDatabase`: enums, sync,
+maintenance, municipios; then `listen`). The Express app itself is `src/app.js`, required without side
+effects by the tests.
+
+## Tests (fase 2, 2026-10-19)
+
+- **Contract tests of v1** (`tests/contract/`): every GET × 5 roles (anónimo, jugador, instructor,
+  desarrollador, admin) and the writes (permissions + happy paths) snapshot `{ status, content-type,
+  shape }`, where shape = keys and types (`uuid`, `date`, `string`…), not values. Plus the session Excel
+  (sheets, headers, row counts). While v1 lives these snapshots must not change; an intended change is
+  updated with `npm test -- -u` and explained in the PR.
+- `tests/support/seed.cjs` (global setup, once per run): `DROP SCHEMA public CASCADE`, `prepareDatabase`,
+  levels/risks + admin/developer straight into the models, and everything else through the API like
+  production (organization, instructor, 3 players, VARK, a session with joins, attempts with events and
+  progress, a free-play attempt). Test files read the ids with `inject('seed')`.
+- `tests/support/env.cjs` loads `.env.test` (copy `.env.test.example`), forces `NODE_ENV=test`, removes
+  `REDIS_URL`, stubs the email functions and **refuses to run if `DB_NAME` does not contain "test"**.
+- Test files are ESM but load `src/` through `createRequire`, so the email stubs and the app share
+  Node's CommonJS cache.
+- CI (`.github/workflows/ci.yml`) runs lint + tests against a `postgres:16` service container.
+- Recorded current behavior worth revisiting in v2: `GET /api/sessions/:id/progress` answers 403 to
+  admin and developer (only the owning instructor gets 200); `GET /api/vark/me` is 404 for staff.
 
 ## Architecture
 

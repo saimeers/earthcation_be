@@ -1,4 +1,4 @@
-const { Level, Risk } = require('../models');
+const { Level } = require('../models');
 
 const getAllLevels = async () => {
   return Level.findAll({ include: [{ association: 'risks' }] });

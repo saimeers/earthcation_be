@@ -1,4 +1,4 @@
-const { User, UserProfile, UserRiskProgress, VarkResult, Organization, Location, TrainingSession, SessionUser, Risk, Level } = require('../models');
+const { User, UserProfile, UserRiskProgress, VarkResult, Organization, Location, TrainingSession, Risk, Level } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { summarize, latestAttemptRows, latestAttemptByLevel } = require('../utils/attempt.utils');
 const { coordsFor } = require('../utils/geo.utils');

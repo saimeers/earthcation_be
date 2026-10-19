@@ -1,0 +1,6240 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`v1 GET /api/locations 1`] = `
+{
+  "body": [
+    {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET /api/sessions/:id/export.xlsx 1`] = `
+{
+  "sheets": [
+    {
+      "headers": [
+        "Informe de sesión — Sala de prueba",
+        "Informe de sesión — Sala de prueba",
+      ],
+      "name": "Resumen",
+      "rows": 25,
+    },
+    {
+      "headers": [
+        "Cédula",
+        "Nombre",
+        "Organización",
+        "Estilo VARK",
+        "Desempeño",
+        "% Mitigación",
+        "Riesgos evaluados",
+        "Mitigados",
+        "Errores",
+        "Reacción prom. (s)",
+        "Intentos de nivel",
+        "Completados",
+        "Fallidos",
+        "Abandonados",
+        "Mejor tiempo",
+        "Riesgo más débil",
+        "Causa de fallo más común",
+      ],
+      "name": "Participantes",
+      "rows": 3,
+    },
+    {
+      "headers": [
+        "Código",
+        "Riesgo",
+        "Categoría",
+        "Nivel",
+        "Resultados",
+        "Mitigados",
+        "Fallidos",
+        "% Fallo",
+        "Errores",
+        "Reacción prom. (s)",
+      ],
+      "name": "Riesgos de la sesión",
+      "rows": 6,
+    },
+    {
+      "headers": [
+        "Cédula",
+        "Nombre",
+        "Nivel",
+        "Código",
+        "Riesgo",
+        "Categoría",
+        "Resultado",
+        "Errores",
+        "Reacción (s)",
+        "Fecha",
+      ],
+      "name": "Resultados por riesgo",
+      "rows": 6,
+    },
+    {
+      "headers": [
+        "Cédula",
+        "Nombre",
+        "Nivel",
+        "N.º intento",
+        "Resultado",
+        "Causa de fallo",
+        "Etapa",
+        "Duración",
+        "Vida final",
+        "Detector",
+        "Calibrado",
+        "Inicio",
+      ],
+      "name": "Intentos por nivel",
+      "rows": 4,
+    },
+  ],
+  "status": 200,
+  "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+`;
+
+exports[`v1 GET como admin > / 1`] = `
+{
+  "body": undefined,
+  "status": 200,
+  "type": "text/html",
+}
+`;
+
+exports[`v1 GET como admin > /api/analytics/location?department 1`] = `
+{
+  "body": [
+    {
+      "dominant_style": "null | string",
+      "level_attempts": "number",
+      "location": {
+        "department": "string",
+        "municipality": "string",
+      },
+      "mitigated": "number",
+      "percentage": "number",
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/analytics/map 1`] = `
+{
+  "body": [
+    {
+      "department": "string",
+      "id": "uuid",
+      "lat": "number",
+      "lng": "number",
+      "location_exact": "boolean",
+      "municipality": "string",
+      "name": "string",
+      "percentage": "number",
+      "player_count": "number",
+      "results": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/analytics/organization/:orgId 1`] = `
+{
+  "body": [
+    {
+      "dominant_style": "null | string",
+      "level_attempts": "number",
+      "mitigated": "number",
+      "percentage": "number",
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/analytics/overview 1`] = `
+{
+  "body": {
+    "progress": {
+      "global_percentage": "number",
+      "history_results": "number",
+      "level_attempts": "number",
+      "total_attempts": "number",
+      "total_mitigated": "number",
+    },
+    "progress_by_level": [
+      {
+        "avg_attempts": "number",
+        "level": "string",
+        "mitigated": "number",
+        "percentage": "number",
+        "players": "number",
+        "players_100": "number",
+        "total": "number",
+      },
+    ],
+    "riesgos_mas_fallados": [
+      {
+        "avg_mistakes": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "name": "string",
+        "risk_id": "string",
+        "total_attempts": "number",
+      },
+    ],
+    "sessions": {
+      "active": "number",
+      "total": "number",
+    },
+    "tendencia_temporal": [
+      {
+        "mitigated": "number",
+        "percentage": "number",
+        "total": "number",
+        "week": "date",
+      },
+    ],
+    "users": {
+      "instructors": "number",
+      "players": "number",
+      "total": "number",
+    },
+    "vark_distribution": [
+      {
+        "count": "number",
+        "style": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/deploy/status 1`] = `
+{
+  "body": {
+    "active": "null",
+    "max_mb": "number",
+    "play_url": "null",
+    "storage": {
+      "originals": "string",
+      "published": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/deploy/versions 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/health/details 1`] = `
+{
+  "body": {
+    "database": {
+      "ms": "number",
+      "ok": "boolean",
+      "pool": {
+        "available": "number",
+        "max": "number",
+        "size": "number",
+        "using": "number",
+        "waiting": "number",
+      },
+    },
+    "memory_mb": "number",
+    "metrics": {
+      "errors": "number",
+      "p50_ms": "number",
+      "p95_ms": "number",
+      "per_minute": [
+        {
+          "errors": "number",
+          "minute": "date",
+          "requests": "number",
+        },
+      ],
+      "requests": "number",
+      "routes": [
+        {
+          "errors": "number",
+          "p50_ms": "number",
+          "p95_ms": "number",
+          "requests": "number",
+          "route": "string",
+        },
+      ],
+      "window_minutes": "number",
+    },
+    "redis": {
+      "mode": "string",
+      "ok": "null",
+    },
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/levels 1`] = `
+{
+  "body": [
+    {
+      "id": "number",
+      "name": "string",
+      "risks": [
+        {
+          "category": "string",
+          "id": "string",
+          "level_id": "number",
+          "name": "string",
+        },
+      ],
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/levels/:id (no existe) 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/levels/:id 1`] = `
+{
+  "body": {
+    "id": "number",
+    "name": "string",
+    "risks": [
+      {
+        "category": "string",
+        "id": "string",
+        "level_id": "number",
+        "name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/locations/:id 1`] = `
+{
+  "body": {
+    "country": "string",
+    "department": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "municipality": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/locations/search?municipality 1`] = `
+{
+  "body": [
+    {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/no-existe 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/organizations 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/organizations/:id 1`] = `
+{
+  "body": {
+    "created_at": "date",
+    "id": "uuid",
+    "is_active": "boolean",
+    "members": [
+      {
+        "id": "uuid",
+        "location_id": "uuid",
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+    ],
+    "name": "string",
+    "type": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/organizations/search?name 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/organizations/types 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/progress/full 1`] = `
+{
+  "body": {
+    "progress": [],
+    "total_attempts": "number",
+    "user_id": "uuid",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/progress/level/:levelId 1`] = `
+{
+  "body": {
+    "attempts": "number",
+    "completion": "string",
+    "level_id": "string",
+    "percentage": "number",
+    "risks": [
+      {
+        "category": "string",
+        "last_mistakes": "null",
+        "last_reaction_ms": "null",
+        "mitigated": "boolean",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/progress/me/:sessionId 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/progress/user/:userId/history 1`] = `
+{
+  "body": [
+    {
+      "attempt_id": "uuid",
+      "detail": "null",
+      "id": "uuid",
+      "is_mitigated": "boolean",
+      "mistakes_count": "number",
+      "reaction_time_ms": "number",
+      "recorded_at": "date",
+      "risk": {
+        "category": "string",
+        "id": "string",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "name": "string",
+      },
+      "risk_id": "string",
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/:id/participants/:userId/analysis 1`] = `
+{
+  "body": {
+    "attempts": [
+      {
+        "attempt_number": "number",
+        "device_calibrated": "boolean",
+        "duration_ms": "number",
+        "ended_at": "date",
+        "fail_reason": "null | string",
+        "fail_risk_id": "null | string",
+        "fail_stage": "null | string",
+        "final_health": "number",
+        "game_version": "string",
+        "gas_brand": "string",
+        "id": "uuid",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "session_id": "uuid",
+        "started_at": "date",
+        "summary": {
+          "device_powered_on": "number",
+          "lantern_switched_on": "number",
+        },
+        "user_id": "uuid",
+        "vark_style": "string",
+      },
+    ],
+    "event_counts": {
+      "level_started": "number",
+      "risk_panel_shown": "number",
+    },
+    "group": {
+      "avg_level_attempts": "number",
+      "avg_mistakes_per_result": "number",
+      "avg_percentage": "number",
+      "avg_reaction_ms": "number",
+      "levels": {
+        "level1": {
+          "avg_attempts_until_first_completion": "number",
+          "avg_best_time_ms": "number",
+        },
+        "level2": {
+          "avg_attempts_until_first_completion": "number",
+          "avg_best_time_ms": "number",
+        },
+      },
+      "participants": "number",
+      "rank": "number",
+      "risks": {
+        "CR-01": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-03": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-04": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-06": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-07": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+      },
+    },
+    "navigation": {
+      "index": "number",
+      "next": "uuid",
+      "prev": "null",
+      "total": "number",
+    },
+    "participant": {
+      "avg_reaction_ms": "number",
+      "band": "string",
+      "by_level": [
+        {
+          "attempts": "number",
+          "mitigated": "number",
+          "name": "string",
+          "risks": [
+            {
+              "category": "string",
+              "is_mitigated": "boolean",
+              "mistakes_count": "number",
+              "reaction_time_ms": "number",
+              "recorded_at": "date",
+              "risk_id": "string",
+              "risk_name": "string",
+            },
+          ],
+          "total": "number",
+        },
+      ],
+      "dominant_style": "string",
+      "joined_at": "date",
+      "level_attempts": "number",
+      "mistakes_total": "number",
+      "mitigated": "number",
+      "organization": "string",
+      "percentage": "number",
+      "risks": [
+        {
+          "avg_reaction_ms": "number",
+          "category": "string",
+          "failed": "number",
+          "last_recorded_at": "date",
+          "last_result": "string",
+          "level_name": "string",
+          "mistakes_total": "number",
+          "mitigated": "number",
+          "mitigation_rate": "number",
+          "results": "number",
+          "risk_id": "string",
+          "risk_name": "string",
+        },
+      ],
+      "telemetry": {
+        "abandoned": "number",
+        "attempts": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "failed": "number",
+        "journeys": {
+          "level1": [
+            {
+              "attempt_number": "number",
+              "duration_ms": "number",
+              "fail_reason": "null | string",
+              "fail_stage": "null | string",
+              "id": "uuid",
+              "outcome": "string",
+            },
+          ],
+        },
+        "levels": [
+          {
+            "abandoned": "number",
+            "attempts": "number",
+            "attempts_until_first_completion": "number",
+            "best_time_ms": "number",
+            "completed": "number",
+            "fail_reasons": {
+              "derrumbe": "number",
+            },
+            "fail_stages": {
+              "Sostenimiento": "number",
+            },
+            "failed": "number",
+            "in_progress": "number",
+            "level_key": "string",
+            "retries": "number",
+            "total_time_ms": "number",
+          },
+        ],
+        "top_fail_reason": {
+          "count": "number",
+          "reason": "string",
+        },
+        "total_time_ms": "number",
+      },
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "organization": {
+            "id": "uuid",
+            "name": "string",
+          },
+          "organization_id": "uuid",
+        },
+        "username": "string",
+        "varkProfile": {
+          "dominant_style": "string",
+        },
+      },
+      "weakest_risk": {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    },
+    "reading": {
+      "avg_read_ms": "null",
+      "group_avg_read_ms": "null",
+      "panels": "number",
+    },
+    "session": {
+      "code": "string",
+      "ended_at": "null",
+      "id": "uuid",
+      "is_free_play": "boolean",
+      "name": "string",
+      "started_at": "date",
+      "status": "string",
+    },
+    "summary_counters": {
+      "device_powered_on": "number",
+      "lantern_switched_on": "number",
+    },
+    "user": {
+      "age": "number",
+      "cedula": "string",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/:id/progress 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/:id/progress/admin 1`] = `
+{
+  "body": {
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "levels": [
+      {
+        "abandoned": "number",
+        "attempts": "number",
+        "attempts_until_first_completion": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "fail_reasons": {
+          "derrumbe": "absent | number",
+        },
+        "fail_stages": {
+          "Sostenimiento": "absent | number",
+        },
+        "failed": "number",
+        "in_progress": "number",
+        "level_key": "string",
+        "retries": "number",
+        "total_time_ms": "number",
+      },
+    ],
+    "participants": [
+      {
+        "avg_reaction_ms": "number",
+        "band": "string",
+        "by_level": [
+          {
+            "attempts": "number",
+            "mitigated": "number",
+            "name": "string",
+            "risks": [
+              {
+                "category": "string",
+                "is_mitigated": "boolean",
+                "mistakes_count": "number",
+                "reaction_time_ms": "number",
+                "recorded_at": "date",
+                "risk_id": "string",
+                "risk_name": "string",
+              },
+            ],
+            "total": "number",
+          },
+        ],
+        "dominant_style": "string",
+        "joined_at": "date",
+        "level_attempts": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "organization": "string",
+        "percentage": "number",
+        "risks": [
+          {
+            "avg_reaction_ms": "number",
+            "category": "string",
+            "failed": "number",
+            "last_recorded_at": "date",
+            "last_result": "string",
+            "level_name": "string",
+            "mistakes_total": "number",
+            "mitigated": "number",
+            "mitigation_rate": "number",
+            "results": "number",
+            "risk_id": "string",
+            "risk_name": "string",
+          },
+        ],
+        "telemetry": {
+          "abandoned": "number",
+          "attempts": "number",
+          "best_time_ms": "number",
+          "completed": "number",
+          "failed": "number",
+          "journeys": {
+            "level1": ""absent" | [{"attempt_number":"number","duration_ms":"number","fail_reason":"null | string","fail_stage":"null | string","id":"uuid","outcome":"string"}]",
+            "level2": ""absent" | [{"attempt_number":"number","duration_ms":"number","fail_reason":"null","fail_stage":"null","id":"uuid","outcome":"string"}]",
+          },
+          "levels": [
+            {
+              "abandoned": "number",
+              "attempts": "number",
+              "attempts_until_first_completion": "number",
+              "best_time_ms": "number",
+              "completed": "number",
+              "fail_reasons": {
+                "derrumbe": "absent | number",
+              },
+              "fail_stages": {
+                "Sostenimiento": "absent | number",
+              },
+              "failed": "number",
+              "in_progress": "number",
+              "level_key": "string",
+              "retries": "number",
+              "total_time_ms": "number",
+            },
+          ],
+          "top_fail_reason": ""null" | {"count":"number","reason":"string"}",
+          "total_time_ms": "number",
+        },
+        "total_attempts": "number",
+        "user": {
+          "cedula": "string",
+          "first_name": "string",
+          "id": "uuid",
+          "last_name": "string",
+          "profile": {
+            "organization": {
+              "id": "uuid",
+              "name": "string",
+            },
+            "organization_id": "uuid",
+          },
+          "username": "string",
+          "varkProfile": {
+            "dominant_style": "string",
+          },
+        },
+        "weakest_risk": {
+          "avg_reaction_ms": "number",
+          "category": "string",
+          "failed": "number",
+          "last_recorded_at": "date",
+          "last_result": "string",
+          "level_name": "string",
+          "mistakes_total": "number",
+          "mitigated": "number",
+          "mitigation_rate": "number",
+          "results": "number",
+          "risk_id": "string",
+          "risk_name": "string",
+        },
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": {
+        "email": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "department": "string",
+        "id": "uuid",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user": {
+            "cedula": "string",
+            "first_name": "string",
+            "id": "uuid",
+            "last_name": "string",
+            "profile": {
+              "organization": {
+                "id": "uuid",
+                "name": "string",
+              },
+              "organization_id": "uuid",
+            },
+            "username": "string",
+            "varkProfile": {
+              "dominant_style": "string",
+            },
+          },
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+    "summary": {
+      "avg_percentage": "number",
+      "avg_reaction_ms": "number",
+      "bands": {
+        "destacado": "number",
+        "en_progreso": "number",
+        "refuerzo": "number",
+        "sin_datos": "number",
+      },
+      "completion_rate": "number",
+      "level_attempts": "number",
+      "level_completed": "number",
+      "level_failed": "number",
+      "participants": "number",
+      "risk_mitigated": "number",
+      "risk_results": "number",
+      "with_data": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/all 1`] = `
+{
+  "body": [
+    {
+      "code": "null | string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": ""null" | {"email":"string","first_name":"string","id":"uuid","last_name":"string"}",
+      "instructor_id": "null | uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/by-location?department 1`] = `
+{
+  "body": [
+    {
+      "code": "null | string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": ""null" | {"cedula":"string","first_name":"string","id":"uuid","last_name":"string"}",
+      "instructor_id": "null | uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/code/:code 1`] = `
+{
+  "body": {
+    "code": "string",
+    "id": "uuid",
+    "instructor": {
+      "first_name": "string",
+      "last_name": "string",
+    },
+    "name": "string",
+    "status": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/sessions/mine 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/telemetry/attempts/:id 1`] = `
+{
+  "body": {
+    "attempt": {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null",
+      "fail_risk_id": "null",
+      "fail_stage": "null",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "riskResults": [
+        {
+          "attempt_id": "uuid",
+          "detail": "null",
+          "id": "uuid",
+          "is_mitigated": "boolean",
+          "mistakes_count": "number",
+          "reaction_time_ms": "number",
+          "recorded_at": "date",
+          "risk": {
+            "category": "string",
+            "id": "string",
+            "level_id": "number",
+            "name": "string",
+          },
+          "risk_id": "string",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user": {
+        "cedula": "string",
+        "id": "uuid",
+        "username": "string",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+    "events": [
+      {
+        "attempt_id": "uuid",
+        "created_at": "date",
+        "event_type": "string",
+        "fatigue": "null | number",
+        "health": "null | number",
+        "id": "string",
+        "payload": ""null" | {"read_ms":"number"}",
+        "pos_x": "null | number",
+        "risk_id": "null | string",
+        "stage": "null | string",
+        "t_ms": "number",
+        "user_id": "uuid",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/telemetry/me/attempts 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/telemetry/overview 1`] = `
+{
+  "body": {
+    "event_counts": [
+      {
+        "count": "number",
+        "event_type": "string",
+      },
+    ],
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_risk_id": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "gas_brands": [
+      {
+        "attempts": "number",
+        "calibrated": "number",
+        "gas_brand": "string",
+      },
+    ],
+    "levels": [
+      {
+        "avg_duration_ms": "number",
+        "count": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "players": "number",
+      },
+    ],
+    "retries": [
+      {
+        "avg_attempt_number": "number",
+        "level_key": "string",
+        "max_attempt_number": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/telemetry/overview?session_id 1`] = `
+{
+  "body": {
+    "event_counts": [
+      {
+        "count": "number",
+        "event_type": "string",
+      },
+    ],
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_risk_id": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "gas_brands": [
+      {
+        "attempts": "number",
+        "calibrated": "number",
+        "gas_brand": "string",
+      },
+    ],
+    "levels": [
+      {
+        "avg_duration_ms": "number",
+        "count": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "players": "number",
+      },
+    ],
+    "retries": [
+      {
+        "avg_attempt_number": "number",
+        "level_key": "string",
+        "max_attempt_number": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/telemetry/users/:userId/attempts 1`] = `
+{
+  "body": [
+    {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null | string",
+      "fail_risk_id": "null | string",
+      "fail_stage": "null | string",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/telemetry/users/:userId/summary 1`] = `
+{
+  "body": {
+    "event_counts": {
+      "level_started": "number",
+      "risk_panel_shown": "number",
+    },
+    "levels": [
+      {
+        "abandoned": "number",
+        "attempts": "number",
+        "attempts_until_first_completion": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "fail_reasons": {
+          "derrumbe": "number",
+        },
+        "fail_stages": {
+          "Sostenimiento": "number",
+        },
+        "failed": "number",
+        "in_progress": "number",
+        "level_key": "string",
+        "retries": "number",
+        "total_time_ms": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+    "total_attempts": "number",
+    "user_id": "uuid",
+    "weakest_risk": {
+      "avg_reaction_ms": "number",
+      "category": "string",
+      "failed": "number",
+      "last_recorded_at": "date",
+      "last_result": "string",
+      "level_name": "string",
+      "mistakes_total": "number",
+      "mitigated": "number",
+      "mitigation_rate": "number",
+      "results": "number",
+      "risk_id": "string",
+      "risk_name": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/users 1`] = `
+{
+  "body": [
+    {
+      "age": "null | number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null | string",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": ""null" | null | {"country":"string","department":"string","id":"uuid","is_active":"boolean","municipality":"string"}",
+        "location_id": "null | uuid",
+        "organization": ""null" | null | {"created_at":"date","id":"uuid","is_active":"boolean","name":"string","type":"string"}",
+        "organization_id": "null | uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": ""null" | null | {"auditory_score":"number","dominant_style":"string","reading_score":"number","visual_score":"number"}",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/users/:id 1`] = `
+{
+  "body": {
+    "age": "number",
+    "cedula": "string",
+    "created_at": "date",
+    "email": "null",
+    "first_name": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "last_name": "string",
+    "profile": {
+      "id": "uuid",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "organization": {
+        "created_at": "date",
+        "id": "uuid",
+        "is_active": "boolean",
+        "name": "string",
+        "type": "string",
+      },
+      "organization_id": "uuid",
+      "user_id": "uuid",
+    },
+    "role": "string",
+    "updated_at": "date",
+    "username": "string",
+    "varkProfile": {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "reading_score": "number",
+      "visual_score": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/users/:id/sessions 1`] = `
+{
+  "body": [
+    {
+      "id": "uuid",
+      "joined_at": "date",
+      "session": {
+        "code": "string",
+        "created_at": "date",
+        "ended_at": "null",
+        "id": "uuid",
+        "name": "string",
+        "started_at": "date",
+        "status": "string",
+      },
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/users?role=player 1`] = `
+{
+  "body": [
+    {
+      "age": "number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/vark/all 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization": {
+            "created_at": "date",
+            "id": "uuid",
+            "is_active": "boolean",
+            "name": "string",
+            "type": "string",
+          },
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+        "role": "string",
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/vark/by-location?department 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/vark/by-style/:style 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization": {
+            "created_at": "date",
+            "id": "uuid",
+            "is_active": "boolean",
+            "name": "string",
+            "type": "string",
+          },
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/vark/me 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /api/visits/stats 1`] = `
+{
+  "body": {
+    "browsers": [],
+    "cities": [],
+    "countries": [],
+    "days": "number",
+    "devices": [],
+    "logins": {
+      "by_role": [],
+      "devices": [],
+      "per_day": [],
+      "regions": [],
+    },
+    "os": [],
+    "per_day": [],
+    "regions": [],
+    "since": "date",
+    "totals": {
+      "bots": "number",
+      "unique": "number",
+      "via_qr": "number",
+      "visitors": "number",
+      "visits": "number",
+    },
+    "versions": [],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como admin > /health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "timestamp": "date",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > / 1`] = `
+{
+  "body": undefined,
+  "status": 200,
+  "type": "text/html",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/analytics/location?department 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/analytics/map 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/analytics/organization/:orgId 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/analytics/overview 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/deploy/status 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/deploy/versions 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/health/details 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/levels 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/levels/:id (no existe) 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/levels/:id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/locations/:id 1`] = `
+{
+  "body": {
+    "country": "string",
+    "department": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "municipality": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/locations/search?municipality 1`] = `
+{
+  "body": [
+    {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/no-existe 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/organizations 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/organizations/:id 1`] = `
+{
+  "body": {
+    "created_at": "date",
+    "id": "uuid",
+    "is_active": "boolean",
+    "members": [
+      {
+        "id": "uuid",
+        "location_id": "uuid",
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+    ],
+    "name": "string",
+    "type": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/organizations/search?name 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/organizations/types 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/progress/full 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/progress/level/:levelId 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/progress/me/:sessionId 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/progress/user/:userId/history 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/:id/participants/:userId/analysis 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/:id/progress 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/:id/progress/admin 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/all 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/by-location?department 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/code/:code 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/sessions/mine 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/telemetry/attempts/:id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/telemetry/me/attempts 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/telemetry/overview 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/telemetry/overview?session_id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/telemetry/users/:userId/attempts 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/telemetry/users/:userId/summary 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/users 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/users/:id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/users/:id/sessions 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/users?role=player 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/vark/all 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/vark/by-location?department 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/vark/by-style/:style 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/vark/me 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /api/visits/stats 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como anonimo > /health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "timestamp": "date",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > / 1`] = `
+{
+  "body": undefined,
+  "status": 200,
+  "type": "text/html",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/analytics/location?department 1`] = `
+{
+  "body": [
+    {
+      "dominant_style": "null | string",
+      "level_attempts": "number",
+      "location": {
+        "department": "string",
+        "municipality": "string",
+      },
+      "mitigated": "number",
+      "percentage": "number",
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/analytics/map 1`] = `
+{
+  "body": [
+    {
+      "department": "string",
+      "id": "uuid",
+      "lat": "number",
+      "lng": "number",
+      "location_exact": "boolean",
+      "municipality": "string",
+      "name": "string",
+      "percentage": "number",
+      "player_count": "number",
+      "results": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/analytics/organization/:orgId 1`] = `
+{
+  "body": [
+    {
+      "dominant_style": "null | string",
+      "level_attempts": "number",
+      "mitigated": "number",
+      "percentage": "number",
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/analytics/overview 1`] = `
+{
+  "body": {
+    "progress": {
+      "global_percentage": "number",
+      "history_results": "number",
+      "level_attempts": "number",
+      "total_attempts": "number",
+      "total_mitigated": "number",
+    },
+    "progress_by_level": [
+      {
+        "avg_attempts": "number",
+        "level": "string",
+        "mitigated": "number",
+        "percentage": "number",
+        "players": "number",
+        "players_100": "number",
+        "total": "number",
+      },
+    ],
+    "riesgos_mas_fallados": [
+      {
+        "avg_mistakes": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "name": "string",
+        "risk_id": "string",
+        "total_attempts": "number",
+      },
+    ],
+    "sessions": {
+      "active": "number",
+      "total": "number",
+    },
+    "tendencia_temporal": [
+      {
+        "mitigated": "number",
+        "percentage": "number",
+        "total": "number",
+        "week": "date",
+      },
+    ],
+    "users": {
+      "instructors": "number",
+      "players": "number",
+      "total": "number",
+    },
+    "vark_distribution": [
+      {
+        "count": "number",
+        "style": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/deploy/status 1`] = `
+{
+  "body": {
+    "active": "null",
+    "max_mb": "number",
+    "play_url": "null",
+    "storage": {
+      "originals": "string",
+      "published": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/deploy/versions 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/health/details 1`] = `
+{
+  "body": {
+    "database": {
+      "ms": "number",
+      "ok": "boolean",
+      "pool": {
+        "available": "number",
+        "max": "number",
+        "size": "number",
+        "using": "number",
+        "waiting": "number",
+      },
+    },
+    "memory_mb": "number",
+    "metrics": {
+      "errors": "number",
+      "p50_ms": "number",
+      "p95_ms": "number",
+      "per_minute": [
+        {
+          "errors": "number",
+          "minute": "date",
+          "requests": "number",
+        },
+      ],
+      "requests": "number",
+      "routes": [
+        {
+          "errors": "number",
+          "p50_ms": "number",
+          "p95_ms": "number",
+          "requests": "number",
+          "route": "string",
+        },
+      ],
+      "window_minutes": "number",
+    },
+    "redis": {
+      "mode": "string",
+      "ok": "null",
+    },
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/levels 1`] = `
+{
+  "body": [
+    {
+      "id": "number",
+      "name": "string",
+      "risks": [
+        {
+          "category": "string",
+          "id": "string",
+          "level_id": "number",
+          "name": "string",
+        },
+      ],
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/levels/:id (no existe) 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/levels/:id 1`] = `
+{
+  "body": {
+    "id": "number",
+    "name": "string",
+    "risks": [
+      {
+        "category": "string",
+        "id": "string",
+        "level_id": "number",
+        "name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/locations/:id 1`] = `
+{
+  "body": {
+    "country": "string",
+    "department": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "municipality": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/locations/search?municipality 1`] = `
+{
+  "body": [
+    {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/no-existe 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/organizations 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/organizations/:id 1`] = `
+{
+  "body": {
+    "created_at": "date",
+    "id": "uuid",
+    "is_active": "boolean",
+    "members": [
+      {
+        "id": "uuid",
+        "location_id": "uuid",
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+    ],
+    "name": "string",
+    "type": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/organizations/search?name 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/organizations/types 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/progress/full 1`] = `
+{
+  "body": {
+    "progress": [],
+    "total_attempts": "number",
+    "user_id": "uuid",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/progress/level/:levelId 1`] = `
+{
+  "body": {
+    "attempts": "number",
+    "completion": "string",
+    "level_id": "string",
+    "percentage": "number",
+    "risks": [
+      {
+        "category": "string",
+        "last_mistakes": "null",
+        "last_reaction_ms": "null",
+        "mitigated": "boolean",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/progress/me/:sessionId 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/progress/user/:userId/history 1`] = `
+{
+  "body": [
+    {
+      "attempt_id": "uuid",
+      "detail": "null",
+      "id": "uuid",
+      "is_mitigated": "boolean",
+      "mistakes_count": "number",
+      "reaction_time_ms": "number",
+      "recorded_at": "date",
+      "risk": {
+        "category": "string",
+        "id": "string",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "name": "string",
+      },
+      "risk_id": "string",
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/:id/participants/:userId/analysis 1`] = `
+{
+  "body": {
+    "attempts": [
+      {
+        "attempt_number": "number",
+        "device_calibrated": "boolean",
+        "duration_ms": "number",
+        "ended_at": "date",
+        "fail_reason": "null | string",
+        "fail_risk_id": "null | string",
+        "fail_stage": "null | string",
+        "final_health": "number",
+        "game_version": "string",
+        "gas_brand": "string",
+        "id": "uuid",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "session_id": "uuid",
+        "started_at": "date",
+        "summary": {
+          "device_powered_on": "number",
+          "lantern_switched_on": "number",
+        },
+        "user_id": "uuid",
+        "vark_style": "string",
+      },
+    ],
+    "event_counts": {
+      "level_started": "number",
+      "risk_panel_shown": "number",
+    },
+    "group": {
+      "avg_level_attempts": "number",
+      "avg_mistakes_per_result": "number",
+      "avg_percentage": "number",
+      "avg_reaction_ms": "number",
+      "levels": {
+        "level1": {
+          "avg_attempts_until_first_completion": "number",
+          "avg_best_time_ms": "number",
+        },
+        "level2": {
+          "avg_attempts_until_first_completion": "number",
+          "avg_best_time_ms": "number",
+        },
+      },
+      "participants": "number",
+      "rank": "number",
+      "risks": {
+        "CR-01": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-03": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-04": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-06": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-07": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+      },
+    },
+    "navigation": {
+      "index": "number",
+      "next": "uuid",
+      "prev": "null",
+      "total": "number",
+    },
+    "participant": {
+      "avg_reaction_ms": "number",
+      "band": "string",
+      "by_level": [
+        {
+          "attempts": "number",
+          "mitigated": "number",
+          "name": "string",
+          "risks": [
+            {
+              "category": "string",
+              "is_mitigated": "boolean",
+              "mistakes_count": "number",
+              "reaction_time_ms": "number",
+              "recorded_at": "date",
+              "risk_id": "string",
+              "risk_name": "string",
+            },
+          ],
+          "total": "number",
+        },
+      ],
+      "dominant_style": "string",
+      "joined_at": "date",
+      "level_attempts": "number",
+      "mistakes_total": "number",
+      "mitigated": "number",
+      "organization": "string",
+      "percentage": "number",
+      "risks": [
+        {
+          "avg_reaction_ms": "number",
+          "category": "string",
+          "failed": "number",
+          "last_recorded_at": "date",
+          "last_result": "string",
+          "level_name": "string",
+          "mistakes_total": "number",
+          "mitigated": "number",
+          "mitigation_rate": "number",
+          "results": "number",
+          "risk_id": "string",
+          "risk_name": "string",
+        },
+      ],
+      "telemetry": {
+        "abandoned": "number",
+        "attempts": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "failed": "number",
+        "journeys": {
+          "level1": [
+            {
+              "attempt_number": "number",
+              "duration_ms": "number",
+              "fail_reason": "null | string",
+              "fail_stage": "null | string",
+              "id": "uuid",
+              "outcome": "string",
+            },
+          ],
+        },
+        "levels": [
+          {
+            "abandoned": "number",
+            "attempts": "number",
+            "attempts_until_first_completion": "number",
+            "best_time_ms": "number",
+            "completed": "number",
+            "fail_reasons": {
+              "derrumbe": "number",
+            },
+            "fail_stages": {
+              "Sostenimiento": "number",
+            },
+            "failed": "number",
+            "in_progress": "number",
+            "level_key": "string",
+            "retries": "number",
+            "total_time_ms": "number",
+          },
+        ],
+        "top_fail_reason": {
+          "count": "number",
+          "reason": "string",
+        },
+        "total_time_ms": "number",
+      },
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "organization": {
+            "id": "uuid",
+            "name": "string",
+          },
+          "organization_id": "uuid",
+        },
+        "username": "string",
+        "varkProfile": {
+          "dominant_style": "string",
+        },
+      },
+      "weakest_risk": {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    },
+    "reading": {
+      "avg_read_ms": "null",
+      "group_avg_read_ms": "null",
+      "panels": "number",
+    },
+    "session": {
+      "code": "string",
+      "ended_at": "null",
+      "id": "uuid",
+      "is_free_play": "boolean",
+      "name": "string",
+      "started_at": "date",
+      "status": "string",
+    },
+    "summary_counters": {
+      "device_powered_on": "number",
+      "lantern_switched_on": "number",
+    },
+    "user": {
+      "age": "number",
+      "cedula": "string",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/:id/progress 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/:id/progress/admin 1`] = `
+{
+  "body": {
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "levels": [
+      {
+        "abandoned": "number",
+        "attempts": "number",
+        "attempts_until_first_completion": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "fail_reasons": {
+          "derrumbe": "absent | number",
+        },
+        "fail_stages": {
+          "Sostenimiento": "absent | number",
+        },
+        "failed": "number",
+        "in_progress": "number",
+        "level_key": "string",
+        "retries": "number",
+        "total_time_ms": "number",
+      },
+    ],
+    "participants": [
+      {
+        "avg_reaction_ms": "number",
+        "band": "string",
+        "by_level": [
+          {
+            "attempts": "number",
+            "mitigated": "number",
+            "name": "string",
+            "risks": [
+              {
+                "category": "string",
+                "is_mitigated": "boolean",
+                "mistakes_count": "number",
+                "reaction_time_ms": "number",
+                "recorded_at": "date",
+                "risk_id": "string",
+                "risk_name": "string",
+              },
+            ],
+            "total": "number",
+          },
+        ],
+        "dominant_style": "string",
+        "joined_at": "date",
+        "level_attempts": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "organization": "string",
+        "percentage": "number",
+        "risks": [
+          {
+            "avg_reaction_ms": "number",
+            "category": "string",
+            "failed": "number",
+            "last_recorded_at": "date",
+            "last_result": "string",
+            "level_name": "string",
+            "mistakes_total": "number",
+            "mitigated": "number",
+            "mitigation_rate": "number",
+            "results": "number",
+            "risk_id": "string",
+            "risk_name": "string",
+          },
+        ],
+        "telemetry": {
+          "abandoned": "number",
+          "attempts": "number",
+          "best_time_ms": "number",
+          "completed": "number",
+          "failed": "number",
+          "journeys": {
+            "level1": ""absent" | [{"attempt_number":"number","duration_ms":"number","fail_reason":"null | string","fail_stage":"null | string","id":"uuid","outcome":"string"}]",
+            "level2": ""absent" | [{"attempt_number":"number","duration_ms":"number","fail_reason":"null","fail_stage":"null","id":"uuid","outcome":"string"}]",
+          },
+          "levels": [
+            {
+              "abandoned": "number",
+              "attempts": "number",
+              "attempts_until_first_completion": "number",
+              "best_time_ms": "number",
+              "completed": "number",
+              "fail_reasons": {
+                "derrumbe": "absent | number",
+              },
+              "fail_stages": {
+                "Sostenimiento": "absent | number",
+              },
+              "failed": "number",
+              "in_progress": "number",
+              "level_key": "string",
+              "retries": "number",
+              "total_time_ms": "number",
+            },
+          ],
+          "top_fail_reason": ""null" | {"count":"number","reason":"string"}",
+          "total_time_ms": "number",
+        },
+        "total_attempts": "number",
+        "user": {
+          "cedula": "string",
+          "first_name": "string",
+          "id": "uuid",
+          "last_name": "string",
+          "profile": {
+            "organization": {
+              "id": "uuid",
+              "name": "string",
+            },
+            "organization_id": "uuid",
+          },
+          "username": "string",
+          "varkProfile": {
+            "dominant_style": "string",
+          },
+        },
+        "weakest_risk": {
+          "avg_reaction_ms": "number",
+          "category": "string",
+          "failed": "number",
+          "last_recorded_at": "date",
+          "last_result": "string",
+          "level_name": "string",
+          "mistakes_total": "number",
+          "mitigated": "number",
+          "mitigation_rate": "number",
+          "results": "number",
+          "risk_id": "string",
+          "risk_name": "string",
+        },
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": {
+        "email": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "department": "string",
+        "id": "uuid",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user": {
+            "cedula": "string",
+            "first_name": "string",
+            "id": "uuid",
+            "last_name": "string",
+            "profile": {
+              "organization": {
+                "id": "uuid",
+                "name": "string",
+              },
+              "organization_id": "uuid",
+            },
+            "username": "string",
+            "varkProfile": {
+              "dominant_style": "string",
+            },
+          },
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+    "summary": {
+      "avg_percentage": "number",
+      "avg_reaction_ms": "number",
+      "bands": {
+        "destacado": "number",
+        "en_progreso": "number",
+        "refuerzo": "number",
+        "sin_datos": "number",
+      },
+      "completion_rate": "number",
+      "level_attempts": "number",
+      "level_completed": "number",
+      "level_failed": "number",
+      "participants": "number",
+      "risk_mitigated": "number",
+      "risk_results": "number",
+      "with_data": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/all 1`] = `
+{
+  "body": [
+    {
+      "code": "null | string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": ""null" | {"email":"string","first_name":"string","id":"uuid","last_name":"string"}",
+      "instructor_id": "null | uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/by-location?department 1`] = `
+{
+  "body": [
+    {
+      "code": "null | string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": ""null" | {"cedula":"string","first_name":"string","id":"uuid","last_name":"string"}",
+      "instructor_id": "null | uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/code/:code 1`] = `
+{
+  "body": {
+    "code": "string",
+    "id": "uuid",
+    "instructor": {
+      "first_name": "string",
+      "last_name": "string",
+    },
+    "name": "string",
+    "status": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/sessions/mine 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/telemetry/attempts/:id 1`] = `
+{
+  "body": {
+    "attempt": {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null",
+      "fail_risk_id": "null",
+      "fail_stage": "null",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "riskResults": [
+        {
+          "attempt_id": "uuid",
+          "detail": "null",
+          "id": "uuid",
+          "is_mitigated": "boolean",
+          "mistakes_count": "number",
+          "reaction_time_ms": "number",
+          "recorded_at": "date",
+          "risk": {
+            "category": "string",
+            "id": "string",
+            "level_id": "number",
+            "name": "string",
+          },
+          "risk_id": "string",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user": {
+        "cedula": "string",
+        "id": "uuid",
+        "username": "string",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+    "events": [
+      {
+        "attempt_id": "uuid",
+        "created_at": "date",
+        "event_type": "string",
+        "fatigue": "null | number",
+        "health": "null | number",
+        "id": "string",
+        "payload": ""null" | {"read_ms":"number"}",
+        "pos_x": "null | number",
+        "risk_id": "null | string",
+        "stage": "null | string",
+        "t_ms": "number",
+        "user_id": "uuid",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/telemetry/me/attempts 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/telemetry/overview 1`] = `
+{
+  "body": {
+    "event_counts": [
+      {
+        "count": "number",
+        "event_type": "string",
+      },
+    ],
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_risk_id": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "gas_brands": [
+      {
+        "attempts": "number",
+        "calibrated": "number",
+        "gas_brand": "string",
+      },
+    ],
+    "levels": [
+      {
+        "avg_duration_ms": "number",
+        "count": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "players": "number",
+      },
+    ],
+    "retries": [
+      {
+        "avg_attempt_number": "number",
+        "level_key": "string",
+        "max_attempt_number": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/telemetry/overview?session_id 1`] = `
+{
+  "body": {
+    "event_counts": [
+      {
+        "count": "number",
+        "event_type": "string",
+      },
+    ],
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_risk_id": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "gas_brands": [
+      {
+        "attempts": "number",
+        "calibrated": "number",
+        "gas_brand": "string",
+      },
+    ],
+    "levels": [
+      {
+        "avg_duration_ms": "number",
+        "count": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "players": "number",
+      },
+    ],
+    "retries": [
+      {
+        "avg_attempt_number": "number",
+        "level_key": "string",
+        "max_attempt_number": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/telemetry/users/:userId/attempts 1`] = `
+{
+  "body": [
+    {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null | string",
+      "fail_risk_id": "null | string",
+      "fail_stage": "null | string",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/telemetry/users/:userId/summary 1`] = `
+{
+  "body": {
+    "event_counts": {
+      "level_started": "number",
+      "risk_panel_shown": "number",
+    },
+    "levels": [
+      {
+        "abandoned": "number",
+        "attempts": "number",
+        "attempts_until_first_completion": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "fail_reasons": {
+          "derrumbe": "number",
+        },
+        "fail_stages": {
+          "Sostenimiento": "number",
+        },
+        "failed": "number",
+        "in_progress": "number",
+        "level_key": "string",
+        "retries": "number",
+        "total_time_ms": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+    "total_attempts": "number",
+    "user_id": "uuid",
+    "weakest_risk": {
+      "avg_reaction_ms": "number",
+      "category": "string",
+      "failed": "number",
+      "last_recorded_at": "date",
+      "last_result": "string",
+      "level_name": "string",
+      "mistakes_total": "number",
+      "mitigated": "number",
+      "mitigation_rate": "number",
+      "results": "number",
+      "risk_id": "string",
+      "risk_name": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/users 1`] = `
+{
+  "body": [
+    {
+      "age": "null | number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null | string",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": ""null" | null | {"country":"string","department":"string","id":"uuid","is_active":"boolean","municipality":"string"}",
+        "location_id": "null | uuid",
+        "organization": ""null" | null | {"created_at":"date","id":"uuid","is_active":"boolean","name":"string","type":"string"}",
+        "organization_id": "null | uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": ""null" | null | {"auditory_score":"number","dominant_style":"string","reading_score":"number","visual_score":"number"}",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/users/:id 1`] = `
+{
+  "body": {
+    "age": "number",
+    "cedula": "string",
+    "created_at": "date",
+    "email": "null",
+    "first_name": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "last_name": "string",
+    "profile": {
+      "id": "uuid",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "organization": {
+        "created_at": "date",
+        "id": "uuid",
+        "is_active": "boolean",
+        "name": "string",
+        "type": "string",
+      },
+      "organization_id": "uuid",
+      "user_id": "uuid",
+    },
+    "role": "string",
+    "updated_at": "date",
+    "username": "string",
+    "varkProfile": {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "reading_score": "number",
+      "visual_score": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/users/:id/sessions 1`] = `
+{
+  "body": [
+    {
+      "id": "uuid",
+      "joined_at": "date",
+      "session": {
+        "code": "string",
+        "created_at": "date",
+        "ended_at": "null",
+        "id": "uuid",
+        "name": "string",
+        "started_at": "date",
+        "status": "string",
+      },
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/users?role=player 1`] = `
+{
+  "body": [
+    {
+      "age": "number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/vark/all 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization": {
+            "created_at": "date",
+            "id": "uuid",
+            "is_active": "boolean",
+            "name": "string",
+            "type": "string",
+          },
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+        "role": "string",
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/vark/by-location?department 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/vark/by-style/:style 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization": {
+            "created_at": "date",
+            "id": "uuid",
+            "is_active": "boolean",
+            "name": "string",
+            "type": "string",
+          },
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/vark/me 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /api/visits/stats 1`] = `
+{
+  "body": {
+    "browsers": [],
+    "cities": [],
+    "countries": [],
+    "days": "number",
+    "devices": [],
+    "logins": {
+      "by_role": [],
+      "devices": [],
+      "per_day": [],
+      "regions": [],
+    },
+    "os": [],
+    "per_day": [],
+    "regions": [],
+    "since": "date",
+    "totals": {
+      "bots": "number",
+      "unique": "number",
+      "via_qr": "number",
+      "visitors": "number",
+      "visits": "number",
+    },
+    "versions": [],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como desarrollador > /health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "timestamp": "date",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > / 1`] = `
+{
+  "body": undefined,
+  "status": 200,
+  "type": "text/html",
+}
+`;
+
+exports[`v1 GET como instructor > /api/analytics/location?department 1`] = `
+{
+  "body": [
+    {
+      "dominant_style": "null | string",
+      "level_attempts": "number",
+      "location": {
+        "department": "string",
+        "municipality": "string",
+      },
+      "mitigated": "number",
+      "percentage": "number",
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/analytics/map 1`] = `
+{
+  "body": [
+    {
+      "department": "string",
+      "id": "uuid",
+      "lat": "number",
+      "lng": "number",
+      "location_exact": "boolean",
+      "municipality": "string",
+      "name": "string",
+      "percentage": "number",
+      "player_count": "number",
+      "results": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/analytics/organization/:orgId 1`] = `
+{
+  "body": [
+    {
+      "dominant_style": "null | string",
+      "level_attempts": "number",
+      "mitigated": "number",
+      "percentage": "number",
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/analytics/overview 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/deploy/status 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/deploy/versions 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/health/details 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/levels 1`] = `
+{
+  "body": [
+    {
+      "id": "number",
+      "name": "string",
+      "risks": [
+        {
+          "category": "string",
+          "id": "string",
+          "level_id": "number",
+          "name": "string",
+        },
+      ],
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/levels/:id (no existe) 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/levels/:id 1`] = `
+{
+  "body": {
+    "id": "number",
+    "name": "string",
+    "risks": [
+      {
+        "category": "string",
+        "id": "string",
+        "level_id": "number",
+        "name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/locations/:id 1`] = `
+{
+  "body": {
+    "country": "string",
+    "department": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "municipality": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/locations/search?municipality 1`] = `
+{
+  "body": [
+    {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/no-existe 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/organizations 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/organizations/:id 1`] = `
+{
+  "body": {
+    "created_at": "date",
+    "id": "uuid",
+    "is_active": "boolean",
+    "members": [
+      {
+        "id": "uuid",
+        "location_id": "uuid",
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+    ],
+    "name": "string",
+    "type": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/organizations/search?name 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/organizations/types 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/progress/full 1`] = `
+{
+  "body": {
+    "progress": [],
+    "total_attempts": "number",
+    "user_id": "uuid",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/progress/level/:levelId 1`] = `
+{
+  "body": {
+    "attempts": "number",
+    "completion": "string",
+    "level_id": "string",
+    "percentage": "number",
+    "risks": [
+      {
+        "category": "string",
+        "last_mistakes": "null",
+        "last_reaction_ms": "null",
+        "mitigated": "boolean",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/progress/me/:sessionId 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/progress/user/:userId/history 1`] = `
+{
+  "body": [
+    {
+      "attempt_id": "uuid",
+      "detail": "null",
+      "id": "uuid",
+      "is_mitigated": "boolean",
+      "mistakes_count": "number",
+      "reaction_time_ms": "number",
+      "recorded_at": "date",
+      "risk": {
+        "category": "string",
+        "id": "string",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "name": "string",
+      },
+      "risk_id": "string",
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/:id/participants/:userId/analysis 1`] = `
+{
+  "body": {
+    "attempts": [
+      {
+        "attempt_number": "number",
+        "device_calibrated": "boolean",
+        "duration_ms": "number",
+        "ended_at": "date",
+        "fail_reason": "null | string",
+        "fail_risk_id": "null | string",
+        "fail_stage": "null | string",
+        "final_health": "number",
+        "game_version": "string",
+        "gas_brand": "string",
+        "id": "uuid",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "session_id": "uuid",
+        "started_at": "date",
+        "summary": {
+          "device_powered_on": "number",
+          "lantern_switched_on": "number",
+        },
+        "user_id": "uuid",
+        "vark_style": "string",
+      },
+    ],
+    "event_counts": {
+      "level_started": "number",
+      "risk_panel_shown": "number",
+    },
+    "group": {
+      "avg_level_attempts": "number",
+      "avg_mistakes_per_result": "number",
+      "avg_percentage": "number",
+      "avg_reaction_ms": "number",
+      "levels": {
+        "level1": {
+          "avg_attempts_until_first_completion": "number",
+          "avg_best_time_ms": "number",
+        },
+        "level2": {
+          "avg_attempts_until_first_completion": "number",
+          "avg_best_time_ms": "number",
+        },
+      },
+      "participants": "number",
+      "rank": "number",
+      "risks": {
+        "CR-01": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-03": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-04": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-06": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+        "CR-07": {
+          "avg_reaction_ms": "number",
+          "mitigation_rate": "number",
+        },
+      },
+    },
+    "navigation": {
+      "index": "number",
+      "next": "uuid",
+      "prev": "null",
+      "total": "number",
+    },
+    "participant": {
+      "avg_reaction_ms": "number",
+      "band": "string",
+      "by_level": [
+        {
+          "attempts": "number",
+          "mitigated": "number",
+          "name": "string",
+          "risks": [
+            {
+              "category": "string",
+              "is_mitigated": "boolean",
+              "mistakes_count": "number",
+              "reaction_time_ms": "number",
+              "recorded_at": "date",
+              "risk_id": "string",
+              "risk_name": "string",
+            },
+          ],
+          "total": "number",
+        },
+      ],
+      "dominant_style": "string",
+      "joined_at": "date",
+      "level_attempts": "number",
+      "mistakes_total": "number",
+      "mitigated": "number",
+      "organization": "string",
+      "percentage": "number",
+      "risks": [
+        {
+          "avg_reaction_ms": "number",
+          "category": "string",
+          "failed": "number",
+          "last_recorded_at": "date",
+          "last_result": "string",
+          "level_name": "string",
+          "mistakes_total": "number",
+          "mitigated": "number",
+          "mitigation_rate": "number",
+          "results": "number",
+          "risk_id": "string",
+          "risk_name": "string",
+        },
+      ],
+      "telemetry": {
+        "abandoned": "number",
+        "attempts": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "failed": "number",
+        "journeys": {
+          "level1": [
+            {
+              "attempt_number": "number",
+              "duration_ms": "number",
+              "fail_reason": "null | string",
+              "fail_stage": "null | string",
+              "id": "uuid",
+              "outcome": "string",
+            },
+          ],
+        },
+        "levels": [
+          {
+            "abandoned": "number",
+            "attempts": "number",
+            "attempts_until_first_completion": "number",
+            "best_time_ms": "number",
+            "completed": "number",
+            "fail_reasons": {
+              "derrumbe": "number",
+            },
+            "fail_stages": {
+              "Sostenimiento": "number",
+            },
+            "failed": "number",
+            "in_progress": "number",
+            "level_key": "string",
+            "retries": "number",
+            "total_time_ms": "number",
+          },
+        ],
+        "top_fail_reason": {
+          "count": "number",
+          "reason": "string",
+        },
+        "total_time_ms": "number",
+      },
+      "total_attempts": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "organization": {
+            "id": "uuid",
+            "name": "string",
+          },
+          "organization_id": "uuid",
+        },
+        "username": "string",
+        "varkProfile": {
+          "dominant_style": "string",
+        },
+      },
+      "weakest_risk": {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    },
+    "reading": {
+      "avg_read_ms": "null",
+      "group_avg_read_ms": "null",
+      "panels": "number",
+    },
+    "session": {
+      "code": "string",
+      "ended_at": "null",
+      "id": "uuid",
+      "is_free_play": "boolean",
+      "name": "string",
+      "started_at": "date",
+      "status": "string",
+    },
+    "summary_counters": {
+      "device_powered_on": "number",
+      "lantern_switched_on": "number",
+    },
+    "user": {
+      "age": "number",
+      "cedula": "string",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/:id/progress 1`] = `
+{
+  "body": {
+    "participants": [
+      {
+        "avg_reaction_ms": "number",
+        "dominant_style": "string",
+        "level_attempts": "number",
+        "mitigated": "number",
+        "percentage": "number",
+        "progress": [
+          {
+            "attempt_id": "uuid",
+            "detail": "null",
+            "id": "uuid",
+            "is_mitigated": "boolean",
+            "mistakes_count": "number",
+            "reaction_time_ms": "number",
+            "recorded_at": "date",
+            "risk": {
+              "category": "string",
+              "id": "string",
+              "level": {
+                "id": "number",
+                "name": "string",
+              },
+              "level_id": "number",
+              "name": "string",
+            },
+            "risk_id": "string",
+            "session_id": "uuid",
+            "user_id": "uuid",
+          },
+        ],
+        "total_attempts": "number",
+        "user": {
+          "cedula": "string",
+          "first_name": "string",
+          "id": "uuid",
+          "last_name": "string",
+          "username": "string",
+          "varkProfile": {
+            "dominant_style": "string",
+          },
+        },
+      },
+    ],
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user": {
+            "cedula": "string",
+            "first_name": "string",
+            "id": "uuid",
+            "last_name": "string",
+            "username": "string",
+            "varkProfile": {
+              "dominant_style": "string",
+            },
+          },
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/:id/progress/admin 1`] = `
+{
+  "body": {
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "levels": [
+      {
+        "abandoned": "number",
+        "attempts": "number",
+        "attempts_until_first_completion": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "fail_reasons": {
+          "derrumbe": "absent | number",
+        },
+        "fail_stages": {
+          "Sostenimiento": "absent | number",
+        },
+        "failed": "number",
+        "in_progress": "number",
+        "level_key": "string",
+        "retries": "number",
+        "total_time_ms": "number",
+      },
+    ],
+    "participants": [
+      {
+        "avg_reaction_ms": "number",
+        "band": "string",
+        "by_level": [
+          {
+            "attempts": "number",
+            "mitigated": "number",
+            "name": "string",
+            "risks": [
+              {
+                "category": "string",
+                "is_mitigated": "boolean",
+                "mistakes_count": "number",
+                "reaction_time_ms": "number",
+                "recorded_at": "date",
+                "risk_id": "string",
+                "risk_name": "string",
+              },
+            ],
+            "total": "number",
+          },
+        ],
+        "dominant_style": "string",
+        "joined_at": "date",
+        "level_attempts": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "organization": "string",
+        "percentage": "number",
+        "risks": [
+          {
+            "avg_reaction_ms": "number",
+            "category": "string",
+            "failed": "number",
+            "last_recorded_at": "date",
+            "last_result": "string",
+            "level_name": "string",
+            "mistakes_total": "number",
+            "mitigated": "number",
+            "mitigation_rate": "number",
+            "results": "number",
+            "risk_id": "string",
+            "risk_name": "string",
+          },
+        ],
+        "telemetry": {
+          "abandoned": "number",
+          "attempts": "number",
+          "best_time_ms": "number",
+          "completed": "number",
+          "failed": "number",
+          "journeys": {
+            "level1": ""absent" | [{"attempt_number":"number","duration_ms":"number","fail_reason":"null | string","fail_stage":"null | string","id":"uuid","outcome":"string"}]",
+            "level2": ""absent" | [{"attempt_number":"number","duration_ms":"number","fail_reason":"null","fail_stage":"null","id":"uuid","outcome":"string"}]",
+          },
+          "levels": [
+            {
+              "abandoned": "number",
+              "attempts": "number",
+              "attempts_until_first_completion": "number",
+              "best_time_ms": "number",
+              "completed": "number",
+              "fail_reasons": {
+                "derrumbe": "absent | number",
+              },
+              "fail_stages": {
+                "Sostenimiento": "absent | number",
+              },
+              "failed": "number",
+              "in_progress": "number",
+              "level_key": "string",
+              "retries": "number",
+              "total_time_ms": "number",
+            },
+          ],
+          "top_fail_reason": ""null" | {"count":"number","reason":"string"}",
+          "total_time_ms": "number",
+        },
+        "total_attempts": "number",
+        "user": {
+          "cedula": "string",
+          "first_name": "string",
+          "id": "uuid",
+          "last_name": "string",
+          "profile": {
+            "organization": {
+              "id": "uuid",
+              "name": "string",
+            },
+            "organization_id": "uuid",
+          },
+          "username": "string",
+          "varkProfile": {
+            "dominant_style": "string",
+          },
+        },
+        "weakest_risk": {
+          "avg_reaction_ms": "number",
+          "category": "string",
+          "failed": "number",
+          "last_recorded_at": "date",
+          "last_result": "string",
+          "level_name": "string",
+          "mistakes_total": "number",
+          "mitigated": "number",
+          "mitigation_rate": "number",
+          "results": "number",
+          "risk_id": "string",
+          "risk_name": "string",
+        },
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": {
+        "email": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "department": "string",
+        "id": "uuid",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user": {
+            "cedula": "string",
+            "first_name": "string",
+            "id": "uuid",
+            "last_name": "string",
+            "profile": {
+              "organization": {
+                "id": "uuid",
+                "name": "string",
+              },
+              "organization_id": "uuid",
+            },
+            "username": "string",
+            "varkProfile": {
+              "dominant_style": "string",
+            },
+          },
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+    "summary": {
+      "avg_percentage": "number",
+      "avg_reaction_ms": "number",
+      "bands": {
+        "destacado": "number",
+        "en_progreso": "number",
+        "refuerzo": "number",
+        "sin_datos": "number",
+      },
+      "completion_rate": "number",
+      "level_attempts": "number",
+      "level_completed": "number",
+      "level_failed": "number",
+      "participants": "number",
+      "risk_mitigated": "number",
+      "risk_results": "number",
+      "with_data": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/all 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/by-location?department 1`] = `
+{
+  "body": [
+    {
+      "code": "null | string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor": ""null" | {"cedula":"string","first_name":"string","id":"uuid","last_name":"string"}",
+      "instructor_id": "null | uuid",
+      "is_free_play": "boolean",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/code/:code 1`] = `
+{
+  "body": {
+    "code": "string",
+    "id": "uuid",
+    "instructor": {
+      "first_name": "string",
+      "last_name": "string",
+    },
+    "name": "string",
+    "status": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/sessions/mine 1`] = `
+{
+  "body": [
+    {
+      "code": "null | string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor_id": "null | uuid",
+      "is_free_play": "boolean",
+      "location_id": "uuid",
+      "name": "string",
+      "participants": [
+        {
+          "id": "uuid",
+          "joined_at": "date",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "started_at": "date",
+      "status": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/telemetry/attempts/:id 1`] = `
+{
+  "body": {
+    "attempt": {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null",
+      "fail_risk_id": "null",
+      "fail_stage": "null",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "riskResults": [
+        {
+          "attempt_id": "uuid",
+          "detail": "null",
+          "id": "uuid",
+          "is_mitigated": "boolean",
+          "mistakes_count": "number",
+          "reaction_time_ms": "number",
+          "recorded_at": "date",
+          "risk": {
+            "category": "string",
+            "id": "string",
+            "level_id": "number",
+            "name": "string",
+          },
+          "risk_id": "string",
+          "session_id": "uuid",
+          "user_id": "uuid",
+        },
+      ],
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user": {
+        "cedula": "string",
+        "id": "uuid",
+        "username": "string",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+    "events": [
+      {
+        "attempt_id": "uuid",
+        "created_at": "date",
+        "event_type": "string",
+        "fatigue": "null | number",
+        "health": "null | number",
+        "id": "string",
+        "payload": ""null" | {"read_ms":"number"}",
+        "pos_x": "null | number",
+        "risk_id": "null | string",
+        "stage": "null | string",
+        "t_ms": "number",
+        "user_id": "uuid",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/telemetry/me/attempts 1`] = `
+{
+  "body": [],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/telemetry/overview 1`] = `
+{
+  "body": {
+    "event_counts": [
+      {
+        "count": "number",
+        "event_type": "string",
+      },
+    ],
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_risk_id": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "gas_brands": [
+      {
+        "attempts": "number",
+        "calibrated": "number",
+        "gas_brand": "string",
+      },
+    ],
+    "levels": [
+      {
+        "avg_duration_ms": "number",
+        "count": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "players": "number",
+      },
+    ],
+    "retries": [
+      {
+        "avg_attempt_number": "number",
+        "level_key": "string",
+        "max_attempt_number": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/telemetry/overview?session_id 1`] = `
+{
+  "body": {
+    "event_counts": [
+      {
+        "count": "number",
+        "event_type": "string",
+      },
+    ],
+    "fail_reasons": [
+      {
+        "count": "number",
+        "fail_reason": "string",
+        "fail_risk_id": "string",
+        "fail_stage": "string",
+        "level_key": "string",
+      },
+    ],
+    "gas_brands": [
+      {
+        "attempts": "number",
+        "calibrated": "number",
+        "gas_brand": "string",
+      },
+    ],
+    "levels": [
+      {
+        "avg_duration_ms": "number",
+        "count": "number",
+        "level_key": "string",
+        "outcome": "string",
+        "players": "number",
+      },
+    ],
+    "retries": [
+      {
+        "avg_attempt_number": "number",
+        "level_key": "string",
+        "max_attempt_number": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "fail_rate": "number",
+        "failed": "number",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/telemetry/users/:userId/attempts 1`] = `
+{
+  "body": [
+    {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null | string",
+      "fail_risk_id": "null | string",
+      "fail_stage": "null | string",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/telemetry/users/:userId/summary 1`] = `
+{
+  "body": {
+    "event_counts": {
+      "level_started": "number",
+      "risk_panel_shown": "number",
+    },
+    "levels": [
+      {
+        "abandoned": "number",
+        "attempts": "number",
+        "attempts_until_first_completion": "number",
+        "best_time_ms": "number",
+        "completed": "number",
+        "fail_reasons": {
+          "derrumbe": "number",
+        },
+        "fail_stages": {
+          "Sostenimiento": "number",
+        },
+        "failed": "number",
+        "in_progress": "number",
+        "level_key": "string",
+        "retries": "number",
+        "total_time_ms": "number",
+      },
+    ],
+    "risks": [
+      {
+        "avg_reaction_ms": "number",
+        "category": "string",
+        "failed": "number",
+        "last_recorded_at": "date",
+        "last_result": "string",
+        "level_name": "string",
+        "mistakes_total": "number",
+        "mitigated": "number",
+        "mitigation_rate": "number",
+        "results": "number",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+    "total_attempts": "number",
+    "user_id": "uuid",
+    "weakest_risk": {
+      "avg_reaction_ms": "number",
+      "category": "string",
+      "failed": "number",
+      "last_recorded_at": "date",
+      "last_result": "string",
+      "level_name": "string",
+      "mistakes_total": "number",
+      "mitigated": "number",
+      "mitigation_rate": "number",
+      "results": "number",
+      "risk_id": "string",
+      "risk_name": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/users 1`] = `
+{
+  "body": [
+    {
+      "age": "null | number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null | string",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": ""null" | null | {"country":"string","department":"string","id":"uuid","is_active":"boolean","municipality":"string"}",
+        "location_id": "null | uuid",
+        "organization": ""null" | null | {"created_at":"date","id":"uuid","is_active":"boolean","name":"string","type":"string"}",
+        "organization_id": "null | uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": ""null" | null | {"auditory_score":"number","dominant_style":"string","reading_score":"number","visual_score":"number"}",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/users/:id 1`] = `
+{
+  "body": {
+    "age": "number",
+    "cedula": "string",
+    "created_at": "date",
+    "email": "null",
+    "first_name": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "last_name": "string",
+    "profile": {
+      "id": "uuid",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "location_id": "uuid",
+      "organization": {
+        "created_at": "date",
+        "id": "uuid",
+        "is_active": "boolean",
+        "name": "string",
+        "type": "string",
+      },
+      "organization_id": "uuid",
+      "user_id": "uuid",
+    },
+    "role": "string",
+    "updated_at": "date",
+    "username": "string",
+    "varkProfile": {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "reading_score": "number",
+      "visual_score": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/users/:id/sessions 1`] = `
+{
+  "body": [
+    {
+      "id": "uuid",
+      "joined_at": "date",
+      "session": {
+        "code": "string",
+        "created_at": "date",
+        "ended_at": "null",
+        "id": "uuid",
+        "name": "string",
+        "started_at": "date",
+        "status": "string",
+      },
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/users?role=player 1`] = `
+{
+  "body": [
+    {
+      "age": "number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/vark/all 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization": {
+            "created_at": "date",
+            "id": "uuid",
+            "is_active": "boolean",
+            "name": "string",
+            "type": "string",
+          },
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+        "role": "string",
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/vark/by-location?department 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/vark/by-style/:style 1`] = `
+{
+  "body": [
+    {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "id": "uuid",
+      "reading_score": "number",
+      "user": {
+        "cedula": "string",
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+        "profile": {
+          "id": "uuid",
+          "location": {
+            "country": "string",
+            "department": "string",
+            "id": "uuid",
+            "is_active": "boolean",
+            "municipality": "string",
+          },
+          "location_id": "uuid",
+          "organization": {
+            "created_at": "date",
+            "id": "uuid",
+            "is_active": "boolean",
+            "name": "string",
+            "type": "string",
+          },
+          "organization_id": "uuid",
+          "user_id": "uuid",
+        },
+      },
+      "user_id": "uuid",
+      "visual_score": "number",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/vark/me 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /api/visits/stats 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como instructor > /health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "timestamp": "date",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > / 1`] = `
+{
+  "body": undefined,
+  "status": 200,
+  "type": "text/html",
+}
+`;
+
+exports[`v1 GET como jugador > /api/analytics/location?department 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/analytics/map 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/analytics/organization/:orgId 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/analytics/overview 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/deploy/status 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/deploy/versions 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "uptime_s": "number",
+    "version": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/health/details 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/levels 1`] = `
+{
+  "body": [
+    {
+      "id": "number",
+      "name": "string",
+      "risks": [
+        {
+          "category": "string",
+          "id": "string",
+          "level_id": "number",
+          "name": "string",
+        },
+      ],
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/levels/:id (no existe) 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/levels/:id 1`] = `
+{
+  "body": {
+    "id": "number",
+    "name": "string",
+    "risks": [
+      {
+        "category": "string",
+        "id": "string",
+        "level_id": "number",
+        "name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/locations/:id 1`] = `
+{
+  "body": {
+    "country": "string",
+    "department": "string",
+    "id": "uuid",
+    "is_active": "boolean",
+    "municipality": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/locations/search?municipality 1`] = `
+{
+  "body": [
+    {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/no-existe 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/organizations 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/organizations/:id 1`] = `
+{
+  "body": {
+    "created_at": "date",
+    "id": "uuid",
+    "is_active": "boolean",
+    "members": [
+      {
+        "id": "uuid",
+        "location_id": "uuid",
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+    ],
+    "name": "string",
+    "type": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/organizations/search?name 1`] = `
+{
+  "body": [
+    {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/organizations/types 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/progress/full 1`] = `
+{
+  "body": {
+    "progress": [
+      {
+        "attempt_id": "uuid",
+        "detail": "null",
+        "id": "uuid",
+        "is_mitigated": "boolean",
+        "mistakes_count": "number",
+        "reaction_time_ms": "number",
+        "recorded_at": "date",
+        "risk": {
+          "category": "string",
+          "id": "string",
+          "level": {
+            "id": "number",
+            "name": "string",
+          },
+          "level_id": "number",
+          "name": "string",
+        },
+        "risk_id": "string",
+        "session_id": "uuid",
+        "user_id": "uuid",
+      },
+    ],
+    "total_attempts": "number",
+    "user_id": "uuid",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/progress/level/:levelId 1`] = `
+{
+  "body": {
+    "attempts": "number",
+    "completion": "string",
+    "level_id": "string",
+    "percentage": "number",
+    "risks": [
+      {
+        "category": "string",
+        "last_mistakes": "number",
+        "last_reaction_ms": "number",
+        "mitigated": "boolean",
+        "risk_id": "string",
+        "risk_name": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/progress/me/:sessionId 1`] = `
+{
+  "body": [
+    {
+      "attempt_id": "uuid",
+      "detail": "null",
+      "id": "uuid",
+      "is_mitigated": "boolean",
+      "mistakes_count": "number",
+      "reaction_time_ms": "number",
+      "recorded_at": "date",
+      "risk": {
+        "category": "string",
+        "id": "string",
+        "level": {
+          "id": "number",
+          "name": "string",
+        },
+        "level_id": "number",
+        "name": "string",
+      },
+      "risk_id": "string",
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/progress/user/:userId/history 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/:id/participants/:userId/analysis 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/:id/progress 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/:id/progress/admin 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/all 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/by-location?department 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/code/:code 1`] = `
+{
+  "body": {
+    "code": "string",
+    "id": "uuid",
+    "instructor": {
+      "first_name": "string",
+      "last_name": "string",
+    },
+    "name": "string",
+    "status": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/sessions/mine 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/telemetry/attempts/:id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/telemetry/me/attempts 1`] = `
+{
+  "body": [
+    {
+      "attempt_number": "number",
+      "device_calibrated": "boolean",
+      "duration_ms": "number",
+      "ended_at": "date",
+      "fail_reason": "null | string",
+      "fail_risk_id": "null | string",
+      "fail_stage": "null | string",
+      "final_health": "number",
+      "game_version": "string",
+      "gas_brand": "string",
+      "id": "uuid",
+      "level": {
+        "id": "number",
+        "name": "string",
+      },
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": {
+        "device_powered_on": "number",
+        "lantern_switched_on": "number",
+      },
+      "user_id": "uuid",
+      "vark_style": "string",
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/telemetry/overview 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/telemetry/overview?session_id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/telemetry/users/:userId/attempts 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/telemetry/users/:userId/summary 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/users 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/users/:id 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/users/:id/sessions 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/users?role=player 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/vark/all 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/vark/by-location?department 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/vark/by-style/:style 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/vark/me 1`] = `
+{
+  "body": {
+    "auditory_score": "number",
+    "dominant_style": "string",
+    "id": "uuid",
+    "reading_score": "number",
+    "user_id": "uuid",
+    "visual_score": "number",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /api/visits/stats 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`v1 GET como jugador > /health 1`] = `
+{
+  "body": {
+    "status": "string",
+    "timestamp": "date",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
