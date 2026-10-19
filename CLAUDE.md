@@ -59,7 +59,11 @@ Behavior changes in identity (contract unchanged): an inactive staff user with a
 "Credenciales inválidas" (the password is checked before revealing "Usuario inactivo"); the bulk-import preview
 looks up registered cédulas in one query; confirm resolves organization/location first and creates user + profile
 in one transaction (no user without profile if a later step fails).
-Next: deployment → learning → sessions.
+**deployment** is migrated too: `build.ts` (pure WebGL inspection and `headersFor`), state rules in `domain.ts`,
+`adapters.ts` over `config/deployStorage.js` + adm-zip + HMAC + the in-memory publish queue, `playLocal.ts` for
+`/play-local`. New error kinds `too_large` (413) and `unavailable` (503). Contract tests in `v1.deploy.test.js` run the
+whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
+Next: learning → sessions.
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
@@ -326,7 +330,7 @@ every `router.get` that allows `admin` also allows `developer`; all writes stay 
 `dbMaintenance.ensureEnumValues()` **before** `sync` (alter does not add ENUM values reliably).
 Deploy/visits/health endpoints allow `admin` and `developer`.
 
-### Game deployment (`/api/deploy/*`, `deploy.service.js`, admin + developer)
+### Game deployment (`/api/deploy/*`, `src/contexts/deployment/`, admin + developer)
 
 `GameVersion` (status `uploading → processing → ready | failed`) + `GameSetting` key
 `active_version_id` (single pointer, changed in a transaction). Flow: `POST /versions` creates the row and

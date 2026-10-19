@@ -2,7 +2,7 @@ const sequelize = require('./config/database');
 const app = require('./app');
 const { seedMunicipios } = require('./scripts/seedMunicipios');
 const { migrate } = require('./infrastructure/migrations');
-const { recoverInterrupted } = require('./services/deploy.service');
+const { recoverInterrupted } = require('./contexts/deployment');
 
 // Esquema + datos base que la API necesita antes de atender. Las pruebas lo reutilizan sobre su BD.
 const prepareDatabase = async () => {

@@ -6,7 +6,7 @@ const compression = require('compression');
 require('./models');
 const { globalLimiter, authLimiter, loginCedulaLimiter, loginIpFailLimiter } = require('./middleware/rateLimit.middleware');
 const observability = require('./contexts/observability');
-const { getPublished } = require('./config/deployStorage');
+const deployment = require('./contexts/deployment');
 
 // La app Express sin arrancar el servidor ni tocar el esquema: la usan server.js y las pruebas (supertest)
 const app = express();
@@ -20,7 +20,7 @@ app.set('trust proxy', 1);
 const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(o => o && o !== '*');
 // Sin R2 (desarrollo) la API sirve el juego publicado como lo haría el Worker. Va antes de helmet:
 // su CSP bloquea el wasm y los workers de Unity.
-if (getPublished().driver === 'local') app.use('/play-local', require('./routes/playLocal.routes'));
+if (deployment.isLocalPublishing()) app.use('/play-local', deployment.playLocalRoutes());
 
 app.use(helmet());
 app.use(cors({ origin: origins?.length ? origins : '*' }));
@@ -51,7 +51,7 @@ app.use('/api/telemetry', require('./routes/telemetry.routes'));
 app.use('/api/locations',     require('./contexts/catalog').locationRoutesV1);
 app.use('/api/organizations', require('./contexts/catalog').organizationRoutesV1);
 app.use('/api/health',    observability.healthRoutesV1);
-app.use('/api/deploy',    require('./routes/deploy.routes'));
+app.use('/api/deploy',    deployment.deployRoutesV1);
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
