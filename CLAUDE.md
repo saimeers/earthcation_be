@@ -44,10 +44,11 @@ npm test           # builds, then vitest: unit + v1 contract tests against a dis
 (`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
 contract snapshots must stay identical in every migration PR.
 
-Migrated: **catalog** (organizations, locations; the old routes/controllers/services were deleted).
+Migrated: **catalog** (organizations, locations) and **vark** (scoring is the pure `scoreVark`; the panel
+listings are a v1 read model of raw rows). Their old routes/controllers/services/utils were deleted.
 Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
 (`name`, `type` / `municipality`, `department`, `country`); before, the whole body reached the model.
-Next: vark → observability → identity → deployment → learning → sessions.
+Next: observability → identity → deployment → learning → sessions.
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
