@@ -5,8 +5,7 @@ const morgan    = require('morgan');
 const compression = require('compression');
 require('./models');
 const { globalLimiter, authLimiter, loginCedulaLimiter, loginIpFailLimiter } = require('./middleware/rateLimit.middleware');
-const { metrics } = require('./middleware/metrics.middleware');
-const { getHealth } = require('./services/health.service');
+const observability = require('./contexts/observability');
 const { getPublished } = require('./config/deployStorage');
 
 // La app Express sin arrancar el servidor ni tocar el esquema: la usan server.js y las pruebas (supertest)
@@ -28,16 +27,13 @@ app.use(cors({ origin: origins?.length ? origins : '*' }));
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'test') app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));
-app.use(metrics);
+app.use(observability.metrics);
 
 // Estado público mínimo (para monitores externos y Railway); el detalle va en /api/health/details
-app.get('/api/health', async (_, res) => {
-  const h = await getHealth();
-  res.status(h.status === 'ok' ? 200 : 503).json({ status: h.status, version: h.version, uptime_s: h.uptime_s });
-});
+app.get('/api/health', observability.publicHealth);
 
 // Antes del límite global: todas las visitas llegan desde las IP del Worker de Cloudflare
-app.use('/api/visits', require('./routes/visit.routes'));
+app.use('/api/visits', observability.visitRoutesV1);
 
 app.use('/api', globalLimiter);
 app.use('/api/auth/login', authLimiter, loginIpFailLimiter, loginCedulaLimiter);
@@ -54,7 +50,7 @@ app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/telemetry', require('./routes/telemetry.routes'));
 app.use('/api/locations',     require('./contexts/catalog').locationRoutesV1);
 app.use('/api/organizations', require('./contexts/catalog').organizationRoutesV1);
-app.use('/api/health',    require('./routes/health.routes'));
+app.use('/api/health',    observability.healthRoutesV1);
 app.use('/api/deploy',    require('./routes/deploy.routes'));
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
