@@ -1,0 +1,335 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`despliegue con almacenamiento local > ZIP inválido queda fallido con el motivo, se reintenta y se borra 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > ZIP inválido queda fallido con el motivo, se reintenta y se borra 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > ZIP inválido queda fallido con el motivo, se reintenta y se borra 3`] = `
+{
+  "body": {
+    "activated_at": "null",
+    "created_at": "date",
+    "error": "null",
+    "id": "uuid",
+    "label": "string",
+    "manifest": "null",
+    "notes": "string",
+    "published_at": "null",
+    "r2_prefix": "null",
+    "s3_key": "string",
+    "size_bytes": "string",
+    "status": "string",
+    "updated_at": "date",
+    "uploaded_by": "uuid",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > ZIP inválido queda fallido con el motivo, se reintenta y se borra 4`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > activar, estado y versión activa protegida 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > activar, estado y versión activa protegida 2`] = `
+{
+  "body": {
+    "message": "string",
+    "version": {
+      "activated_at": "date",
+      "created_at": "date",
+      "error": "null",
+      "id": "uuid",
+      "label": "string",
+      "manifest": {
+        "compression": "string",
+        "files": [
+          {
+            "path": "string",
+            "size": "number",
+          },
+        ],
+        "product_version": "string",
+        "publish_ms": "number",
+        "root": "string",
+        "total_bytes": "number",
+        "warnings": [],
+      },
+      "notes": "string",
+      "published_at": "date",
+      "r2_prefix": "string",
+      "s3_key": "string",
+      "size_bytes": "string",
+      "status": "string",
+      "updated_at": "date",
+      "uploaded_by": "uuid",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > activar, estado y versión activa protegida 3`] = `
+{
+  "body": {
+    "active": {
+      "activated_at": "date",
+      "id": "uuid",
+      "label": "string",
+      "product_version": "string",
+    },
+    "max_mb": "number",
+    "play_url": "null",
+    "storage": {
+      "originals": "string",
+      "published": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > activar, estado y versión activa protegida 4`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > crear versión, subir el ZIP y publicar 1`] = `
+{
+  "body": {
+    "upload": {
+      "headers": {
+        "Content-Type": "string",
+      },
+      "method": "string",
+      "mode": "string",
+      "url": "string",
+    },
+    "version": {
+      "activated_at": "null",
+      "created_at": "date",
+      "error": "null",
+      "id": "uuid",
+      "label": "string",
+      "manifest": "null",
+      "notes": "string",
+      "published_at": "null",
+      "r2_prefix": "null",
+      "s3_key": "string",
+      "size_bytes": "string",
+      "status": "string",
+      "updated_at": "date",
+      "uploaded_by": "uuid",
+    },
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > crear versión, subir el ZIP y publicar 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > crear versión, subir el ZIP y publicar 3`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > crear versión, subir el ZIP y publicar 4`] = `
+{
+  "body": {
+    "activated_at": "null",
+    "created_at": "date",
+    "error": "null",
+    "id": "uuid",
+    "label": "string",
+    "manifest": "null",
+    "notes": "string",
+    "published_at": "null",
+    "r2_prefix": "null",
+    "s3_key": "string",
+    "size_bytes": "string",
+    "status": "string",
+    "updated_at": "date",
+    "uploaded_by": "uuid",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > crear versión, subir el ZIP y publicar 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > crear versión, subir el ZIP y publicar 6`] = `
+{
+  "body": [
+    {
+      "activated_at": "null",
+      "created_at": "date",
+      "error": "null",
+      "id": "uuid",
+      "is_active": "boolean",
+      "label": "string",
+      "manifest": {
+        "compression": "string",
+        "files": [
+          {
+            "path": "string",
+            "size": "number",
+          },
+        ],
+        "product_version": "string",
+        "publish_ms": "number",
+        "root": "string",
+        "total_bytes": "number",
+        "warnings": [],
+      },
+      "notes": "string",
+      "published_at": "date",
+      "r2_prefix": "string",
+      "s3_key": "string",
+      "size_bytes": "string",
+      "status": "string",
+      "updated_at": "date",
+      "uploaded_by": "uuid",
+      "uploader": {
+        "first_name": "string",
+        "id": "uuid",
+        "last_name": "string",
+      },
+    },
+  ],
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > validaciones al crear y subir 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 413,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > validaciones al crear y subir 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > validaciones al crear y subir 3`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > validaciones al crear y subir 4`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > validaciones al crear y subir 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > validaciones al crear y subir 6`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`despliegue con almacenamiento local > vista previa servida por /play-local 1`] = `
+{
+  "body": {
+    "expires_in": "number",
+    "url": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
