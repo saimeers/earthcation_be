@@ -1,0 +1,1233 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`auth > forgot-password responde igual exista o no 1`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > login con cédula inexistente 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > login de admin con contraseña 1`] = `
+{
+  "body": {
+    "message": "string",
+    "token": "string",
+    "user": {
+      "cedula": "string",
+      "dominant_style": "null",
+      "email": "string",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "location": "null",
+      "organization": "null",
+      "role": "string",
+      "username": "string",
+      "vark_completed": "boolean",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > login de admin con contraseña errada 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > login de admin sin contraseña 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > login de jugador solo con cédula 1`] = `
+{
+  "body": {
+    "message": "string",
+    "token": "string",
+    "user": {
+      "cedula": "string",
+      "dominant_style": "string",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "location": {
+        "country": "string",
+        "department": "string",
+        "id": "uuid",
+        "is_active": "boolean",
+        "municipality": "string",
+      },
+      "organization": {
+        "created_at": "date",
+        "id": "uuid",
+        "is_active": "boolean",
+        "name": "string",
+        "type": "string",
+      },
+      "role": "string",
+      "username": "string",
+      "vark_completed": "boolean",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > login sin cédula 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > register ya no existe 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`auth > reset-password con token inválido 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > admin cambia organización, localidad y rol; los vacíos quedan en null 1`] = `
+{
+  "body": {
+    "message": "string",
+    "user": {
+      "age": "null",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "null",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": "null",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 3`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 4`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > conflictos, permisos y no encontrados al editar 6`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > crear sin cédula ni usuario 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 1`] = `
+{
+  "body": {
+    "email_sent": "boolean",
+    "message": "string",
+    "user_id": "uuid",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 2`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 3`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > instructor nuevo: correo de bienvenida, define su contraseña y entra 4`] = `
+{
+  "body": {
+    "message": "string",
+    "token": "string",
+    "user": {
+      "cedula": "string",
+      "dominant_style": "null",
+      "email": "string",
+      "first_name": "string",
+      "id": "uuid",
+      "last_name": "string",
+      "location": "null",
+      "organization": "null",
+      "role": "string",
+      "username": "string",
+      "vark_completed": "boolean",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > olvidé mi contraseña con correo registrado manda token 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > olvidé mi contraseña con correo registrado manda token 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`identidad: alta de staff, restablecer contraseña y conflictos > usuario deshabilitado no entra 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > confirm crea, reutiliza catálogo y reporta omitidos 1`] = `
+{
+  "body": {
+    "created": [
+      {
+        "cedula": "string",
+        "location_created": "null | string",
+        "location_no_match": "null | string",
+        "organization_created": "null | string",
+        "user_id": "uuid",
+      },
+    ],
+    "errors": [],
+    "skipped": [
+      {
+        "cedula": "string",
+        "reason": "string",
+      },
+    ],
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > parse de un archivo sin el formato ANM 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > parse marca nuevos, repetidos en archivo, ya registrados y sin nombre 1`] = `
+{
+  "body": {
+    "rows": [
+      {
+        "age": "null | number",
+        "cedula": "string",
+        "email": "string",
+        "first_name": "string",
+        "last_name": "string",
+        "location_department": "string",
+        "location_municipality": "string",
+        "message": "string",
+        "organization_name": "string",
+        "status": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva con datos > parse sin columna de nombre 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > activar versión inexistente 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > confirm sin filas 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > crear versión como jugador 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > crear versión sin datos 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > ingesta de visitas con secreto y estadísticas 1`] = `
+{
+  "body": {
+    "browsers": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "cities": [
+      {
+        "city": "string",
+        "count": "number",
+        "country": "string",
+        "lat": "number",
+        "lng": "number",
+        "region": "string",
+      },
+    ],
+    "countries": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "days": "number",
+    "devices": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "logins": {
+      "by_role": [
+        {
+          "count": "number",
+          "role": "string",
+          "users": "number",
+        },
+      ],
+      "devices": [],
+      "per_day": [
+        {
+          "count": "number",
+          "day": "string",
+        },
+      ],
+      "regions": [],
+    },
+    "os": [
+      {
+        "count": "number",
+        "key": "string",
+      },
+    ],
+    "per_day": [
+      {
+        "day": "string",
+        "unique": "number",
+        "visits": "number",
+      },
+    ],
+    "regions": [
+      {
+        "count": "number",
+        "country": "string",
+        "region": "string",
+      },
+    ],
+    "since": "date",
+    "totals": {
+      "bots": "number",
+      "unique": "number",
+      "via_qr": "number",
+      "visitors": "number",
+      "visits": "number",
+    },
+    "versions": [
+      {
+        "count": "number",
+        "id": "uuid",
+        "label": "string",
+      },
+    ],
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > ingesta de visitas sin secreto 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > parse como jugador 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`importación masiva, despliegue y visitas > parse sin archivo 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > VARK 1`] = `
+{
+  "body": {
+    "message": "string",
+    "result": {
+      "auditory_score": "number",
+      "dominant_style": "string",
+      "reading_score": "number",
+      "visual_score": "number",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > eventos vacíos 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > flujo completo de un intento 1`] = `
+{
+  "body": {
+    "attempt": {
+      "attempt_number": "number",
+      "device_calibrated": "null",
+      "duration_ms": "null",
+      "ended_at": "null",
+      "fail_reason": "null",
+      "fail_risk_id": "null",
+      "fail_stage": "null",
+      "final_health": "null",
+      "game_version": "null",
+      "gas_brand": "null",
+      "id": "uuid",
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": "null",
+      "user_id": "uuid",
+      "vark_style": "null",
+    },
+    "message": "string",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > flujo completo de un intento 2`] = `
+{
+  "body": {
+    "message": "string",
+    "saved": "number",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > flujo completo de un intento 3`] = `
+{
+  "body": {
+    "message": "string",
+    "progress": {
+      "attempt_id": "uuid",
+      "detail": "null",
+      "id": "uuid",
+      "is_mitigated": "boolean",
+      "mistakes_count": "number",
+      "reaction_time_ms": "null",
+      "recorded_at": "date",
+      "risk_id": "string",
+      "session_id": "uuid",
+      "user_id": "uuid",
+    },
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > flujo completo de un intento 4`] = `
+{
+  "body": {
+    "attempt": {
+      "attempt_number": "number",
+      "device_calibrated": "null",
+      "duration_ms": "null",
+      "ended_at": "date",
+      "fail_reason": "null",
+      "fail_risk_id": "null",
+      "fail_stage": "null",
+      "final_health": "null",
+      "game_version": "null",
+      "gas_brand": "null",
+      "id": "uuid",
+      "level_id": "number",
+      "level_key": "string",
+      "outcome": "string",
+      "session_id": "uuid",
+      "started_at": "date",
+      "summary": "null",
+      "user_id": "uuid",
+      "vark_style": "null",
+    },
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > flujo completo de un intento 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > flujo completo de un intento 6`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > intento sin level_key 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`juego: intentos, eventos, progreso, VARK > progreso con riesgo inexistente 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear organización como admin 1`] = `
+{
+  "body": {
+    "data": {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+    "message": "string",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear organización como instructor 1`] = `
+{
+  "body": {
+    "data": {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+    "message": "string",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear organización como jugador 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear, editar, deshabilitar y habilitar localidad 1`] = `
+{
+  "body": {
+    "data": {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+    "message": "string",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear, editar, deshabilitar y habilitar localidad 2`] = `
+{
+  "body": {
+    "data": {
+      "country": "string",
+      "department": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "municipality": "string",
+    },
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear, editar, deshabilitar y habilitar localidad 3`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear, editar, deshabilitar y habilitar localidad 4`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > crear, editar, deshabilitar y habilitar localidad 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > editar, deshabilitar y habilitar organización 1`] = `
+{
+  "body": {
+    "data": {
+      "created_at": "date",
+      "id": "uuid",
+      "is_active": "boolean",
+      "name": "string",
+      "type": "string",
+    },
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > editar, deshabilitar y habilitar organización 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > editar, deshabilitar y habilitar organización 3`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > editar, deshabilitar y habilitar organización 4`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`organizaciones y localidades > organización con nombre repetido 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > crear como jugador y como desarrollador 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > crear como jugador y como desarrollador 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > respuesta de creación 1`] = `
+{
+  "body": {
+    "message": "string",
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location_id": "uuid",
+      "name": "string",
+      "started_at": "null",
+      "status": "string",
+    },
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse a sala en espera, iniciar, terminar 1`] = `
+{
+  "body": {
+    "joined": "boolean",
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location_id": "uuid",
+      "name": "string",
+      "started_at": "null",
+      "status": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse a sala en espera, iniciar, terminar 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse a sala en espera, iniciar, terminar 3`] = `
+{
+  "body": {
+    "message": "string",
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "null",
+      "id": "uuid",
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location_id": "uuid",
+      "name": "string",
+      "started_at": "date",
+      "status": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse a sala en espera, iniciar, terminar 4`] = `
+{
+  "body": {
+    "message": "string",
+    "session": {
+      "code": "string",
+      "created_at": "date",
+      "ended_at": "date",
+      "id": "uuid",
+      "instructor_id": "uuid",
+      "is_free_play": "boolean",
+      "location_id": "uuid",
+      "name": "string",
+      "started_at": "date",
+      "status": "string",
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse a sala en espera, iniciar, terminar 5`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse con código inexistente 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`sesiones > unirse sin código 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > admin edita otro usuario 1`] = `
+{
+  "body": {
+    "message": "string",
+    "user": {
+      "age": "number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear como anonimo 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 401,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear como desarrollador 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear como instructor 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear como jugador 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear jugador como admin, luego deshabilitar y habilitar 1`] = `
+{
+  "body": {
+    "email_sent": "boolean",
+    "message": "string",
+    "user_id": "uuid",
+  },
+  "status": 201,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear jugador como admin, luego deshabilitar y habilitar 2`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear jugador como admin, luego deshabilitar y habilitar 3`] = `
+{
+  "body": {
+    "message": "string",
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > crear jugador como admin, luego deshabilitar y habilitar 4`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 403,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > cédula repetida 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 409,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > instructor sin correo no se crea 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`usuarios > un jugador que se edita a sí mismo no cambia de rol ni de cédula 1`] = `
+{
+  "body": {
+    "message": "string",
+    "user": {
+      "age": "number",
+      "cedula": "string",
+      "created_at": "date",
+      "email": "null",
+      "first_name": "string",
+      "id": "uuid",
+      "is_active": "boolean",
+      "last_name": "string",
+      "profile": {
+        "id": "uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
+        "user_id": "uuid",
+      },
+      "role": "string",
+      "updated_at": "date",
+      "username": "string",
+      "varkProfile": {
+        "auditory_score": "number",
+        "dominant_style": "string",
+        "reading_score": "number",
+        "visual_score": "number",
+      },
+    },
+  },
+  "status": 200,
+  "type": "application/json",
+}
+`;
