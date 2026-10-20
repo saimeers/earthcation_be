@@ -20,3 +20,12 @@ export * from './catalog/locations/update-location/UpdateLocationCommand'
 export * from './catalog/locations/update-location/UpdateLocationUseCase'
 export * from './catalog/locations/change-location-status/ChangeLocationStatusCommand'
 export * from './catalog/locations/change-location-status/ChangeLocationStatusUseCase'
+
+// ── vark ──
+export * from './vark/results/submit-vark-test/SubmitVarkTestCommand'
+export * from './vark/results/submit-vark-test/SubmitVarkTestUseCase'
+export * from './vark/results/get-my-vark-result/GetMyVarkResultUseCase'
+export * from './vark/results/list-vark-results/ListVarkResultsUseCase'
+export * from './vark/results/list-vark-results-by-style/ListVarkResultsByStyleUseCase'
+export * from './vark/results/list-vark-results-by-place/ListVarkResultsByPlaceQuery'
+export * from './vark/results/list-vark-results-by-place/ListVarkResultsByPlaceUseCase'

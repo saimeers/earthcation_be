@@ -48,7 +48,11 @@ Shared pieces that arrived with it: `@earthcation/sequelize-repository` owns **a
 the connection factory and the Umzug migrations; `app-service/src/container.ts` creates the connection from
 `config/env.ts` (DB_* validated there) and `legacy/config/database.js` + `legacy/models/index.js` just re-export it.
 rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1); until identity migrates,
-the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` validates env before loading the app. Paths below that say `src/...` mean
+the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` validates env before loading the app.
+— **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
+errors, `VarkRepository` whose panel listings are the `VarkListingRow` read model of raw rows), 5 use cases in
+`usecase/src/vark/results/<case>/`, `SequelizeVarkRepository`, `VarkController` + `routes/vark.routes.ts` +
+`dto/v1/vark.ts`; mounted from `container.routes.vark`. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
 
 ### TypeScript (fase 3, 2026-10-19)
@@ -75,8 +79,7 @@ the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` 
 (`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
 contract snapshots must stay identical in every migration PR.
 
-Migrated: **catalog** (organizations, locations), **vark** (scoring is the pure `scoreVark`; the panel
-listings are a v1 read model of raw rows) and **observability** (visits, login locations, health, metrics: pure
+Migrated: **catalog** (organizations, locations), **vark** (now in the clean packages, see above) and **observability** (visits, login locations, health, metrics: pure
 `toVisit`/`loginPlace`/`parseUserAgent` and `metrics.ts#summarize`; `runtime.ts` holds the only mutable state, the
 per-minute buckets; the stats are a read model cached under namespace `visit-stats`) and **identity** (auth, users,
 bulk import: `domain.ts` field rules, `anm.ts` pure Excel reading, `places.ts` catalog matching, `bulkImport.ts`;
