@@ -42,7 +42,9 @@ describe('parseEnv', () => {
   const secret = 'a'.repeat(32)
 
   it('valores por defecto', () => {
-    expect(parseEnv({ JWT_SECRET: secret })).toEqual(ok({ JWT_SECRET: secret, PORT: 3000, NODE_ENV: 'development' }))
+    expect(parseEnv({ JWT_SECRET: secret })).toEqual(ok({
+      JWT_SECRET: secret, PORT: 3000, NODE_ENV: 'development', DB_PORT: 5432, DB_POOL_MAX: 20, DB_POOL_MIN: 2,
+    }))
   })
 
   it('JWT_SECRET corto o ausente impide arrancar', () => {

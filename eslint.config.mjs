@@ -49,6 +49,11 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
+    // Esquemas de tablas: datos declarativos, no lógica
+    files: ['infrastructure/driven-adapters/sequelize-repository/src/models/**/*.ts'],
+    rules: { 'max-lines-per-function': 'off' },
+  },
+  {
     files: [LEGACY],
     extends: [functional.configs.lite],
     rules: {

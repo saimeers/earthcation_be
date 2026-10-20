@@ -19,6 +19,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1152.0",
     "@earthcation/model": "workspace:*",
     "@earthcation/rest-api": "workspace:*",
+    "@earthcation/sequelize-repository": "workspace:*",
     "@earthcation/usecase": "workspace:*",
     "adm-zip": "^0.6.1",
     "bcryptjs": "^3.0.3",

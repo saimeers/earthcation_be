@@ -1,3 +1,22 @@
-// API pública de los casos de uso. Cada contexto se agrega aquí al migrarlo desde applications/app-service/src/legacy
-// (catalog → vark → observability → identity → deployment → learning → sessions).
-export {}
+// API pública de los casos de uso: un caso por carpeta (<contexto>/<entidad>/<caso>/XxxUseCase.ts + su Command)
+export * from './catalog/organizations/list-organizations/ListOrganizationsUseCase'
+export * from './catalog/organizations/search-organizations/SearchOrganizationsQuery'
+export * from './catalog/organizations/search-organizations/SearchOrganizationsUseCase'
+export * from './catalog/organizations/list-organization-types/ListOrganizationTypesUseCase'
+export * from './catalog/organizations/get-organization/GetOrganizationUseCase'
+export * from './catalog/organizations/create-organization/CreateOrganizationCommand'
+export * from './catalog/organizations/create-organization/CreateOrganizationUseCase'
+export * from './catalog/organizations/update-organization/UpdateOrganizationCommand'
+export * from './catalog/organizations/update-organization/UpdateOrganizationUseCase'
+export * from './catalog/organizations/change-organization-status/ChangeOrganizationStatusCommand'
+export * from './catalog/organizations/change-organization-status/ChangeOrganizationStatusUseCase'
+export * from './catalog/locations/list-locations/ListLocationsUseCase'
+export * from './catalog/locations/search-locations/SearchLocationsQuery'
+export * from './catalog/locations/search-locations/SearchLocationsUseCase'
+export * from './catalog/locations/get-location/GetLocationUseCase'
+export * from './catalog/locations/create-location/CreateLocationCommand'
+export * from './catalog/locations/create-location/CreateLocationUseCase'
+export * from './catalog/locations/update-location/UpdateLocationCommand'
+export * from './catalog/locations/update-location/UpdateLocationUseCase'
+export * from './catalog/locations/change-location-status/ChangeLocationStatusCommand'
+export * from './catalog/locations/change-location-status/ChangeLocationStatusUseCase'

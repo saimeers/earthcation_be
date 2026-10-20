@@ -1,0 +1,30 @@
+import { DataTypes, type Sequelize } from 'sequelize'
+
+export const defineUserRiskProgress = (sequelize: Sequelize) => sequelize.define('UserRiskProgress', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  is_mitigated: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  mistakes_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  reaction_time_ms: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  detail: {
+    type: DataTypes.JSONB, // contexto del resultado (etapa, causa, equipo calibrado, vida al terminar...)
+    allowNull: true,
+  }
+}, {
+  tableName: 'user_risk_progress',
+  timestamps: true,
+  createdAt: 'recorded_at',
+  updatedAt: false
+});
