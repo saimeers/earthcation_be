@@ -1,0 +1,18 @@
+{
+  // JS de v1 (src/legacy, se va vaciando contexto por contexto) y TS conviven: tsc compila ambos a dist/
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": false,
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../domain/model" },
+    { "path": "../../domain/usecase" },
+    { "path": "../../infrastructure/entry-points/rest-api" }
+  ]
+}

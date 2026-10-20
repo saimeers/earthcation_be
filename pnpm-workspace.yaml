@@ -1,0 +1,7 @@
+# Cada capa y cada adaptador es un paquete: pnpm no deja importar lo que un paquete no declaró como dependencia
+packages:
+  - "domain/*"
+  - "infrastructure/driven-adapters/*"
+  - "infrastructure/entry-points/*"
+  - "infrastructure/helpers/*"
+  - "applications/*"
