@@ -63,7 +63,13 @@ in one transaction (no user without profile if a later step fails).
 `adapters.ts` over `config/deployStorage.js` + adm-zip + HMAC + the in-memory publish queue, `playLocal.ts` for
 `/play-local`. New error kinds `too_large` (413) and `unavailable` (503). Contract tests in `v1.deploy.test.js` run the
 whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
-Next: learning → sessions.
+**learning** (progress, levels, telemetry, analytics): `attempts.ts` (latest-attempt rule), `summaries.ts`
+(`summarizeAttempts`, `summarizeRisks`, `round`, hardest risks, level progress) and `geo.ts` (DIVIPOLA coordinates) are
+pure; `analyticsReadModel.ts` and `telemetryOverview.ts` aggregate in Postgres and shape with those functions.
+`session.service.js` imports `summaries`/`attempts` from the context; the free-play session (`utils/freeSession.utils.js`)
+stays until sessions migrates. `shared/collections.ts` has `groupBy`/`countBy`/`maxBy` (order of first appearance).
+`tests/contract/v1.learning.test.js` snapshots the computed VALUES (ids and dates masked), not only the shape.
+Next: sessions (including the session Excel export).
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
@@ -140,7 +146,7 @@ is actually the user's **cédula**, not a chosen username.
   instructor: own rooms + the "Juego libre" session of their profile location; else 403).
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
-- `analyticsService.getOverview()` also returns `riesgos_mas_fallados` (top failed risks by fail
+- `GET /api/analytics/overview` (`contexts/learning/analyticsReadModel.ts#overview`) also returns `riesgos_mas_fallados` (top failed risks by fail
   rate, grouped over `UserRiskProgress`) and `tendencia_temporal` (weekly mitigation % via
   `date_trunc('week', recorded_at)`) — both computed on the fly, no new columns.
 
@@ -222,12 +228,12 @@ frontend's bulk-import preview) only when nothing in the catalog is close enough
   Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
   tinted result cells. Dates are written in Colombia local time (UTC−5) since Excel has no
   timezone. Spanish labels for game enums live in `utils/telemetry.labels.js`.
-- `telemetry.service.js` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
+- `contexts/learning/summaries.ts` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
   (used by `getUserSummary` and the session service) — don't duplicate those loops.
 
 ### Analytics — mines map (`GET /api/analytics/map`)
 
-`analyticsService.getMinesMap()` powers the frontend's Leaflet map of mining units. `Organization`
+`analyticsReadModel.ts#minesMap` powers the frontend's Leaflet map of mining units. `Organization`
 has no `location_id` of its own — each org's location is inferred as the most frequent
 municipality/department among its active players' `UserProfile.location`. Returns one row per
 organization with `municipality`/`department`/`player_count`/`percentage` (mitigation rate,
@@ -261,7 +267,7 @@ to a constraint here, dropping the index directly fails). If a unique/not-null f
 change again, verify with a raw query against `pg_constraint` that the old constraint actually left
 before assuming the model change took effect.
 
-### Success percentages = latest attempt (`utils/attempt.utils.js`)
+### Success percentages = latest attempt (`contexts/learning/attempts.ts`)
 
 Every success % (analytics overview/by level/by organization/by location, mines map, session
 participants, `GET /api/progress/level/:levelId`) uses only the **latest attempt of each player in each
@@ -270,7 +276,7 @@ not average with older tries. Rows without `attempt_id` are grouped per session 
 `riesgos_mas_fallados` and `tendencia_temporal` still use the full history on purpose (difficulty /
 trend). The frontend mirrors this in `earthcation_fe/src/lib/attempts.js`.
 
-### Mines map coordinates (`utils/geo.utils.js`)
+### Mines map coordinates (`contexts/learning/geo.ts`)
 
 `src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
 `gdxc-w37w`). `coordsFor(municipality, department)` matches catalog names tolerant to accents,
