@@ -8,6 +8,7 @@ const { globalLimiter, authLimiter, loginCedulaLimiter, loginIpFailLimiter } = r
 const observability = require('./contexts/observability');
 const deployment = require('./contexts/deployment');
 const { errorHandlerV1, notFoundV1 } = require('@earthcation/rest-api');
+const container = require('../container');
 
 // La app Express sin arrancar el servidor ni tocar el esquema: la usan server.js y las pruebas (supertest)
 const app = express();
@@ -49,8 +50,9 @@ app.use('/api/levels',    require('./contexts/learning').levelRoutesV1);
 app.use('/api/sessions',  require('./contexts/sessions').sessionRoutesV1);
 app.use('/api/analytics', require('./contexts/learning').analyticsRoutesV1);
 app.use('/api/telemetry', require('./contexts/learning').telemetryRoutesV1);
-app.use('/api/locations',     require('./contexts/catalog').locationRoutesV1);
-app.use('/api/organizations', require('./contexts/catalog').organizationRoutesV1);
+// Contextos ya migrados a la arquitectura limpia: sus rutas las arma el composition root
+app.use('/api/locations',     container.routes.locations);
+app.use('/api/organizations', container.routes.organizations);
 app.use('/api/health',    observability.healthRoutesV1);
 app.use('/api/deploy',    deployment.deployRoutesV1);
 

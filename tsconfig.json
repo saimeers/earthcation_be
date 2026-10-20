@@ -4,6 +4,7 @@
   "references": [
     { "path": "domain/model" },
     { "path": "domain/usecase" },
+    { "path": "infrastructure/driven-adapters/sequelize-repository" },
     { "path": "infrastructure/entry-points/rest-api" },
     { "path": "applications/app-service" }
   ]

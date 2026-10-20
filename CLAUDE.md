@@ -38,7 +38,17 @@ Style: classes + throw (use cases with `execute(cmd)`, entities/VOs with behavio
 from `@earthcation/model`, one `errorHandlerV1` in rest-api maps `kind` → status). Packages export only `index.ts`.
 **Transitional**: the fase 3 code lives in `applications/app-service/src/legacy/` (same files as before, functional
 style, `Result`); each context moves out into the packages in its own PR (catalog → vark → observability → identity →
-deployment → learning → sessions) and `legacy/` disappears at the end. Paths below that say `src/...` mean
+deployment → learning → sessions) and `legacy/` disappears at the end.
+
+Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location` entities with `prepare`/`change`/
+`disable`/`enable`, errors, `OrganizationRepository`/`LocationRepository`), 13 use cases in
+`usecase/src/catalog/{organizations,locations}/<case>/`, `SequelizeOrganizationRepository`/`SequelizeLocationRepository`,
+`OrganizationController`/`LocationController` + `routes/catalog.routes.ts` + `dto/v1/catalog.ts` in rest-api.
+Shared pieces that arrived with it: `@earthcation/sequelize-repository` owns **all models** (`defineModels(sequelize)`),
+the connection factory and the Umzug migrations; `app-service/src/container.ts` creates the connection from
+`config/env.ts` (DB_* validated there) and `legacy/config/database.js` + `legacy/models/index.js` just re-export it.
+rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1); until identity migrates,
+the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` validates env before loading the app. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
 
 ### TypeScript (fase 3, 2026-10-19)
