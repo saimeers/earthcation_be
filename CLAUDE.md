@@ -10,24 +10,45 @@ Deployed on Railway at `api-earthcation.saimers.dev`. See `../../project-context
 cross-project picture (data model diagrams, every endpoint, known gaps) — this file only covers
 what's specific to working inside this folder.
 
-## Commands
+## Commands (pnpm workspaces + Turborepo, fase 3b)
 
 ```
-npm run dev        # tsx watch src/main.ts — hot reload (JS and TS)
-npm run build      # tsc → dist/ (Railway runs it before `npm start`)
-npm start          # node index.js → dist/src/main.js
-npm run typecheck  # tsc --noEmit
-npm run lint       # eslint: base rules on JS, functional + size rules on TS
-npm test           # builds, then vitest: unit + v1 contract tests against a disposable Postgres
+pnpm install       # pnpm 9.15.9 (packageManager); turbo needs `pnpm` on PATH
+pnpm build         # turbo: tsc -b in every package, in dependency order (Railway runs it before `pnpm start`)
+pnpm start         # node applications/app-service/dist/main.js
+pnpm dev           # tsx watch on app-service
+pnpm lint          # eslint per package (root eslint.config.mjs)
+pnpm test          # turbo: vitest per package; app-service = v1 contract tests against a disposable Postgres
+pnpm boundaries    # dependency-cruiser: allowed graph between layers
 ```
+
+### Clean architecture monorepo (fase 3b, 2026-10-20) — in progress
+
+Bancolombia-style scaffold: every layer and adapter is a package with its own `package.json`; pnpm forbids importing
+what a package did not declare, dependency-cruiser (`.dependency-cruiser.cjs`) forbids declaring the wrong thing.
+```
+domain/model                       @earthcation/model    entities, value objects, DomainError subclasses, gateways
+domain/usecase                     @earthcation/usecase  <context>/<case>/XxxUseCase.ts (+ Command); deps: model
+infrastructure/driven-adapters/*   implement gateways; deps: model + their library
+infrastructure/entry-points/*      rest-api (routes, controllers, dto, middlewares, errorHandler); deps: usecase, model
+applications/app-service           the only deployable: config/env.ts, container, main; deps: everything
+```
+Graph: model ← nothing · usecase ← model · adapters ← model · entry-points ← usecase, model · app-service ← all.
+Style: classes + throw (use cases with `execute(cmd)`, entities/VOs with behavior, typed `DomainError` subclasses
+from `@earthcation/model`, one `errorHandlerV1` in rest-api maps `kind` → status). Packages export only `index.ts`.
+**Transitional**: the fase 3 code lives in `applications/app-service/src/legacy/` (same files as before, functional
+style, `Result`); each context moves out into the packages in its own PR (catalog → vark → observability → identity →
+deployment → learning → sessions) and `legacy/` disappears at the end. Paths below that say `src/...` mean
+`applications/app-service/src/legacy/...` until then.
 
 ### TypeScript (fase 3, 2026-10-19)
 
-- JS (v1, migrated context by context) and TS (new code) coexist: `tsconfig.json` has `allowJs` and compiles
-  `src/**` to `dist/src/**` (CommonJS). Root `index.js` only requires `dist/src/main.js`; the real entry is
-  `src/main.ts` (validates env with `infrastructure/env.ts`, zod, then `server.js#start`). **Production needs
-  the build** — `npm start` on a fresh clone without `npm run build` fails.
-- Contract tests load `dist/` (`pretest` builds), so they check the artifact that is deployed.
+- In app-service, JS (v1) and TS coexist (`allowJs`), compiled from `src/` to `dist/`. The entry is
+  `applications/app-service/src/main.ts` (validates env with `src/config/env.ts`, zod, then `legacy/server.js#start`).
+  **Production needs the build** — `pnpm start` on a fresh clone without `pnpm build` fails.
+- Contract tests (`applications/app-service/test/`) load `dist/` (turbo builds first), so they check the deployed artifact.
+- The service version reported by `/api/health` is `applications/app-service/package.json#version` (bump it with the
+  root one at each release).
 - `shared/result.ts`: `Result<T, E>` (`ok`, `err`, `map`, `flatMap`, `andThen`, `fromNullable`) — domain and
   application never throw. `shared/errors.ts`: `DomainError { kind, code, message, details? }` and
   `httpStatusOf` (v2 maps business rules to 422).
@@ -89,7 +110,7 @@ publishes, municipios; then `listen`). The Express app itself is `src/app.js`, r
   desarrollador, admin) and the writes (permissions + happy paths) snapshot `{ status, content-type,
   shape }`, where shape = keys and types (`uuid`, `date`, `string`…), not values. Plus the session Excel
   (sheets, headers, row counts). While v1 lives these snapshots must not change; an intended change is
-  updated with `npm test -- -u` and explained in the PR.
+  updated with `pnpm --filter @earthcation/app-service test -- -u` and explained in the PR.
 - `tests/support/seed.cjs` (global setup, once per run): `DROP SCHEMA public CASCADE`, `prepareDatabase`,
   levels/risks + admin/developer straight into the models, and everything else through the API like
   production (organization, instructor, 3 players, VARK, a session with joins, attempts with events and

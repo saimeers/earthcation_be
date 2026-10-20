@@ -1,25 +1,10 @@
 {
-  // JS (v1, se va migrando) y TS (código nuevo) conviven: tsc revisa el TS y compila ambos a dist/
-  "compilerOptions": {
-    "target": "ES2023",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "rootDir": ".",
-    "outDir": "dist",
-    "allowJs": true,
-    "checkJs": false,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "types": ["node"]
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  // Solo referencias: el editor ve todos los paquetes; cada paquete se compila con su propio `tsc -b`
+  "files": [],
+  "references": [
+    { "path": "domain/model" },
+    { "path": "domain/usecase" },
+    { "path": "infrastructure/entry-points/rest-api" },
+    { "path": "applications/app-service" }
+  ]
 }
