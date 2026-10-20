@@ -52,7 +52,14 @@ the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` 
 — **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
 errors, `VarkRepository` whose panel listings are the `VarkListingRow` read model of raw rows), 5 use cases in
 `usecase/src/vark/results/<case>/`, `SequelizeVarkRepository`, `VarkController` + `routes/vark.routes.ts` +
-`dto/v1/vark.ts`; mounted from `container.routes.vark`. Paths below that say `src/...` mean
+`dto/v1/vark.ts`; mounted from `container.routes.vark`.
+— **observability**: `model/src/observability` (`Visit.fromWorker`, `BotDetector`, `UserAgent`, `LoginEvent` + `loginPlace`/`utf8Header`,
+`VisitWindow`, pure `summarizeMetrics`, `Health` types; gateways `VisitRepository`, `LoginEventRepository`, `VisitStatsReadModel`,
+`MetricsStore`, `DatabaseHealthProbe`/`CacheHealthProbe`, `RuntimeInfo`), 4 use cases in `usecase/src/observability/`, new adapters
+`@earthcation/redis-cache` (`RedisCache`: the shared `Cache`, Redis or memory) and `@earthcation/in-memory-metrics`;
+rest-api `VisitController`/`HealthController`, `metrics` middleware, `cloudflareEdge` (client IP, old `utils/clientIp.js`).
+The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET` and exports `redis`, `cache`, `edge` and `recordLogin`;
+`legacy/config/redis.js`, `legacy/services/cache.service.js` and `legacy/utils/clientIp.js` just re-export them. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
 
 ### TypeScript (fase 3, 2026-10-19)
@@ -79,9 +86,7 @@ errors, `VarkRepository` whose panel listings are the `VarkListingRow` read mode
 (`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
 contract snapshots must stay identical in every migration PR.
 
-Migrated: **catalog** (organizations, locations), **vark** (now in the clean packages, see above) and **observability** (visits, login locations, health, metrics: pure
-`toVisit`/`loginPlace`/`parseUserAgent` and `metrics.ts#summarize`; `runtime.ts` holds the only mutable state, the
-per-minute buckets; the stats are a read model cached under namespace `visit-stats`) and **identity** (auth, users,
+Migrated: **catalog** (organizations, locations), **vark** and **observability** (both now in the clean packages, see above) and **identity** (auth, users,
 bulk import: `domain.ts` field rules, `anm.ts` pure Excel reading, `places.ts` catalog matching, `bulkImport.ts`;
 crypto/JWT/email/xlsx adapters in `adapters.ts` over `utils/hash|jwt|email.utils.js`, which stay because the auth
 middleware, rate limiter and tests use them). Their old
@@ -354,16 +359,16 @@ generated password is stored but never surfaced, since players never need one.
 - **Indexes**: `src/scripts/dbMaintenance.js` (run on every boot, idempotent) creates the indexes the
   write tables lacked (`level_attempts(session_id)`, `(user_id, level_key)`, `user_risk_progress`
   by session/user/attempt/recorded_at, `game_events(created_at)`) and drops the free-session NOT NULLs.
-- **Redis optional** (`src/config/redis.js`, `REDIS_URL`; copied from gameploy): without it every
-  user falls back to memory. `src/services/cache.service.js` `remember(ns, key, ttl, fn)` / `bump(ns)`
+- **Redis optional** (`@earthcation/redis-cache`, `REDIS_URL`; copied from gameploy): without it every
+  user falls back to memory. `RedisCache` (legacy: `src/services/cache.service.js`) `remember(ns, key, ttl, fn)` / `bump(ns)`
   (versioned keys). Cached: session detail (`sessions` context) 10 s per session (bumped on
   start/end), analytics overview and mines map 60 s, a player's free session 10 min, level ids 1 h.
 - **Rate limits** (`src/middleware/rateLimit.middleware.js`): requests with a token count **per user**
   (1500/15 min), anonymous ones per visitor IP (3000) — a whole classroom shares one public IP.
-  Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: `src/utils/clientIp.js`.
+  Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: rest-api `middlewares/cloudflare.ts`.
 - `trust proxy`, `compression`, `ALLOWED_ORIGINS` accepts a comma-separated list.
 - **Health**: `GET /api/health` (public, minimal) and `GET /api/health/details` (DB/Redis ping, pool,
-  p50/p95 and errors per route over 15 min from `src/contexts/observability/runtime.ts`, in memory).
+  p50/p95 and errors per route over 15 min from `@earthcation/in-memory-metrics`, in memory).
 - **Load test**: `node scripts/load/simulate-players.js [--players 50 --seconds 60 --panels 2]`
   (signs tokens for existing players, writes rows tagged `level_key = 'loadtest'`;
   `--cleanup` deletes them). 2026-10-18, local API → Railway DB, 50 players + 2 panels:
@@ -395,12 +400,12 @@ files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SE
 them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
 published game at `/play-local/` (mounted before helmet, no token check) — dev only. `DEPLOY_MAX_MB` (500).
 
-### Visits & login locations (`src/contexts/observability/`)
+### Visits & login locations (`model/src/observability`, `usecase/src/observability`)
 
 `POST /api/visits/ingest` (no token; header `x-ingest-secret` = `VISITS_INGEST_SECRET`, shared with the
 Worker; mounted **before** the global rate limit since every visit comes from Cloudflare's IPs) stores a
 `GameVisit` per opening of the live game: Cloudflare country/region/city/colo/coordinates, device/OS/browser
-(`userAgent.ts`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
+(`UserAgent.ts`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
 `HMAC(VISIT_SALT, ip)` — no IP is stored; `is_unique` = first opening of that visitor in 30 min
 (`setIfAbsent`). Successful logins write a `LoginEvent` (role, `cf-ipcountry`/`cf-region`/`cf-ipcity`
 — trusted only when `req.ip` is Cloudflare; region/city need the zone's "Add visitor location headers"
@@ -408,7 +413,7 @@ managed transform) without blocking the response. `GET /api/visits/stats?days=7|
 developer) aggregates everything, cached 60 s.
 - **Trusting `cf-*` headers**: behind Railway, `req.ip` is not reliably a Cloudflare address. A zone Transform
   Rule (`http_request_late_transform`, host `api-earthcation.saimers.dev`) sets `x-earthcation-edge` to
-  `CF_EDGE_SECRET`; `utils/clientIp.js#fromCloudflare(req)` checks it (falls back to `isCloudflare(req.ip)`).
+  `CF_EDGE_SECRET`; rest-api `cloudflareEdge(secret).fromCloudflare(req)` checks it (falls back to `isCloudflare(req.ip)`).
   Node reads headers as latin1 and Cloudflare sends `cf-ipcity`/`cf-region` in UTF-8 → `utf8Header()`;
   " Department" is stripped from Colombian region names.
 - **Bots**: visits with a bot user-agent or from a datacenter network (`as_organization` from the Worker, e.g.

@@ -43,10 +43,19 @@ export const isCloudflare = (ip: unknown): boolean => {
 
 export interface CloudflareEdge {
   /** La petición pasó por el proxy de Cloudflare. */
-  fromCloudflare(req: Request): boolean
+  readonly fromCloudflare: (req: Request) => boolean
   /** IP del visitante (CF-Connecting-IP solo si la petición viene de Cloudflare). */
-  clientIp(req: Request): string | undefined
-  isCloudflare(ip: unknown): boolean
+  readonly clientIp: (req: Request) => string | undefined
+  readonly isCloudflare: (ip: unknown) => boolean
+}
+
+const hasEdgeHeader = (req: Request, edgeSecret: string | undefined): boolean =>
+  edgeSecret !== undefined && edgeSecret !== '' && sameSecret(req.headers['x-earthcation-edge'], edgeSecret)
+
+/** CF-Connecting-IP si trae una IP válida (aún sin decidir si se le cree). */
+const forwardedIp = (req: Request): string | null => {
+  const ip = normalize(req.get('cf-connecting-ip')?.trim())
+  return isIP(ip) ? ip : null
 }
 
 /**
@@ -54,16 +63,13 @@ export interface CloudflareEdge {
  * x-earthcation-edge con CF_EDGE_SECRET a todo lo que va a la API; quien llame directo al origen no conoce ese
  * valor. Sin secreto (o sin la cabecera) se decide por la dirección de req.ip.
  */
-const hasEdgeHeader = (req: Request, edgeSecret: string | undefined): boolean =>
-  edgeSecret !== undefined && edgeSecret !== '' && sameSecret(req.headers['x-earthcation-edge'], edgeSecret)
-
 export const cloudflareEdge = (edgeSecret: string | undefined): CloudflareEdge => {
   const fromCloudflare = (req: Request): boolean => hasEdgeHeader(req, edgeSecret) || isCloudflare(req.ip)
   // Detrás del proxy, req.ip (con `trust proxy` 1) es un servidor de Cloudflare compartido por muchos visitantes;
   // CF-Connecting-IP solo se cree si la petición viene de verdad de Cloudflare (cualquiera podría inventarla)
   const clientIp = (req: Request): string | undefined => {
-    const forwarded = normalize(req.get('cf-connecting-ip')?.trim())
-    if (forwarded && isIP(forwarded) && fromCloudflare(req)) return forwarded
+    const forwarded = forwardedIp(req)
+    if (forwarded && fromCloudflare(req)) return forwarded
     return normalize(req.ip) || req.ip
   }
   return { fromCloudflare, clientIp, isCloudflare }
