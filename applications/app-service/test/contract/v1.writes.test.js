@@ -5,7 +5,7 @@ const require = createRequire(import.meta.url)
 const { send, contract, app } = require('../support/contract.cjs')
 const request = require('supertest')
 const XLSX = require('xlsx')
-const email = require('../../dist/legacy/utils/email.utils')
+const { outbox } = require('../support/env.cjs')
 const { tokenFor } = require('../support/auth.cjs')
 
 // Contrato de las escrituras de v1: permisos por rol (estado) y forma de la respuesta. Cada caso crea
@@ -65,7 +65,7 @@ describe('usuarios', () => {
 })
 
 describe('identidad: alta de staff, restablecer contraseña y conflictos', () => {
-  const lastEmailTo = (to) => email.outbox.filter((m) => m.to === to).at(-1)
+  const lastEmailTo = (to) => outbox.filter((m) => m.to === to).at(-1)
 
   it('instructor nuevo: correo de bienvenida, define su contraseña y entra', async () => {
     const created = await send('post', '/api/users', s.admin, {

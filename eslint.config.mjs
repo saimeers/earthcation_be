@@ -49,8 +49,8 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    // Esquemas de tablas: datos declarativos, no lógica
-    files: ['infrastructure/driven-adapters/sequelize-repository/src/models/**/*.ts'],
+    // Esquemas de tablas y plantillas HTML de correo: datos declarativos, no lógica
+    files: ['infrastructure/driven-adapters/sequelize-repository/src/models/**/*.ts', 'infrastructure/driven-adapters/resend-mailer/src/templates.ts'],
     rules: { 'max-lines-per-function': 'off' },
   },
   {

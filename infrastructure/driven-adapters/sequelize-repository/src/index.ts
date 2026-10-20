@@ -16,3 +16,8 @@ export { SequelizeVisitRepository } from './observability/SequelizeVisitReposito
 export { SequelizeLoginEventRepository } from './observability/SequelizeLoginEventRepository'
 export { SequelizeVisitStatsReadModel } from './observability/SequelizeVisitStatsReadModel'
 export { SequelizeHealthProbe } from './observability/SequelizeHealthProbe'
+
+// ── identity ──
+export { SequelizeUserRepository } from './identity/SequelizeUserRepository'
+export { SequelizeUserReadModel } from './identity/SequelizeUserReadModel'
+export { SequelizeImportDirectory } from './identity/SequelizeImportDirectory'

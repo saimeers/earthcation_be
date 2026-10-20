@@ -1,0 +1,22 @@
+{
+  "name": "@earthcation/excel",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adaptador de Excel: lectura de planillas (xlsx/SheetJS). El escritor con estilos (ExcelJS) llega con el contexto de sesiones.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@earthcation/model": "workspace:*",
+    "xlsx": "^0.18.5"
+  }
+}

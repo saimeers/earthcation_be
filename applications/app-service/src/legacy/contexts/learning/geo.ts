@@ -1,5 +1,5 @@
 import MUNICIPIOS from '../../data/colombia-municipios-coords.json'
-import { levenshtein } from '../identity/places'
+import { levenshtein } from '@earthcation/model'
 import { groupBy, maxBy } from '../../shared/collections'
 
 // Coordenadas de municipios (DIVIPOLA del DANE, datos.gov.co dataset gdxc-w37w) para el mapa de minas. Los
