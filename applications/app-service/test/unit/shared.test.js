@@ -45,6 +45,7 @@ describe('parseEnv', () => {
     expect(parseEnv({ JWT_SECRET: secret })).toEqual(ok({
       JWT_SECRET: secret, PORT: 3000, NODE_ENV: 'development', DB_PORT: 5432, DB_POOL_MAX: 20, DB_POOL_MIN: 2,
       DEPLOY_MAX_MB: 500, DEPLOY_LOCAL_DIR: '.deploy', PLAY_URL: 'https://play.earthcation.saimers.dev', AWS_REGION: 'us-east-1',
+      EMAIL_FROM: 'noreply@saimers.dev',
     }))
   })
 

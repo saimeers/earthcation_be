@@ -47,8 +47,8 @@ Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location`
 Shared pieces that arrived with it: `@earthcation/sequelize-repository` owns **all models** (`defineModels(sequelize)`),
 the connection factory and the Umzug migrations; `app-service/src/container.ts` creates the connection from
 `config/env.ts` (DB_* validated there) and `legacy/config/database.js` + `legacy/models/index.js` just re-export it.
-rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1); until identity migrates,
-the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` validates env before loading the app.
+rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1). `main.ts` validates env
+before loading the app.
 — **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
 errors, `VarkRepository` whose panel listings are the `VarkListingRow` read model of raw rows), 5 use cases in
 `usecase/src/vark/results/<case>/`, `SequelizeVarkRepository`, `VarkController` + `routes/vark.routes.ts` +
@@ -65,8 +65,19 @@ flag and `legacy/server.js` the boot recovery. Deploy env vars are validated in 
 `MetricsStore`, `DatabaseHealthProbe`/`CacheHealthProbe`, `RuntimeInfo`), 4 use cases in `usecase/src/observability/`, new adapters
 `@earthcation/redis-cache` (`RedisCache`: the shared `Cache`, Redis or memory) and `@earthcation/in-memory-metrics`;
 rest-api `VisitController`/`HealthController`, `metrics` middleware, `cloudflareEdge` (client IP, old `utils/clientIp.js`).
-The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET` and exports `redis`, `cache`, `edge` and `recordLogin`;
-`legacy/config/redis.js`, `legacy/services/cache.service.js` and `legacy/utils/clientIp.js` just re-export them. Paths below that say `src/...` mean
+The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET` and exports `redis`, `cache` and `edge`;
+`legacy/config/redis.js`, `legacy/services/cache.service.js` and `legacy/utils/clientIp.js` just re-export them.
+— **identity**: `model/src/identity` (`User` entity with `register`/`imported`/`edit`/`assertEditableBy`/`assertCanLogIn`/
+password reset; VOs `Cedula`, `Email`, `UserRole`; `AnmSheet` = pure ANM Excel reading; domain services `PlaceMatcher`
+(municipio catalog via the `PlaceCatalog` gateway), `IdentifierAvailability`, `ResetTokenFactory`; gateways `UserRepository`,
+`UserReadModel`, `PasswordHasher`, `PasswordGenerator`, `ResetTokenService`, `TokenIssuer`, `Mailer`, `SpreadsheetReader`,
+`ImportDirectory`, `LoginRecorder`), 11 use cases in `usecase/src/identity/{auth,users,bulk-import}/`, new adapters
+`@earthcation/security` (bcrypt, `JwtTokenService` = `TokenIssuer` + `TokenVerifier`, HS256), `@earthcation/resend-mailer`,
+`@earthcation/excel` (xlsx reader) and `@earthcation/geo-catalog` (`colombia-municipios.json`); `SequelizeUser*` +
+`SequelizeImportDirectory`; rest-api `AuthController`/`UserController`/`BulkImportController` + `routes/identity.routes.ts`.
+The login's `LoginRecorder` is observability's `recordLogin`. `legacy/utils/jwt.utils.js`/`hash.utils.js` re-export the
+container's `security` instances (auth middleware, rate limiter, test seed, `scripts/load`); tests stub `ResendMailer.prototype`
+(`test/support/env.cjs` → `outbox`). Env: `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
 
 ### TypeScript (fase 3, 2026-10-19)
@@ -93,10 +104,8 @@ The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET` and expo
 (`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
 contract snapshots must stay identical in every migration PR.
 
-Migrated: **catalog** (organizations, locations), **vark** and **observability** (both now in the clean packages, see above) and **identity** (auth, users,
-bulk import: `domain.ts` field rules, `anm.ts` pure Excel reading, `places.ts` catalog matching, `bulkImport.ts`;
-crypto/JWT/email/xlsx adapters in `adapters.ts` over `utils/hash|jwt|email.utils.js`, which stay because the auth
-middleware, rate limiter and tests use them). Their old
+Migrated: **catalog** (organizations, locations), **vark**, **observability** and **identity** (all now in the clean
+packages, see above). Their old
 routes/controllers/services/utils were deleted. Cross-context ports live in `src/ports/` (`Cache`, adapter
 `src/adapters/cache` over `services/cache.service.js`).
 Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
@@ -104,7 +113,9 @@ Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id
 Behavior changes in identity (contract unchanged): an inactive staff user with a wrong password now gets
 "Credenciales inválidas" (the password is checked before revealing "Usuario inactivo"); the bulk-import preview
 looks up registered cédulas in one query; confirm resolves organization/location first and creates user + profile
-in one transaction (no user without profile if a later step fails).
+in one transaction (no user without profile if a later step fails). With the clean-architecture move: an unknown `role`
+or a non-numeric `age` now answer 400 ("Rol inválido" / "La edad debe ser un número") instead of a 500 from Postgres;
+an empty `role` in `PUT /api/users/:id` leaves it unchanged (before it was written as NULL); cédula/email are trimmed.
 **deployment** now lives in the clean packages (see above). Error kinds `too_large` (413) and `unavailable` (503)
 arrived with it. Contract tests in `v1.deploy.test.js` run the
 whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
@@ -167,7 +178,7 @@ behind a port, never query logic in `httpV1.ts`.
 
 `middleware/auth.middleware.js` validates the JWT from `Authorization` header and attaches
 `req.user`. `middleware/role.middleware.js` exports `requireRole(...roles)` for route-level
-authorization. `utils/jwt.utils.js` signs `{ id, username, role }` — note `username` in that payload
+authorization. The login (`JwtTokenService` in `@earthcation/security`) signs `{ id, username, role }` — note `username` in that payload
 is actually the user's **cédula**, not a chosen username.
 
 ### Data model essentials (see `../../project-context.md` §2 for full detail)
@@ -219,7 +230,7 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
 
 ### Bulk user import (ANM Excel format)
 
-`src/contexts/identity/` (`anm.ts`, `places.ts`, `bulkImport.ts`, routes in `httpV1.ts`), mounted at
+`model/src/identity/bulk-import/` (`AnmSheet`, `PlaceMatcher`), `usecase/src/identity/bulk-import/`, routes in rest-api `routes/identity.routes.ts`, mounted at
 `/api/users/bulk-import` (both routes `auth` + `requireRole('admin','instructor')`):
 
 - `POST /parse` (multipart, `multer` in-memory, field name `file`) — parses the official ANM
@@ -243,7 +254,7 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
   in the Excel), and an internally generated random password hash that's never emailed or exposed
   (irrelevant since player login is cedula-only).
 
-### Municipios catalog (`src/data/colombia-municipios.json`, `src/scripts/seedMunicipios.js`)
+### Municipios catalog (`@earthcation/geo-catalog`: `src/data/colombia-municipios.json`; `src/scripts/seedMunicipios.js`)
 
 Closed catalog of 33 departments / 1104 municipios (open dataset, DANE-based, with a manual fix
 promoting Bogotá to its own department "Bogotá D.C." instead of a Cundinamarca municipality).
@@ -252,7 +263,7 @@ inserts rows that don't already exist by normalized municipality+department matc
 real production issue: `locations` had accumulated 3 separate rows for "Norte de Santander" from
 free-text Excel imports ("Norte de Santander" / "NORTE DE SANTANDER" / "Norte de Santender").
 
-`contexts/identity/places.ts#placeQuery` matches the Excel's free-text municipio/
+`PlaceMatcher#query` (`model/src/identity/bulk-import/PlaceMatcher.ts`) matches the Excel's free-text municipio/
 departamento against this catalog first (normalized + Levenshtein distance ≤2 for typo tolerance,
 `DEPT_ALIASES` for common abbreviations like "Bogota" → "Bogotá D.C."), falling back to
 create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
@@ -345,7 +356,7 @@ returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 ### Admin-created users
 
-`POST /api/users` (`toNewUser` in `contexts/identity/domain.ts`) normalizes `''` → `null` for optional fields (an empty email used to fail
+`POST /api/users` (`User.register` in `model/src/identity/User.ts`) normalizes `''` → `null` for optional fields (an empty email used to fail
 `isEmail`, an empty age broke the INTEGER column), defaults `username` to the cédula, and requires
 email only for `instructor`/`admin`. **Players never get the welcome email.** If the email send
 fails for staff, the user is still created and the response says `email_sent: false` instead of
@@ -356,7 +367,7 @@ Admins never set a password when creating a user (`POST /api/users`, single-crea
 matters for `admin`/`instructor` accounts, which log in through the web panel and do need a real
 password. The service generates a secure random password, creates a reset token (SHA-256 hash,
 15-min expiry), and emails the temporary password + set-password link via Resend
-(`utils/email.utils.js`). Bulk-imported `player` accounts (see above) skip the email entirely — a
+(`@earthcation/resend-mailer`). Bulk-imported `player` accounts (see above) skip the email entirely — a
 generated password is stored but never surfaced, since players never need one.
 
 ### Concurrency & performance (built for ~50 players per session)

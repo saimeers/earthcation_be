@@ -1,0 +1,53 @@
+import type { Request, Response } from 'express'
+import type {
+  ChangeUserStatusUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase, ListUsersUseCase, UpdateUserUseCase,
+} from '@earthcation/usecase'
+import { currentUser } from '../../middlewares/auth'
+import { creationV1, userFieldsV1 } from '../../dto/v1/identity'
+import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+
+export interface UserUseCases {
+  readonly list: ListUsersUseCase
+  readonly get: GetUserUseCase
+  readonly sessions: GetUserSessionsUseCase
+  readonly create: CreateUserUseCase
+  readonly update: UpdateUserUseCase
+  readonly changeStatus: ChangeUserStatusUseCase
+}
+
+/** Traduce HTTP ↔ casos de uso de usuarios. Las lecturas de v1 salen como filas crudas, igual que antes. */
+export class UserController {
+  constructor(private readonly useCases: UserUseCases) {}
+
+  list = async (req: Request, res: Response): Promise<void> => {
+    const query = { role: queryText(req, 'role'), organizationId: queryText(req, 'organization_id'), locationId: queryText(req, 'location_id') }
+    res.json(await this.useCases.list.execute(query))
+  }
+
+  get = async (req: Request, res: Response): Promise<void> => {
+    res.json(await this.useCases.get.execute(pathParam(req, 'id')))
+  }
+
+  sessions = async (req: Request, res: Response): Promise<void> => {
+    res.json(await this.useCases.sessions.execute(pathParam(req, 'id')))
+  }
+
+  create = async (req: Request, res: Response): Promise<void> => {
+    res.status(201).json(creationV1(await this.useCases.create.execute({ fields: userFieldsV1(bodyOf(req)) })))
+  }
+
+  update = async (req: Request, res: Response): Promise<void> => {
+    const cmd = { id: pathParam(req, 'id'), editor: currentUser(req), fields: userFieldsV1(bodyOf(req)) }
+    res.json({ message: 'Usuario actualizado', user: await this.useCases.update.execute(cmd) })
+  }
+
+  disable = async (req: Request, res: Response): Promise<void> => {
+    await this.useCases.changeStatus.execute({ id: pathParam(req, 'id'), active: false })
+    res.json({ message: 'Usuario deshabilitado correctamente' })
+  }
+
+  enable = async (req: Request, res: Response): Promise<void> => {
+    await this.useCases.changeStatus.execute({ id: pathParam(req, 'id'), active: true })
+    res.json({ message: 'Usuario habilitado correctamente' })
+  }
+}

@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { RequestHandler } from 'express'
+import type { Request, RequestHandler } from 'express'
 import {
-  InvalidTokenError, ROLES, randomIds, systemClock, type AuthenticatedUser, type Role, type RuntimeInfo, type TokenVerifier,
+  randomIds, systemClock, type RuntimeInfo,
+  IdentifierAvailability, PlaceMatcher, ResetTokenFactory, type LoginRecorder as LoginRecorderPort,
 } from '@earthcation/model'
 import {
   ChangeLocationStatusUseCase, ChangeOrganizationStatusUseCase, CreateLocationUseCase, CreateOrganizationUseCase,
@@ -14,11 +15,15 @@ import {
   ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPlayFileUseCase,
   GetPreviewUrlUseCase, ListVersionsUseCase, PublishVersionUseCase, ReceiveLocalZipUseCase,
   RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
+  ChangeUserStatusUseCase, ConfirmBulkImportUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase,
+  ListUsersUseCase, LoginUseCase, PreviewBulkImportUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase,
+  UpdateUserUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
   SequelizeHealthProbe, SequelizeLoginEventRepository, SequelizeVisitRepository, SequelizeVisitStatsReadModel,
   SequelizeGameVersionRepository,
+  SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -26,13 +31,17 @@ import { HmacPreviewSigner } from '@earthcation/hmac-signer'
 import { InProcessPublishQueue } from '@earthcation/in-process-queue'
 import { createRedisClient, RedisCache } from '@earthcation/redis-cache'
 import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
+import { BcryptPasswordHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
+import { ResendMailer } from '@earthcation/resend-mailer'
+import { XlsxSpreadsheetReader } from '@earthcation/excel'
+import { JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
   authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1,
   cloudflareEdge, deployRoutesV1, healthRoutesV1, loginRecorder, metrics, playLocalRoutes, publicHealthV1, visitRoutesV1,
   type LoginRecorder,
+  authRoutesV1, bulkImportRoutesV1, userRoutesV1,
 } from '@earthcation/rest-api'
 import { loadEnv, type Env } from './config/env'
-import jwt from './legacy/utils/jwt.utils'
 
 // Composition root (inyección manual): instancia los adaptadores, se los pasa a los casos de uso y arma las rutas.
 // src/legacy toma de aquí la conexión y los modelos mientras sus contextos se migran.
@@ -47,23 +56,15 @@ const databaseConfig = (e: Env) => ({
 export const sequelize = createSequelize(databaseConfig(env))
 export const models = defineModels(sequelize)
 
-// ── Seguridad (el adaptador propio llega con el contexto de identidad) ───────
+// ── Seguridad ────────────────────────────────────────────────────────────────
 
-const isRole = (v: unknown): v is Role => typeof v === 'string' && (ROLES as readonly string[]).includes(v)
-
-const toAuthenticatedUser = (claims: unknown): AuthenticatedUser => {
-  const c = (claims ?? {}) as { id?: unknown; role?: unknown; username?: unknown }
-  if (typeof c.id !== 'string' || !isRole(c.role)) throw new InvalidTokenError()
-  return { id: c.id, role: c.role, username: typeof c.username === 'string' ? c.username : null }
+// legacy/utils/jwt.utils y hash.utils reexportan estas instancias para el código v1, la semilla y scripts/load
+export const security = {
+  tokens: new JwtTokenService(env.JWT_SECRET),
+  passwords: new BcryptPasswordHasher(),
 }
 
-const tokens: TokenVerifier = {
-  verify: (token) => {
-    try { return toAuthenticatedUser(jwt.verifyToken(token)) } catch { throw new InvalidTokenError() }
-  },
-}
-
-const auth: RequestHandler = authenticate(tokens)
+const auth: RequestHandler = authenticate(security.tokens)
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 
@@ -191,15 +192,57 @@ const observability = {
 /** Mide cada petición para /api/health/details (va al principio de la app). */
 export const metricsMiddleware = metrics(metricsStore)
 
-/**
- * Lo llama el login (identidad, aún en legacy) después de un inicio de sesión exitoso, con la misma firma que
- * tenía `recordLogin(req, user)` de legacy/contexts/observability.
- */
-export const recordLogin: LoginRecorder = loginRecorder({
+/** Ubicación del inicio de sesión (desde la IP y las cabeceras cf-*); lo usa el login de identidad. */
+const recordLogin: LoginRecorder = loginRecorder({
   recordLogin: new RecordLoginUseCase(new SequelizeLoginEventRepository(models)),
   fromCloudflare: edge.fromCloudflare,
   log,
 })
+
+// ── Identidad ────────────────────────────────────────────────────────────────
+
+const userRepository = new SequelizeUserRepository(sequelize, models)
+const userReadModel = new SequelizeUserReadModel(models)
+const availability = new IdentifierAvailability(userRepository)
+const resetTokens = new ResetTokenFactory(new Sha256ResetTokenService(), systemClock)
+const passwordGenerator = new RandomPasswordGenerator()
+const mailer = new ResendMailer({ apiKey: env.RESEND_API_KEY, frontendUrl: env.FRONTEND_URL, from: env.EMAIL_FROM })
+
+// El login entrega el origen (IP y cabeceras) y observabilidad decide si cree las cabeceras de Cloudflare; su
+// recorder solo lee req.ip y req.headers
+const logins: LoginRecorderPort = {
+  record: (login) => {
+    const req = { ip: login.origin.ip, headers: login.origin.headers } as unknown as Request
+    recordLogin(req, { id: login.userId, role: login.role })
+  },
+}
+
+const identity = {
+  authenticate: auth,
+  auth: {
+    login: new LoginUseCase({ users: userRepository, profiles: userReadModel, passwords: security.passwords, tokens: security.tokens, logins }),
+    requestPasswordReset: new RequestPasswordResetUseCase({ users: userRepository, resetTokens, mailer }),
+    resetPassword: new ResetPasswordUseCase({ users: userRepository, resetTokens, passwords: security.passwords, clock: systemClock }),
+  },
+  users: {
+    list: new ListUsersUseCase(userReadModel),
+    get: new GetUserUseCase(userReadModel),
+    sessions: new GetUserSessionsUseCase(userReadModel),
+    create: new CreateUserUseCase({
+      users: userRepository, availability, passwords: security.passwords, generator: passwordGenerator, resetTokens, mailer,
+      errors: { report: (message) => { console.error(message) } },
+    }),
+    update: new UpdateUserUseCase({ users: userRepository, availability, readModel: userReadModel }),
+    changeStatus: new ChangeUserStatusUseCase(userRepository),
+  },
+  bulkImport: {
+    preview: new PreviewBulkImportUseCase({ spreadsheets: new XlsxSpreadsheetReader(), users: userRepository }),
+    confirm: new ConfirmBulkImportUseCase({
+      users: userRepository, directory: new SequelizeImportDirectory(models), places: new PlaceMatcher(new JsonPlaceCatalog()),
+      passwords: security.passwords, generator: passwordGenerator,
+    }),
+  },
+}
 
 export const routes = {
   organizations: organizationRoutesV1(catalog),
@@ -210,4 +253,7 @@ export const routes = {
   visits: visitRoutesV1(observability),
   health: healthRoutesV1(observability),
   publicHealth: publicHealthV1(observability),
+  auth: authRoutesV1(identity),
+  users: userRoutesV1(identity),
+  bulkImport: bulkImportRoutesV1(identity),
 }

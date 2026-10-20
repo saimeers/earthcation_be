@@ -43,6 +43,11 @@ const schema = z.object({
   VISITS_INGEST_SECRET: z.string().optional(),
   // Valor de x-earthcation-edge que agrega la Transform Rule de Cloudflare (ver rest-api middlewares/cloudflare.ts)
   CF_EDGE_SECRET: z.string().optional(),
+  // Correo (Resend): sin clave la API arranca, pero los envíos fallan (el alta de staff responde email_sent: false)
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('noreply@saimers.dev'),
+  // Panel web: base del enlace para definir o restablecer la contraseña
+  FRONTEND_URL: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>

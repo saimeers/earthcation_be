@@ -20,6 +20,10 @@
     { "path": "../../infrastructure/driven-adapters/in-process-queue" },
     { "path": "../../infrastructure/driven-adapters/redis-cache" },
     { "path": "../../infrastructure/driven-adapters/in-memory-metrics" },
+    { "path": "../../infrastructure/driven-adapters/security" },
+    { "path": "../../infrastructure/driven-adapters/resend-mailer" },
+    { "path": "../../infrastructure/driven-adapters/excel" },
+    { "path": "../../infrastructure/driven-adapters/geo-catalog" },
     { "path": "../../infrastructure/entry-points/rest-api" }
   ]
 }

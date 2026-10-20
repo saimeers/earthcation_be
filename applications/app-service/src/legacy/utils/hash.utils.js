@@ -1,7 +1,8 @@
-const bcrypt = require('bcryptjs');
+// Contraseñas del adaptador @earthcation/security (bcrypt). Queda para la semilla de pruebas.
+const { security } = require('../../container');
 
-const hashPassword = (password) => bcrypt.hash(password, 12);
+const hashPassword = (password) => security.passwords.hash(password);
 
-const comparePassword = (plain, hashed) => bcrypt.compare(plain, hashed);
+const comparePassword = (plain, hashed) => security.passwords.matches(plain, hashed);
 
 module.exports = { hashPassword, comparePassword };

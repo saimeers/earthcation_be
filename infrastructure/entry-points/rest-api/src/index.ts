@@ -19,3 +19,9 @@ export type { VisitUseCases } from './controllers/observability/VisitController'
 export { loginRecorder, type LoginRecorder, type LoginRecorderDeps, type LoggedUser } from './controllers/observability/loginRecorder'
 export { metrics } from './middlewares/metrics'
 export { cloudflareEdge, isCloudflare, type CloudflareEdge } from './middlewares/cloudflare'
+
+// ── identity ──
+export { authRoutesV1, userRoutesV1, bulkImportRoutesV1, type IdentityRoutesDeps } from './routes/identity.routes'
+export type { AuthUseCases } from './controllers/identity/AuthController'
+export type { UserUseCases } from './controllers/identity/UserController'
+export type { BulkImportUseCases } from './controllers/identity/BulkImportController'

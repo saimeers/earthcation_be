@@ -1,14 +1,10 @@
-const jwt = require('jsonwebtoken');
+// Tokens de sesión del adaptador @earthcation/security (instancia del composition root, con el JWT_SECRET validado).
+// Queda para el código v1 que aún no se migra (middleware de auth, límite de peticiones), la semilla de pruebas y
+// scripts/load: firman y leen el payload completo.
+const { security } = require('../../container');
 
-// Algoritmo fijo al verificar: así no se acepta un token firmado con otro (p. ej. "none")
-const ALGORITHM = 'HS256';
+const generateToken = (payload) => security.tokens.sign(payload);
 
-const generateToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d', algorithm: ALGORITHM });
-};
-
-const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET, { algorithms: [ALGORITHM] });
-};
+const verifyToken = (token) => security.tokens.decode(token);
 
 module.exports = { generateToken, verifyToken };

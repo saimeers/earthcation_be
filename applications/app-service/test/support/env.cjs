@@ -18,18 +18,18 @@ const loadTestEnv = () => {
   }
 };
 
-// Los servicios desestructuran las funciones de correo al importarse: se reemplazan antes por no-ops que
-// guardan lo "enviado" en email.outbox (las pruebas leen de ahí el token de restablecimiento)
+// Nunca se envía un correo real: los métodos del adaptador de Resend se reemplazan en su prototipo (el container lo
+// instancia después) por no-ops que guardan lo "enviado" en outbox (las pruebas leen de ahí el token de restablecimiento)
+const outbox = [];
 const stubEmails = () => {
-  const email = require('../../dist/legacy/utils/email.utils');
-  const outbox = [];
-  for (const name of Object.keys(email)) {
-    email[name] = async (message) => { outbox.push({ name, ...message }); return { id: 'correo-de-prueba' }; };
+  const { ResendMailer } = require('@earthcation/resend-mailer');
+  const stubs = { sendWelcome: 'sendWelcomeEmail', sendPasswordReset: 'sendPasswordResetEmail' };
+  for (const [method, name] of Object.entries(stubs)) {
+    ResendMailer.prototype[method] = async ({ name: username, ...message }) => { outbox.push({ name, username, ...message }); };
   }
-  email.outbox = outbox;
 };
 
 loadTestEnv();
 stubEmails();
 
-module.exports = { loadTestEnv };
+module.exports = { loadTestEnv, outbox };

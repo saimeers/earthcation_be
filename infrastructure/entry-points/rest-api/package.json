@@ -21,12 +21,14 @@
   "dependencies": {
     "@earthcation/model": "workspace:*",
     "@earthcation/usecase": "workspace:*",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/express-serve-static-core": "^5.1.0",
     "@types/supertest": "^7.2.1",
-    "supertest": "^7.3.1"
+    "supertest": "^7.3.1",
+    "@types/multer": "^2.3.0"
   }
 }
