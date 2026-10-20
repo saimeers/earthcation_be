@@ -44,7 +44,6 @@ app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth',      require('./contexts/identity').authRoutesV1);
 app.use('/api/users',     require('./contexts/identity').userRoutesV1);
 app.use('/api/users/bulk-import', require('./contexts/identity').bulkImportRoutesV1);
-app.use('/api/vark',      require('./contexts/vark').varkRoutesV1);
 app.use('/api/progress',  require('./contexts/learning').progressRoutesV1);
 app.use('/api/levels',    require('./contexts/learning').levelRoutesV1);
 app.use('/api/sessions',  require('./contexts/sessions').sessionRoutesV1);
@@ -53,6 +52,7 @@ app.use('/api/telemetry', require('./contexts/learning').telemetryRoutesV1);
 // Contextos ya migrados a la arquitectura limpia: sus rutas las arma el composition root
 app.use('/api/locations',     container.routes.locations);
 app.use('/api/organizations', container.routes.organizations);
+app.use('/api/vark',          container.routes.vark);
 app.use('/api/health',    observability.healthRoutesV1);
 app.use('/api/deploy',    deployment.deployRoutesV1);
 

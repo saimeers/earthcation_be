@@ -4,11 +4,13 @@ import {
   ChangeLocationStatusUseCase, ChangeOrganizationStatusUseCase, CreateLocationUseCase, CreateOrganizationUseCase,
   GetLocationUseCase, GetOrganizationUseCase, ListLocationsUseCase, ListOrganizationsUseCase, ListOrganizationTypesUseCase,
   SearchLocationsUseCase, SearchOrganizationsUseCase, UpdateLocationUseCase, UpdateOrganizationUseCase,
+  GetMyVarkResultUseCase, ListVarkResultsByPlaceUseCase, ListVarkResultsByStyleUseCase, ListVarkResultsUseCase,
+  SubmitVarkTestUseCase,
 } from '@earthcation/usecase'
 import {
-  createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository,
+  createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
 } from '@earthcation/sequelize-repository'
-import { authenticate, locationRoutesV1, organizationRoutesV1 } from '@earthcation/rest-api'
+import { authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1 } from '@earthcation/rest-api'
 import { loadEnv, type Env } from './config/env'
 import jwt from './legacy/utils/jwt.utils'
 
@@ -69,7 +71,23 @@ const catalog = {
   },
 }
 
+// ── VARK ─────────────────────────────────────────────────────────────────────
+
+const varkRepository = new SequelizeVarkRepository(models)
+
+const vark = {
+  authenticate: auth,
+  vark: {
+    submit: new SubmitVarkTestUseCase(varkRepository),
+    mine: new GetMyVarkResultUseCase(varkRepository),
+    list: new ListVarkResultsUseCase(varkRepository),
+    listByStyle: new ListVarkResultsByStyleUseCase(varkRepository),
+    listByPlace: new ListVarkResultsByPlaceUseCase(varkRepository),
+  },
+}
+
 export const routes = {
   organizations: organizationRoutesV1(catalog),
   locations: locationRoutesV1(catalog),
+  vark: varkRoutesV1(vark),
 }
