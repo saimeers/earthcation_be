@@ -29,3 +29,13 @@ export * from './vark/results/list-vark-results/ListVarkResultsUseCase'
 export * from './vark/results/list-vark-results-by-style/ListVarkResultsByStyleUseCase'
 export * from './vark/results/list-vark-results-by-place/ListVarkResultsByPlaceQuery'
 export * from './vark/results/list-vark-results-by-place/ListVarkResultsByPlaceUseCase'
+
+// ── observability ──
+export * from './observability/visits/ingest-visit/IngestVisitCommand'
+export * from './observability/visits/ingest-visit/IngestVisitUseCase'
+export * from './observability/visits/get-visit-stats/GetVisitStatsQuery'
+export * from './observability/visits/get-visit-stats/GetVisitStatsUseCase'
+export * from './observability/logins/record-login/RecordLoginCommand'
+export * from './observability/logins/record-login/RecordLoginUseCase'
+export * from './observability/health/get-health/GetHealthQuery'
+export * from './observability/health/get-health/GetHealthUseCase'
