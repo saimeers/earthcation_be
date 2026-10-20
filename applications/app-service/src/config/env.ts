@@ -3,7 +3,29 @@ import { err, ok, type Result } from '../legacy/shared/result'
 
 // Variables del entorno, validadas al arrancar. Es el único lugar del código nuevo que lee process.env (src/legacy
 // todavía lee algunas por su cuenta hasta migrar su contexto).
+
+// Texto opcional: vacío cuenta como ausente (así las leía v1 con `||`)
+const optionalText = z.string().optional().transform((v) => (v === '' ? undefined : v))
+
+// Despliegue del juego: sin bucket de S3 o de R2, cada almacenamiento cae a disco (DEPLOY_LOCAL_DIR)
+const deployment = {
+  DEPLOY_MAX_MB: z.coerce.number().positive().catch(500),
+  DEPLOY_LOCAL_DIR: optionalText.transform((v) => v ?? '.deploy'),
+  PLAY_URL: optionalText.transform((v) => (v ?? 'https://play.earthcation.saimers.dev').replace(/\/+$/, '')),
+  // Compartido con el Worker, que valida los enlaces de vista previa
+  PLAY_SIGNING_SECRET: optionalText,
+  AWS_S3_BUCKET: optionalText,
+  AWS_REGION: optionalText.transform((v) => v ?? 'us-east-1'),
+  AWS_ACCESS_KEY_ID: optionalText,
+  AWS_SECRET_ACCESS_KEY: optionalText,
+  R2_BUCKET: optionalText,
+  R2_ACCOUNT_ID: optionalText,
+  R2_ACCESS_KEY_ID: optionalText,
+  R2_SECRET_ACCESS_KEY: optionalText,
+}
+
 const schema = z.object({
+  ...deployment,
   JWT_SECRET: z.string({ error: 'falta' }).min(32, 'debe tener al menos 32 caracteres'),
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.string().default('development'),

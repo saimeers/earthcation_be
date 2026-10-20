@@ -20,6 +20,22 @@ export * from './vark/VarkAnswers'
 export * from './vark/errors/VarkErrors'
 export * from './vark/gateways/VarkRepository'
 
+// ── deployment ──
+export * from './deployment/GameVersion'
+export * from './deployment/VersionLabel'
+export * from './deployment/ZipSize'
+export * from './deployment/BuildInspection'
+export * from './deployment/ActivationPointer'
+export * from './deployment/DeploySettings'
+export * from './deployment/errors/DeploymentErrors'
+export * from './deployment/gateways/GameVersionRepository'
+export * from './deployment/gateways/OriginalsStorage'
+export * from './deployment/gateways/PublishedStorage'
+export * from './deployment/gateways/ZipReader'
+export * from './deployment/gateways/PreviewSigner'
+export * from './deployment/gateways/PublishQueue'
+export * from './deployment/gateways/IdGenerator'
+
 // ── observability ──
 export * from './observability/UserAgent'
 export * from './observability/BotDetector'

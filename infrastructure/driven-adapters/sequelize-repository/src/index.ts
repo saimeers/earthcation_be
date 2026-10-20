@@ -8,6 +8,9 @@ export { SequelizeLocationRepository } from './catalog/SequelizeLocationReposito
 // ── vark ──
 export { SequelizeVarkRepository } from './vark/SequelizeVarkRepository'
 
+// ── deployment ──
+export { SequelizeGameVersionRepository } from './deployment/SequelizeGameVersionRepository'
+
 // ── observability ──
 export { SequelizeVisitRepository } from './observability/SequelizeVisitRepository'
 export { SequelizeLoginEventRepository } from './observability/SequelizeLoginEventRepository'

@@ -2,7 +2,7 @@ const sequelize = require('./config/database');
 const app = require('./app');
 const { seedMunicipios } = require('./scripts/seedMunicipios');
 const { migrate } = require('@earthcation/sequelize-repository');
-const { recoverInterrupted } = require('./contexts/deployment');
+const { deployment } = require('../container');
 
 // Esquema + datos base que la API necesita antes de atender. Las pruebas lo reutilizan sobre su BD.
 const prepareDatabase = async () => {
@@ -11,7 +11,7 @@ const prepareDatabase = async () => {
   // Esquema por migraciones versionadas (@earthcation/sequelize-repository); ya no hay sync({ alter: true }) al arrancar
   const applied = await migrate(sequelize);
   console.log(applied.length ? `✅ Migraciones aplicadas: ${applied.join(', ')}` : '✅ Esquema al día.');
-  await recoverInterrupted(); // publicaciones cortadas por el reinicio → fallidas
+  await deployment.recoverInterrupted(); // publicaciones cortadas por el reinicio → fallidas
   const { created } = await seedMunicipios();
   if (created > 0) console.log(`✅ Catálogo de municipios: ${created} filas nuevas sembradas.`);
 };

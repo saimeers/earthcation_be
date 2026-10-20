@@ -30,6 +30,22 @@ export * from './vark/results/list-vark-results-by-style/ListVarkResultsByStyleU
 export * from './vark/results/list-vark-results-by-place/ListVarkResultsByPlaceQuery'
 export * from './vark/results/list-vark-results-by-place/ListVarkResultsByPlaceUseCase'
 
+// ── deployment ──
+export * from './deployment/status/get-deploy-status/GetDeployStatusUseCase'
+export * from './deployment/versions/list-versions/ListVersionsUseCase'
+export * from './deployment/versions/create-version/CreateVersionCommand'
+export * from './deployment/versions/create-version/CreateVersionUseCase'
+export * from './deployment/versions/receive-local-zip/ReceiveLocalZipCommand'
+export * from './deployment/versions/receive-local-zip/ReceiveLocalZipUseCase'
+export * from './deployment/versions/complete-upload/CompleteUploadUseCase'
+export * from './deployment/versions/activate-version/ActivateVersionUseCase'
+export * from './deployment/versions/remove-version/RemoveVersionUseCase'
+export * from './deployment/versions/get-preview-url/GetPreviewUrlQuery'
+export * from './deployment/versions/get-preview-url/GetPreviewUrlUseCase'
+export * from './deployment/publishing/publish-version/PublishVersionUseCase'
+export * from './deployment/publishing/recover-interrupted-publishes/RecoverInterruptedPublishesUseCase'
+export * from './deployment/play/get-play-file/GetPlayFileUseCase'
+
 // ── observability ──
 export * from './observability/visits/ingest-visit/IngestVisitCommand'
 export * from './observability/visits/ingest-visit/IngestVisitUseCase'

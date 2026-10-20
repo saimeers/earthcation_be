@@ -44,7 +44,14 @@ describe('parseEnv', () => {
   it('valores por defecto', () => {
     expect(parseEnv({ JWT_SECRET: secret })).toEqual(ok({
       JWT_SECRET: secret, PORT: 3000, NODE_ENV: 'development', DB_PORT: 5432, DB_POOL_MAX: 20, DB_POOL_MIN: 2,
+      DEPLOY_MAX_MB: 500, DEPLOY_LOCAL_DIR: '.deploy', PLAY_URL: 'https://play.earthcation.saimers.dev', AWS_REGION: 'us-east-1',
     }))
+  })
+
+  it('despliegue: vacío cuenta como ausente, PLAY_URL sin barra final y un máximo inválido vuelve a 500', () => {
+    const parsed = parseEnv({ JWT_SECRET: secret, AWS_S3_BUCKET: '', PLAY_URL: 'https://x.dev//', DEPLOY_MAX_MB: 'mucho' })
+    expect(parsed).toMatchObject({ ok: true, value: { AWS_S3_BUCKET: undefined, PLAY_URL: 'https://x.dev', DEPLOY_MAX_MB: 500 } })
+    expect(parseEnv({ JWT_SECRET: secret, DEPLOY_MAX_MB: '50' })).toMatchObject({ value: { DEPLOY_MAX_MB: 50 } })
   })
 
   it('JWT_SECRET corto o ausente impide arrancar', () => {

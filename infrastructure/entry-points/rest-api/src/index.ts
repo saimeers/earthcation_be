@@ -9,6 +9,10 @@ export type { LocationUseCases } from './controllers/catalog/LocationController'
 export { varkRoutesV1, type VarkRoutesDeps } from './routes/vark.routes'
 export type { VarkUseCases } from './controllers/vark/VarkController'
 
+// ── deployment ──
+export { deployRoutesV1, playLocalRoutes, type DeploymentRoutesDeps } from './routes/deployment.routes'
+export type { DeploymentUseCases } from './controllers/deployment/DeploymentController'
+
 // ── observability ──
 export { visitRoutesV1, healthRoutesV1, publicHealthV1, type ObservabilityRoutesDeps } from './routes/observability.routes'
 export type { VisitUseCases } from './controllers/observability/VisitController'

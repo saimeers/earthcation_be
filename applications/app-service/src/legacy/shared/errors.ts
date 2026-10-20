@@ -19,9 +19,6 @@ export const forbidden = make('forbidden')
 export const notFound = make('not_found')
 export const conflict = make('conflict')
 export const businessRule = make('business_rule')
-// Archivo más grande de lo permitido (413) y servicio sin configurar o caído (503)
-export const tooLarge = make('too_large')
-export const unavailable = make('unavailable')
 
 // v1 respondía 400 también a las reglas de negocio; v2 usa 422 (ver adapters/http/v1 y v2)
 const STATUS: Readonly<Record<ErrorKind, number>> = {
