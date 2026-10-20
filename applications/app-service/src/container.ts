@@ -11,6 +11,18 @@ import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
 } from '@earthcation/sequelize-repository'
 import { authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1 } from '@earthcation/rest-api'
+import {
+  ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPlayFileUseCase,
+  GetPreviewUrlUseCase, ListVersionsUseCase, PublishVersionUseCase, ReceiveLocalZipUseCase,
+  RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
+} from '@earthcation/usecase'
+import { randomIds, systemClock } from '@earthcation/model'
+import { SequelizeGameVersionRepository } from '@earthcation/sequelize-repository'
+import { createDeploymentStorages } from '@earthcation/object-storage'
+import { AdmZipReader } from '@earthcation/zip-reader'
+import { HmacPreviewSigner } from '@earthcation/hmac-signer'
+import { InProcessPublishQueue } from '@earthcation/in-process-queue'
+import { deployRoutesV1, playLocalRoutes } from '@earthcation/rest-api'
 import { loadEnv, type Env } from './config/env'
 import jwt from './legacy/utils/jwt.utils'
 
@@ -86,8 +98,58 @@ const vark = {
   },
 }
 
+// ── Despliegue del juego ─────────────────────────────────────────────────────
+
+const storages = createDeploymentStorages({
+  localDir: env.DEPLOY_LOCAL_DIR,
+  s3: env.AWS_S3_BUCKET === undefined ? undefined : {
+    bucket: env.AWS_S3_BUCKET, region: env.AWS_REGION,
+    accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  },
+  r2: env.R2_BUCKET === undefined ? undefined : {
+    bucket: env.R2_BUCKET, accountId: env.R2_ACCOUNT_ID,
+    accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+  },
+})
+
+const gameVersions = new SequelizeGameVersionRepository(sequelize, models)
+const deploySettings = { maxMb: env.DEPLOY_MAX_MB, playUrl: env.PLAY_URL }
+const localPublishing = storages.published.kind === 'local'
+// Sin R2 la vista previa la sirve la propia API (/play-local), que no valida el token: basta un secreto fijo
+const signer = new HmacPreviewSigner(env.PLAY_SIGNING_SECRET ?? (localPublishing ? 'local-dev' : undefined))
+
+// La cola corre publish-version; complete-upload solo encola
+const publishVersion = new PublishVersionUseCase({
+  versions: gameVersions, ...storages, zips: new AdmZipReader(), clock: systemClock,
+  log: { info: (m) => { console.log(m) }, error: (m) => { console.error(m) } },
+})
+const publishQueue = new InProcessPublishQueue((id) => publishVersion.execute(id))
+
+const deploymentUseCases = {
+  status: new GetDeployStatusUseCase({ versions: gameVersions, ...storages, settings: deploySettings }),
+  list: new ListVersionsUseCase(gameVersions),
+  create: new CreateVersionUseCase({ versions: gameVersions, originals: storages.originals, ids: randomIds, settings: deploySettings }),
+  receiveZip: new ReceiveLocalZipUseCase({ versions: gameVersions, originals: storages.originals }),
+  complete: new CompleteUploadUseCase({ versions: gameVersions, originals: storages.originals, queue: publishQueue }),
+  activate: new ActivateVersionUseCase({ versions: gameVersions, published: storages.published, clock: systemClock }),
+  remove: new RemoveVersionUseCase({ versions: gameVersions, ...storages }),
+  preview: new GetPreviewUrlUseCase({
+    versions: gameVersions, published: storages.published, signer, clock: systemClock, settings: deploySettings,
+  }),
+}
+
+/** Lo que legacy/server.js y legacy/app.js usan del despliegue. */
+export const deployment = {
+  /** Sin R2 (desarrollo) la API sirve el juego publicado en /play-local, montado antes de helmet. */
+  localPublishing,
+  /** Al arrancar: las publicaciones cortadas por el reinicio quedan fallidas. */
+  recoverInterrupted: () => new RecoverInterruptedPublishesUseCase(gameVersions).execute(),
+}
+
 export const routes = {
   organizations: organizationRoutesV1(catalog),
   locations: locationRoutesV1(catalog),
   vark: varkRoutesV1(vark),
+  deploy: deployRoutesV1({ authenticate: auth, deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
+  playLocal: playLocalRoutes(new GetPlayFileUseCase(storages.published)),
 }

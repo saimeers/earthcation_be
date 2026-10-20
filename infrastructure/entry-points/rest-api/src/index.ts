@@ -8,3 +8,7 @@ export type { LocationUseCases } from './controllers/catalog/LocationController'
 // ── vark ──
 export { varkRoutesV1, type VarkRoutesDeps } from './routes/vark.routes'
 export type { VarkUseCases } from './controllers/vark/VarkController'
+
+// ── deployment ──
+export { deployRoutesV1, playLocalRoutes, type DeploymentRoutesDeps } from './routes/deployment.routes'
+export type { DeploymentUseCases } from './controllers/deployment/DeploymentController'

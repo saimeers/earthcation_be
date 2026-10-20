@@ -5,6 +5,10 @@
     { "path": "domain/model" },
     { "path": "domain/usecase" },
     { "path": "infrastructure/driven-adapters/sequelize-repository" },
+    { "path": "infrastructure/driven-adapters/object-storage" },
+    { "path": "infrastructure/driven-adapters/zip-reader" },
+    { "path": "infrastructure/driven-adapters/hmac-signer" },
+    { "path": "infrastructure/driven-adapters/in-process-queue" },
     { "path": "infrastructure/entry-points/rest-api" },
     { "path": "applications/app-service" }
   ]

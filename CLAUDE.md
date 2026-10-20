@@ -52,7 +52,14 @@ the container adapts `legacy/utils/jwt.utils` as the `TokenVerifier`. `main.ts` 
 — **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
 errors, `VarkRepository` whose panel listings are the `VarkListingRow` read model of raw rows), 5 use cases in
 `usecase/src/vark/results/<case>/`, `SequelizeVarkRepository`, `VarkController` + `routes/vark.routes.ts` +
-`dto/v1/vark.ts`; mounted from `container.routes.vark`. Paths below that say `src/...` mean
+`dto/v1/vark.ts`; mounted from `container.routes.vark`.
+— **deployment**: `model/src/deployment` (`GameVersion` state machine, `VersionLabel`/`ZipSize`, pure `BuildInspection`
+and `ActivationPointer`, errors, gateways `GameVersionRepository`/`OriginalsStorage`/`PublishedStorage`/`ZipReader`/
+`PreviewSigner`/`PublishQueue`/`IdGenerator`), 11 use cases in `usecase/src/deployment/{status,versions,publishing,play}/`,
+`SequelizeGameVersionRepository`, new adapters `object-storage` (S3/R2/disk), `zip-reader`, `hmac-signer`,
+`in-process-queue` (the container wires the queue to `PublishVersionUseCase`), `DeploymentController`/`PlayLocalController`
++ `routes/deployment.routes.ts` + `dto/v1/deployment.ts`; `container.deployment` gives `legacy/app.js` the local-publishing
+flag and `legacy/server.js` the boot recovery. Deploy env vars are validated in `config/env.ts`. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
 
 ### TypeScript (fase 3, 2026-10-19)
@@ -93,9 +100,8 @@ Behavior changes in identity (contract unchanged): an inactive staff user with a
 "Credenciales inválidas" (the password is checked before revealing "Usuario inactivo"); the bulk-import preview
 looks up registered cédulas in one query; confirm resolves organization/location first and creates user + profile
 in one transaction (no user without profile if a later step fails).
-**deployment** is migrated too: `build.ts` (pure WebGL inspection and `headersFor`), state rules in `domain.ts`,
-`adapters.ts` over `config/deployStorage.js` + adm-zip + HMAC + the in-memory publish queue, `playLocal.ts` for
-`/play-local`. New error kinds `too_large` (413) and `unavailable` (503). Contract tests in `v1.deploy.test.js` run the
+**deployment** now lives in the clean packages (see above). Error kinds `too_large` (413) and `unavailable` (503)
+arrived with it. Contract tests in `v1.deploy.test.js` run the
 whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
 **learning** (progress, levels, telemetry, analytics): `attempts.ts` (latest-attempt rule), `summaries.ts`
 (`summarizeAttempts`, `summarizeRisks`, `round`, hardest risks, level progress) and `geo.ts` (DIVIPOLA coordinates) are
@@ -377,19 +383,19 @@ every `router.get` that allows `admin` also allows `developer`; all writes stay 
 `dbMaintenance.ensureEnumValues()` **before** `sync` (alter does not add ENUM values reliably).
 Deploy/visits/health endpoints allow `admin` and `developer`.
 
-### Game deployment (`/api/deploy/*`, `src/contexts/deployment/`, admin + developer)
+### Game deployment (`/api/deploy/*`, `model/src/deployment` + `usecase/src/deployment`, admin + developer)
 
 `GameVersion` (status `uploading → processing → ready | failed`) + `GameSetting` key
 `active_version_id` (single pointer, changed in a transaction). Flow: `POST /versions` creates the row and
 returns where to `PUT` the ZIP (S3 presigned URL, or `/versions/:id/upload` through the API when there is
 no S3) → `POST /versions/:id/complete` (atomic `uploading|failed → processing`) queues the publish
-(in-process, one at a time): unzip (`inspectBuild`, same rules as the panel's `buildCheck.js`), upload each
-file to `builds/<id>/` with `headersFor` (`x.wasm.br` = `application/wasm` + `Content-Encoding: br`,
+(in-process, one at a time): unzip (`BuildInspection.inspect`, same rules as the panel's `buildCheck.js`), upload each
+file to `builds/<id>/` with `BuildInspection.headersFor` (`x.wasm.br` = `application/wasm` + `Content-Encoding: br`,
 everything immutable except `index.html`) → `ready` with `manifest` (files, compression, Unity
 `productVersion`, warnings). `POST /:id/activate` writes `current.json` (read by the Worker) inside the
 transaction; rollback = activate an older one. `GET /:id/preview` = `<PLAY_URL>/v/<id>/?t=<exp>.<hmac>`
 (`PLAY_SIGNING_SECRET`, shared with the Worker). On boot, `processing` rows become `failed` (retryable).
-Storage (`src/config/deployStorage.js`): originals in AWS S3 (`AWS_S3_BUCKET`, `AWS_REGION`,
+Storage (`infrastructure/driven-adapters/object-storage`, configured from `config/env.ts`): originals in AWS S3 (`AWS_S3_BUCKET`, `AWS_REGION`,
 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`; bucket CORS must allow PUT from the panel) and published
 files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). Without
 them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
