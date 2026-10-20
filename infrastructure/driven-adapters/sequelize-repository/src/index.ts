@@ -10,3 +10,9 @@ export { SequelizeVarkRepository } from './vark/SequelizeVarkRepository'
 
 // ── deployment ──
 export { SequelizeGameVersionRepository } from './deployment/SequelizeGameVersionRepository'
+
+// ── observability ──
+export { SequelizeVisitRepository } from './observability/SequelizeVisitRepository'
+export { SequelizeLoginEventRepository } from './observability/SequelizeLoginEventRepository'
+export { SequelizeVisitStatsReadModel } from './observability/SequelizeVisitStatsReadModel'
+export { SequelizeHealthProbe } from './observability/SequelizeHealthProbe'

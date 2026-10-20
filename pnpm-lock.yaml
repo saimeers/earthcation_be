@@ -44,6 +44,9 @@ importers:
       '@earthcation/hmac-signer':
         specifier: workspace:*
         version: link:../../infrastructure/driven-adapters/hmac-signer
+      '@earthcation/in-memory-metrics':
+        specifier: workspace:*
+        version: link:../../infrastructure/driven-adapters/in-memory-metrics
       '@earthcation/in-process-queue':
         specifier: workspace:*
         version: link:../../infrastructure/driven-adapters/in-process-queue
@@ -53,6 +56,9 @@ importers:
       '@earthcation/object-storage':
         specifier: workspace:*
         version: link:../../infrastructure/driven-adapters/object-storage
+      '@earthcation/redis-cache':
+        specifier: workspace:*
+        version: link:../../infrastructure/driven-adapters/redis-cache
       '@earthcation/rest-api':
         specifier: workspace:*
         version: link:../../infrastructure/entry-points/rest-api
@@ -89,9 +95,6 @@ importers:
       helmet:
         specifier: ^8.1.0
         version: 8.3.0
-      ioredis:
-        specifier: ^6.0.0
-        version: 6.0.0
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
@@ -159,6 +162,12 @@ importers:
         specifier: workspace:*
         version: link:../../../domain/model
 
+  infrastructure/driven-adapters/in-memory-metrics:
+    dependencies:
+      '@earthcation/model':
+        specifier: workspace:*
+        version: link:../../../domain/model
+
   infrastructure/driven-adapters/in-process-queue:
     dependencies:
       '@earthcation/model':
@@ -176,6 +185,15 @@ importers:
       '@earthcation/model':
         specifier: workspace:*
         version: link:../../../domain/model
+
+  infrastructure/driven-adapters/redis-cache:
+    dependencies:
+      '@earthcation/model':
+        specifier: workspace:*
+        version: link:../../../domain/model
+      ioredis:
+        specifier: ^6.0.0
+        version: 6.0.0
 
   infrastructure/driven-adapters/sequelize-repository:
     dependencies:

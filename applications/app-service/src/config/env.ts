@@ -37,6 +37,12 @@ const schema = z.object({
   // Sequelize abre 5 conexiones por defecto; con ~50 jugadores escribiendo a la vez hacían cola
   DB_POOL_MAX: z.coerce.number().int().positive().default(20),
   DB_POOL_MIN: z.coerce.number().int().nonnegative().default(2),
+  // Sin REDIS_URL la caché y los límites de peticiones viven en memoria
+  REDIS_URL: z.string().optional(),
+  // Compartido con el Worker de Cloudflare: sin él, POST /api/visits/ingest responde 401 siempre
+  VISITS_INGEST_SECRET: z.string().optional(),
+  // Valor de x-earthcation-edge que agrega la Transform Rule de Cloudflare (ver rest-api middlewares/cloudflare.ts)
+  CF_EDGE_SECRET: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>

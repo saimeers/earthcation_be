@@ -45,3 +45,13 @@ export * from './deployment/versions/get-preview-url/GetPreviewUrlUseCase'
 export * from './deployment/publishing/publish-version/PublishVersionUseCase'
 export * from './deployment/publishing/recover-interrupted-publishes/RecoverInterruptedPublishesUseCase'
 export * from './deployment/play/get-play-file/GetPlayFileUseCase'
+
+// ── observability ──
+export * from './observability/visits/ingest-visit/IngestVisitCommand'
+export * from './observability/visits/ingest-visit/IngestVisitUseCase'
+export * from './observability/visits/get-visit-stats/GetVisitStatsQuery'
+export * from './observability/visits/get-visit-stats/GetVisitStatsUseCase'
+export * from './observability/logins/record-login/RecordLoginCommand'
+export * from './observability/logins/record-login/RecordLoginUseCase'
+export * from './observability/health/get-health/GetHealthQuery'
+export * from './observability/health/get-health/GetHealthUseCase'

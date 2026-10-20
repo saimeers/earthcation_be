@@ -12,3 +12,10 @@ export type { VarkUseCases } from './controllers/vark/VarkController'
 // ── deployment ──
 export { deployRoutesV1, playLocalRoutes, type DeploymentRoutesDeps } from './routes/deployment.routes'
 export type { DeploymentUseCases } from './controllers/deployment/DeploymentController'
+
+// ── observability ──
+export { visitRoutesV1, healthRoutesV1, publicHealthV1, type ObservabilityRoutesDeps } from './routes/observability.routes'
+export type { VisitUseCases } from './controllers/observability/VisitController'
+export { loginRecorder, type LoginRecorder, type LoginRecorderDeps, type LoggedUser } from './controllers/observability/loginRecorder'
+export { metrics } from './middlewares/metrics'
+export { cloudflareEdge, isCloudflare, type CloudflareEdge } from './middlewares/cloudflare'

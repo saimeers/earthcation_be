@@ -1,4 +1,4 @@
-import { recordLogin } from '../observability'
+import { recordLogin } from '../../../container'
 import { mailer, passwords, resetTokens, spreadsheets, tokens } from './adapters'
 import { makeIdentity } from './application'
 import { authRouterV1, bulkImportRouterV1, usersRouterV1 } from './httpV1'
@@ -12,7 +12,8 @@ export const identity = makeIdentity({
   logError: (message) => { console.error(message) },
 })
 
-// El login deja la ubicación del inicio de sesión en observabilidad, sin bloquear la respuesta
+// El login deja la ubicación del inicio de sesión en observabilidad (RecordLoginUseCase, armado en el container),
+// sin bloquear la respuesta
 export const authRoutesV1 = authRouterV1(identity, recordLogin)
 export const userRoutesV1 = usersRouterV1(identity)
 export const bulkImportRoutesV1 = bulkImportRouterV1(identity)

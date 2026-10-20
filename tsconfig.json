@@ -9,6 +9,8 @@
     { "path": "infrastructure/driven-adapters/zip-reader" },
     { "path": "infrastructure/driven-adapters/hmac-signer" },
     { "path": "infrastructure/driven-adapters/in-process-queue" },
+    { "path": "infrastructure/driven-adapters/redis-cache" },
+    { "path": "infrastructure/driven-adapters/in-memory-metrics" },
     { "path": "infrastructure/entry-points/rest-api" },
     { "path": "applications/app-service" }
   ]
