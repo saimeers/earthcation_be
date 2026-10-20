@@ -6,7 +6,8 @@
     "outDir": "dist",
     "allowJs": true,
     "checkJs": false,
-    "declaration": false
+    "declaration": false,
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*"],
   "references": [
