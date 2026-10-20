@@ -1,0 +1,1499 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`casos borde sin escritura > analítica de organización sin jugadores y localidad inexistente 1`] = `[]`;
+
+exports[`casos borde sin escritura > analítica de organización sin jugadores y localidad inexistente 2`] = `[]`;
+
+exports[`casos borde sin escritura > cerrar o mandar eventos a un intento ajeno o inexistente 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`casos borde sin escritura > cerrar o mandar eventos a un intento ajeno o inexistente 2`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`casos borde sin escritura > cerrar o mandar eventos a un intento ajeno o inexistente 3`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`casos borde sin escritura > cerrar o mandar eventos a un intento ajeno o inexistente 4`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`casos borde sin escritura > detalle de intento inexistente 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 404,
+  "type": "application/json",
+}
+`;
+
+exports[`casos borde sin escritura > nivel sin datos del jugador 1`] = `
+{
+  "attempts": 0,
+  "completion": "0/0",
+  "level_id": "3",
+  "percentage": 0,
+  "risks": [],
+}
+`;
+
+exports[`casos borde sin escritura > progreso sin riesgo 1`] = `
+{
+  "body": {
+    "error": "string",
+  },
+  "status": 400,
+  "type": "application/json",
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > analytics/location?department&municipality 1`] = `
+[
+  {
+    "dominant_style": null,
+    "level_attempts": 0,
+    "location": {
+      "department": "Norte de Santander",
+      "municipality": "Cúcuta",
+    },
+    "mitigated": 0,
+    "percentage": 0,
+    "total_attempts": 0,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "instructor-20000001",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+  {
+    "dominant_style": "Visual",
+    "level_attempts": 2,
+    "location": {
+      "department": "Norte de Santander",
+      "municipality": "Cúcuta",
+    },
+    "mitigated": 3,
+    "percentage": 100,
+    "total_attempts": 3,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "player-30000001",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+  {
+    "dominant_style": "Visual",
+    "level_attempts": 1,
+    "location": {
+      "department": "Norte de Santander",
+      "municipality": "Cúcuta",
+    },
+    "mitigated": 1,
+    "percentage": 50,
+    "total_attempts": 2,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "player-30000002",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+  {
+    "dominant_style": "Visual",
+    "level_attempts": 1,
+    "location": {
+      "department": "Norte de Santander",
+      "municipality": "Cúcuta",
+    },
+    "mitigated": 0,
+    "percentage": 0,
+    "total_attempts": 1,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "player-30000003",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > analytics/map 1`] = `
+[
+  {
+    "department": "Norte de Santander",
+    "id": "<uuid>",
+    "lat": 7.905725,
+    "lng": -72.508178,
+    "location_exact": true,
+    "municipality": "Cúcuta",
+    "name": "Mina La Prueba",
+    "percentage": 67,
+    "player_count": 4,
+    "results": 6,
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > analytics/organization/:orgId 1`] = `
+[
+  {
+    "dominant_style": null,
+    "level_attempts": 0,
+    "mitigated": 0,
+    "percentage": 0,
+    "total_attempts": 0,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "instructor-20000001",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+  {
+    "dominant_style": "Visual",
+    "level_attempts": 2,
+    "mitigated": 3,
+    "percentage": 100,
+    "total_attempts": 3,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "player-30000001",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+  {
+    "dominant_style": "Visual",
+    "level_attempts": 1,
+    "mitigated": 1,
+    "percentage": 50,
+    "total_attempts": 2,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "player-30000002",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+  {
+    "dominant_style": "Visual",
+    "level_attempts": 1,
+    "mitigated": 0,
+    "percentage": 0,
+    "total_attempts": 1,
+    "user": {
+      "cedula": "<cedula>",
+      "first_name": "player-30000003",
+      "id": "<uuid>",
+      "last_name": "Semilla",
+    },
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > analytics/overview 1`] = `
+{
+  "progress": {
+    "global_percentage": 67,
+    "history_results": 8,
+    "level_attempts": 4,
+    "total_attempts": 6,
+    "total_mitigated": 4,
+  },
+  "progress_by_level": [
+    {
+      "avg_attempts": 1.5,
+      "level": "Nivel 1 - Operación Segura",
+      "mitigated": 3,
+      "percentage": 75,
+      "players": 2,
+      "players_100": 1,
+      "total": 4,
+    },
+    {
+      "avg_attempts": 1,
+      "level": "Nivel 2 - Inspección Profunda",
+      "mitigated": 1,
+      "percentage": 50,
+      "players": 1,
+      "players_100": 0,
+      "total": 2,
+    },
+  ],
+  "riesgos_mas_fallados": [
+    {
+      "avg_mistakes": 2,
+      "category": "Biológico",
+      "fail_rate": 100,
+      "failed": 1,
+      "name": "Ofidios",
+      "risk_id": "CR-07",
+      "total_attempts": 1,
+    },
+    {
+      "avg_mistakes": 1,
+      "category": "Geotécnico",
+      "fail_rate": 50,
+      "failed": 1,
+      "name": "Derrumbe",
+      "risk_id": "CR-04",
+      "total_attempts": 2,
+    },
+    {
+      "avg_mistakes": 0.7,
+      "category": "Biomecánico",
+      "fail_rate": 33,
+      "failed": 1,
+      "name": "Vibración",
+      "risk_id": "CR-01",
+      "total_attempts": 3,
+    },
+    {
+      "avg_mistakes": 0,
+      "category": "Mecánico",
+      "fail_rate": 0,
+      "failed": 0,
+      "name": "Mecánicos",
+      "risk_id": "CR-03",
+      "total_attempts": 1,
+    },
+    {
+      "avg_mistakes": 0,
+      "category": "Químico",
+      "fail_rate": 0,
+      "failed": 0,
+      "name": "Atmósferas Tóxicas",
+      "risk_id": "CR-06",
+      "total_attempts": 1,
+    },
+  ],
+  "sessions": {
+    "active": 2,
+    "total": 2,
+  },
+  "tendencia_temporal": [
+    {
+      "mitigated": 5,
+      "percentage": 63,
+      "total": 8,
+      "week": "<date>",
+    },
+  ],
+  "users": {
+    "instructors": 1,
+    "players": 3,
+    "total": 6,
+  },
+  "vark_distribution": [
+    {
+      "count": 3,
+      "style": "Visual",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > levels 1`] = `
+[
+  {
+    "id": 1,
+    "name": "Nivel 1 - Operación Segura",
+    "risks": [
+      {
+        "category": "Geotécnico",
+        "id": "CR-04",
+        "level_id": 1,
+        "name": "Derrumbe",
+      },
+      {
+        "category": "Mecánico",
+        "id": "CR-03",
+        "level_id": 1,
+        "name": "Mecánicos",
+      },
+      {
+        "category": "Biomecánico",
+        "id": "CR-01",
+        "level_id": 1,
+        "name": "Vibración",
+      },
+    ],
+  },
+  {
+    "id": 2,
+    "name": "Nivel 2 - Inspección Profunda",
+    "risks": [
+      {
+        "category": "Biológico",
+        "id": "CR-07",
+        "level_id": 2,
+        "name": "Ofidios",
+      },
+      {
+        "category": "Químico",
+        "id": "CR-06",
+        "level_id": 2,
+        "name": "Atmósferas Tóxicas",
+      },
+    ],
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > levels/2 1`] = `
+{
+  "id": 2,
+  "name": "Nivel 2 - Inspección Profunda",
+  "risks": [
+    {
+      "category": "Químico",
+      "id": "CR-06",
+      "level_id": 2,
+      "name": "Atmósferas Tóxicas",
+    },
+    {
+      "category": "Biológico",
+      "id": "CR-07",
+      "level_id": 2,
+      "name": "Ofidios",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > progreso por nivel del segundo jugador 1`] = `
+{
+  "attempts": 0,
+  "completion": "0/0",
+  "level_id": "1",
+  "percentage": 0,
+  "risks": [
+    {
+      "category": "Biomecánico",
+      "last_mistakes": null,
+      "last_reaction_ms": null,
+      "mitigated": false,
+      "risk_id": "CR-01",
+      "risk_name": "Vibración",
+    },
+    {
+      "category": "Mecánico",
+      "last_mistakes": null,
+      "last_reaction_ms": null,
+      "mitigated": false,
+      "risk_id": "CR-03",
+      "risk_name": "Mecánicos",
+    },
+    {
+      "category": "Geotécnico",
+      "last_mistakes": null,
+      "last_reaction_ms": null,
+      "mitigated": false,
+      "risk_id": "CR-04",
+      "risk_name": "Derrumbe",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > progress/full como jugador 1`] = `
+{
+  "progress": [
+    {
+      "attempt_id": "<uuid>",
+      "detail": null,
+      "id": "<uuid>",
+      "is_mitigated": true,
+      "mistakes_count": 0,
+      "reaction_time_ms": 1500,
+      "recorded_at": "<date>",
+      "risk": {
+        "category": "Geotécnico",
+        "id": "CR-04",
+        "level": {
+          "id": 1,
+          "name": "Nivel 1 - Operación Segura",
+        },
+        "level_id": 1,
+        "name": "Derrumbe",
+      },
+      "risk_id": "CR-04",
+      "session_id": "<uuid>",
+      "user_id": "<uuid>",
+    },
+    {
+      "attempt_id": "<uuid>",
+      "detail": null,
+      "id": "<uuid>",
+      "is_mitigated": true,
+      "mistakes_count": 0,
+      "reaction_time_ms": 1500,
+      "recorded_at": "<date>",
+      "risk": {
+        "category": "Mecánico",
+        "id": "CR-03",
+        "level": {
+          "id": 1,
+          "name": "Nivel 1 - Operación Segura",
+        },
+        "level_id": 1,
+        "name": "Mecánicos",
+      },
+      "risk_id": "CR-03",
+      "session_id": "<uuid>",
+      "user_id": "<uuid>",
+    },
+    {
+      "attempt_id": "<uuid>",
+      "detail": null,
+      "id": "<uuid>",
+      "is_mitigated": true,
+      "mistakes_count": 0,
+      "reaction_time_ms": 1500,
+      "recorded_at": "<date>",
+      "risk": {
+        "category": "Biomecánico",
+        "id": "CR-01",
+        "level": {
+          "id": 1,
+          "name": "Nivel 1 - Operación Segura",
+        },
+        "level_id": 1,
+        "name": "Vibración",
+      },
+      "risk_id": "CR-01",
+      "session_id": "<uuid>",
+      "user_id": "<uuid>",
+    },
+    {
+      "attempt_id": "<uuid>",
+      "detail": null,
+      "id": "<uuid>",
+      "is_mitigated": false,
+      "mistakes_count": 2,
+      "reaction_time_ms": 1500,
+      "recorded_at": "<date>",
+      "risk": {
+        "category": "Geotécnico",
+        "id": "CR-04",
+        "level": {
+          "id": 1,
+          "name": "Nivel 1 - Operación Segura",
+        },
+        "level_id": 1,
+        "name": "Derrumbe",
+      },
+      "risk_id": "CR-04",
+      "session_id": "<uuid>",
+      "user_id": "<uuid>",
+    },
+    {
+      "attempt_id": "<uuid>",
+      "detail": null,
+      "id": "<uuid>",
+      "is_mitigated": true,
+      "mistakes_count": 0,
+      "reaction_time_ms": 1500,
+      "recorded_at": "<date>",
+      "risk": {
+        "category": "Biomecánico",
+        "id": "CR-01",
+        "level": {
+          "id": 1,
+          "name": "Nivel 1 - Operación Segura",
+        },
+        "level_id": 1,
+        "name": "Vibración",
+      },
+      "risk_id": "CR-01",
+      "session_id": "<uuid>",
+      "user_id": "<uuid>",
+    },
+  ],
+  "total_attempts": 5,
+  "user_id": "<uuid>",
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > progress/level/1 como jugador 1`] = `
+{
+  "attempts": 2,
+  "completion": "3/3",
+  "level_id": "1",
+  "percentage": 100,
+  "risks": [
+    {
+      "category": "Biomecánico",
+      "last_mistakes": 0,
+      "last_reaction_ms": 1500,
+      "mitigated": true,
+      "risk_id": "CR-01",
+      "risk_name": "Vibración",
+    },
+    {
+      "category": "Mecánico",
+      "last_mistakes": 0,
+      "last_reaction_ms": 1500,
+      "mitigated": true,
+      "risk_id": "CR-03",
+      "risk_name": "Mecánicos",
+    },
+    {
+      "category": "Geotécnico",
+      "last_mistakes": 0,
+      "last_reaction_ms": 1500,
+      "mitigated": true,
+      "risk_id": "CR-04",
+      "risk_name": "Derrumbe",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > progress/level/2 como jugador 1`] = `
+{
+  "attempts": 0,
+  "completion": "0/0",
+  "level_id": "2",
+  "percentage": 0,
+  "risks": [
+    {
+      "category": "Químico",
+      "last_mistakes": null,
+      "last_reaction_ms": null,
+      "mitigated": false,
+      "risk_id": "CR-06",
+      "risk_name": "Atmósferas Tóxicas",
+    },
+    {
+      "category": "Biológico",
+      "last_mistakes": null,
+      "last_reaction_ms": null,
+      "mitigated": false,
+      "risk_id": "CR-07",
+      "risk_name": "Ofidios",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > progress/me/:sessionId como jugador 1`] = `
+[
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Geotécnico",
+      "id": "CR-04",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Derrumbe",
+    },
+    "risk_id": "CR-04",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Mecánico",
+      "id": "CR-03",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Mecánicos",
+    },
+    "risk_id": "CR-03",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Biomecánico",
+      "id": "CR-01",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Vibración",
+    },
+    "risk_id": "CR-01",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": false,
+    "mistakes_count": 2,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Geotécnico",
+      "id": "CR-04",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Derrumbe",
+    },
+    "risk_id": "CR-04",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Biomecánico",
+      "id": "CR-01",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Vibración",
+    },
+    "risk_id": "CR-01",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > progress/user/:userId/history?session_id 1`] = `
+[
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Geotécnico",
+      "id": "CR-04",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Derrumbe",
+    },
+    "risk_id": "CR-04",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Mecánico",
+      "id": "CR-03",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Mecánicos",
+    },
+    "risk_id": "CR-03",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Biomecánico",
+      "id": "CR-01",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Vibración",
+    },
+    "risk_id": "CR-01",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": false,
+    "mistakes_count": 2,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Geotécnico",
+      "id": "CR-04",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Derrumbe",
+    },
+    "risk_id": "CR-04",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+  {
+    "attempt_id": "<uuid>",
+    "detail": null,
+    "id": "<uuid>",
+    "is_mitigated": true,
+    "mistakes_count": 0,
+    "reaction_time_ms": 1500,
+    "recorded_at": "<date>",
+    "risk": {
+      "category": "Biomecánico",
+      "id": "CR-01",
+      "level": {
+        "id": 1,
+        "name": "Nivel 1 - Operación Segura",
+      },
+      "level_id": 1,
+      "name": "Vibración",
+    },
+    "risk_id": "CR-01",
+    "session_id": "<uuid>",
+    "user_id": "<uuid>",
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/attempts/:id 1`] = `
+{
+  "attempt": {
+    "attempt_number": 1,
+    "device_calibrated": true,
+    "duration_ms": 90000,
+    "ended_at": "<date>",
+    "fail_reason": "derrumbe",
+    "fail_risk_id": "CR-04",
+    "fail_stage": "Sostenimiento",
+    "final_health": 0,
+    "game_version": "2.1.2",
+    "gas_brand": "ibrid",
+    "id": "<uuid>",
+    "level": {
+      "id": 1,
+      "name": "Nivel 1 - Operación Segura",
+    },
+    "level_id": 1,
+    "level_key": "level1",
+    "outcome": "failed",
+    "riskResults": [
+      {
+        "attempt_id": "<uuid>",
+        "detail": null,
+        "id": "<uuid>",
+        "is_mitigated": true,
+        "mistakes_count": 0,
+        "reaction_time_ms": 1500,
+        "recorded_at": "<date>",
+        "risk": {
+          "category": "Biomecánico",
+          "id": "CR-01",
+          "level_id": 1,
+          "name": "Vibración",
+        },
+        "risk_id": "CR-01",
+        "session_id": "<uuid>",
+        "user_id": "<uuid>",
+      },
+      {
+        "attempt_id": "<uuid>",
+        "detail": null,
+        "id": "<uuid>",
+        "is_mitigated": false,
+        "mistakes_count": 2,
+        "reaction_time_ms": 1500,
+        "recorded_at": "<date>",
+        "risk": {
+          "category": "Geotécnico",
+          "id": "CR-04",
+          "level_id": 1,
+          "name": "Derrumbe",
+        },
+        "risk_id": "CR-04",
+        "session_id": "<uuid>",
+        "user_id": "<uuid>",
+      },
+    ],
+    "session_id": "<uuid>",
+    "started_at": "<date>",
+    "summary": {
+      "device_powered_on": 1,
+      "lantern_switched_on": 1,
+    },
+    "user": {
+      "cedula": "<cedula>",
+      "id": "<uuid>",
+      "username": "<username>",
+    },
+    "user_id": "<uuid>",
+    "vark_style": "Visual",
+  },
+  "events": [
+    {
+      "attempt_id": "<uuid>",
+      "created_at": "<date>",
+      "event_type": "level_started",
+      "fatigue": 0,
+      "health": 100,
+      "id": "1",
+      "payload": null,
+      "pos_x": 0,
+      "risk_id": null,
+      "stage": null,
+      "t_ms": 0,
+      "user_id": "<uuid>",
+    },
+    {
+      "attempt_id": "<uuid>",
+      "created_at": "<date>",
+      "event_type": "risk_panel_shown",
+      "fatigue": null,
+      "health": null,
+      "id": "2",
+      "payload": {
+        "read_ms": 3200,
+      },
+      "pos_x": null,
+      "risk_id": "CR-04",
+      "stage": "Sostenimiento",
+      "t_ms": 5000,
+      "user_id": "<uuid>",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/me/attempts?level_key como jugador 1`] = `
+[
+  {
+    "attempt_number": 2,
+    "device_calibrated": true,
+    "duration_ms": 90000,
+    "ended_at": "<date>",
+    "fail_reason": null,
+    "fail_risk_id": null,
+    "fail_stage": null,
+    "final_health": 80,
+    "game_version": "2.1.2",
+    "gas_brand": "ibrid",
+    "id": "<uuid>",
+    "level": {
+      "id": 1,
+      "name": "Nivel 1 - Operación Segura",
+    },
+    "level_id": 1,
+    "level_key": "level1",
+    "outcome": "completed",
+    "session_id": "<uuid>",
+    "started_at": "<date>",
+    "summary": {
+      "device_powered_on": 1,
+      "lantern_switched_on": 1,
+    },
+    "user_id": "<uuid>",
+    "vark_style": "Visual",
+  },
+  {
+    "attempt_number": 1,
+    "device_calibrated": true,
+    "duration_ms": 90000,
+    "ended_at": "<date>",
+    "fail_reason": "derrumbe",
+    "fail_risk_id": "CR-04",
+    "fail_stage": "Sostenimiento",
+    "final_health": 0,
+    "game_version": "2.1.2",
+    "gas_brand": "ibrid",
+    "id": "<uuid>",
+    "level": {
+      "id": 1,
+      "name": "Nivel 1 - Operación Segura",
+    },
+    "level_id": 1,
+    "level_key": "level1",
+    "outcome": "failed",
+    "session_id": "<uuid>",
+    "started_at": "<date>",
+    "summary": {
+      "device_powered_on": 1,
+      "lantern_switched_on": 1,
+    },
+    "user_id": "<uuid>",
+    "vark_style": "Visual",
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/overview 1`] = `
+{
+  "event_counts": [
+    {
+      "count": 4,
+      "event_type": "risk_panel_shown",
+    },
+    {
+      "count": 4,
+      "event_type": "level_started",
+    },
+  ],
+  "fail_reasons": [
+    {
+      "count": 1,
+      "fail_reason": "derrumbe",
+      "fail_risk_id": "CR-04",
+      "fail_stage": "Sostenimiento",
+      "level_key": "level1",
+    },
+  ],
+  "gas_brands": [
+    {
+      "attempts": 4,
+      "calibrated": 4,
+      "gas_brand": "ibrid",
+    },
+  ],
+  "levels": [
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level1",
+      "outcome": "abandoned",
+      "players": 1,
+    },
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level1",
+      "outcome": "completed",
+      "players": 1,
+    },
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level1",
+      "outcome": "failed",
+      "players": 1,
+    },
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level2",
+      "outcome": "completed",
+      "players": 1,
+    },
+  ],
+  "retries": [
+    {
+      "avg_attempt_number": 1,
+      "level_key": "level2",
+      "max_attempt_number": 1,
+    },
+    {
+      "avg_attempt_number": 1.33,
+      "level_key": "level1",
+      "max_attempt_number": 2,
+    },
+  ],
+  "risks": [
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Biológico",
+      "fail_rate": 100,
+      "failed": 1,
+      "mistakes_total": 2,
+      "mitigated": 0,
+      "results": 1,
+      "risk_id": "CR-07",
+      "risk_name": "Ofidios",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Geotécnico",
+      "fail_rate": 50,
+      "failed": 1,
+      "mistakes_total": 2,
+      "mitigated": 1,
+      "results": 2,
+      "risk_id": "CR-04",
+      "risk_name": "Derrumbe",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Biomecánico",
+      "fail_rate": 33.3,
+      "failed": 1,
+      "mistakes_total": 2,
+      "mitigated": 2,
+      "results": 3,
+      "risk_id": "CR-01",
+      "risk_name": "Vibración",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Mecánico",
+      "fail_rate": 0,
+      "failed": 0,
+      "mistakes_total": 0,
+      "mitigated": 1,
+      "results": 1,
+      "risk_id": "CR-03",
+      "risk_name": "Mecánicos",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Químico",
+      "fail_rate": 0,
+      "failed": 0,
+      "mistakes_total": 0,
+      "mitigated": 1,
+      "results": 1,
+      "risk_id": "CR-06",
+      "risk_name": "Atmósferas Tóxicas",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/overview?session_id 1`] = `
+{
+  "event_counts": [
+    {
+      "count": 3,
+      "event_type": "level_started",
+    },
+    {
+      "count": 3,
+      "event_type": "risk_panel_shown",
+    },
+  ],
+  "fail_reasons": [
+    {
+      "count": 1,
+      "fail_reason": "derrumbe",
+      "fail_risk_id": "CR-04",
+      "fail_stage": "Sostenimiento",
+      "level_key": "level1",
+    },
+  ],
+  "gas_brands": [
+    {
+      "attempts": 3,
+      "calibrated": 3,
+      "gas_brand": "ibrid",
+    },
+  ],
+  "levels": [
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level1",
+      "outcome": "completed",
+      "players": 1,
+    },
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level1",
+      "outcome": "failed",
+      "players": 1,
+    },
+    {
+      "avg_duration_ms": 90000,
+      "count": 1,
+      "level_key": "level2",
+      "outcome": "completed",
+      "players": 1,
+    },
+  ],
+  "retries": [
+    {
+      "avg_attempt_number": 1.5,
+      "level_key": "level1",
+      "max_attempt_number": 2,
+    },
+    {
+      "avg_attempt_number": 1,
+      "level_key": "level2",
+      "max_attempt_number": 1,
+    },
+  ],
+  "risks": [
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Biológico",
+      "fail_rate": 100,
+      "failed": 1,
+      "mistakes_total": 2,
+      "mitigated": 0,
+      "results": 1,
+      "risk_id": "CR-07",
+      "risk_name": "Ofidios",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Geotécnico",
+      "fail_rate": 50,
+      "failed": 1,
+      "mistakes_total": 2,
+      "mitigated": 1,
+      "results": 2,
+      "risk_id": "CR-04",
+      "risk_name": "Derrumbe",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Biomecánico",
+      "fail_rate": 0,
+      "failed": 0,
+      "mistakes_total": 0,
+      "mitigated": 2,
+      "results": 2,
+      "risk_id": "CR-01",
+      "risk_name": "Vibración",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Mecánico",
+      "fail_rate": 0,
+      "failed": 0,
+      "mistakes_total": 0,
+      "mitigated": 1,
+      "results": 1,
+      "risk_id": "CR-03",
+      "risk_name": "Mecánicos",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Químico",
+      "fail_rate": 0,
+      "failed": 0,
+      "mistakes_total": 0,
+      "mitigated": 1,
+      "results": 1,
+      "risk_id": "CR-06",
+      "risk_name": "Atmósferas Tóxicas",
+    },
+  ],
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/users/:userId/attempts?level_key 1`] = `
+[
+  {
+    "attempt_number": 2,
+    "device_calibrated": true,
+    "duration_ms": 90000,
+    "ended_at": "<date>",
+    "fail_reason": null,
+    "fail_risk_id": null,
+    "fail_stage": null,
+    "final_health": 80,
+    "game_version": "2.1.2",
+    "gas_brand": "ibrid",
+    "id": "<uuid>",
+    "level": {
+      "id": 1,
+      "name": "Nivel 1 - Operación Segura",
+    },
+    "level_id": 1,
+    "level_key": "level1",
+    "outcome": "completed",
+    "session_id": "<uuid>",
+    "started_at": "<date>",
+    "summary": {
+      "device_powered_on": 1,
+      "lantern_switched_on": 1,
+    },
+    "user_id": "<uuid>",
+    "vark_style": "Visual",
+  },
+  {
+    "attempt_number": 1,
+    "device_calibrated": true,
+    "duration_ms": 90000,
+    "ended_at": "<date>",
+    "fail_reason": "derrumbe",
+    "fail_risk_id": "CR-04",
+    "fail_stage": "Sostenimiento",
+    "final_health": 0,
+    "game_version": "2.1.2",
+    "gas_brand": "ibrid",
+    "id": "<uuid>",
+    "level": {
+      "id": 1,
+      "name": "Nivel 1 - Operación Segura",
+    },
+    "level_id": 1,
+    "level_key": "level1",
+    "outcome": "failed",
+    "session_id": "<uuid>",
+    "started_at": "<date>",
+    "summary": {
+      "device_powered_on": 1,
+      "lantern_switched_on": 1,
+    },
+    "user_id": "<uuid>",
+    "vark_style": "Visual",
+  },
+]
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/users/:userId/summary 1`] = `
+{
+  "event_counts": {
+    "level_started": 2,
+    "risk_panel_shown": 2,
+  },
+  "levels": [
+    {
+      "abandoned": 0,
+      "attempts": 2,
+      "attempts_until_first_completion": 2,
+      "best_time_ms": 90000,
+      "completed": 1,
+      "fail_reasons": {
+        "derrumbe": 1,
+      },
+      "fail_stages": {
+        "Sostenimiento": 1,
+      },
+      "failed": 1,
+      "in_progress": 0,
+      "level_key": "level1",
+      "retries": 1,
+      "total_time_ms": 180000,
+    },
+  ],
+  "risks": [
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Geotécnico",
+      "failed": 1,
+      "last_recorded_at": "<date>",
+      "last_result": "mitigated",
+      "level_name": "Nivel 1 - Operación Segura",
+      "mistakes_total": 2,
+      "mitigated": 1,
+      "mitigation_rate": 50,
+      "results": 2,
+      "risk_id": "CR-04",
+      "risk_name": "Derrumbe",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Biomecánico",
+      "failed": 0,
+      "last_recorded_at": "<date>",
+      "last_result": "mitigated",
+      "level_name": "Nivel 1 - Operación Segura",
+      "mistakes_total": 0,
+      "mitigated": 2,
+      "mitigation_rate": 100,
+      "results": 2,
+      "risk_id": "CR-01",
+      "risk_name": "Vibración",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Mecánico",
+      "failed": 0,
+      "last_recorded_at": "<date>",
+      "last_result": "mitigated",
+      "level_name": "Nivel 1 - Operación Segura",
+      "mistakes_total": 0,
+      "mitigated": 1,
+      "mitigation_rate": 100,
+      "results": 1,
+      "risk_id": "CR-03",
+      "risk_name": "Mecánicos",
+    },
+  ],
+  "total_attempts": 2,
+  "user_id": "<uuid>",
+  "weakest_risk": {
+    "avg_reaction_ms": 1500,
+    "category": "Geotécnico",
+    "failed": 1,
+    "last_recorded_at": "<date>",
+    "last_result": "mitigated",
+    "level_name": "Nivel 1 - Operación Segura",
+    "mistakes_total": 2,
+    "mitigated": 1,
+    "mitigation_rate": 50,
+    "results": 2,
+    "risk_id": "CR-04",
+    "risk_name": "Derrumbe",
+  },
+}
+`;
+
+exports[`valores de las lecturas de aprendizaje > telemetry/users/:userId/summary?session_id 1`] = `
+{
+  "event_counts": {
+    "level_started": 2,
+    "risk_panel_shown": 2,
+  },
+  "levels": [
+    {
+      "abandoned": 0,
+      "attempts": 2,
+      "attempts_until_first_completion": 2,
+      "best_time_ms": 90000,
+      "completed": 1,
+      "fail_reasons": {
+        "derrumbe": 1,
+      },
+      "fail_stages": {
+        "Sostenimiento": 1,
+      },
+      "failed": 1,
+      "in_progress": 0,
+      "level_key": "level1",
+      "retries": 1,
+      "total_time_ms": 180000,
+    },
+  ],
+  "risks": [
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Geotécnico",
+      "failed": 1,
+      "last_recorded_at": "<date>",
+      "last_result": "mitigated",
+      "level_name": "Nivel 1 - Operación Segura",
+      "mistakes_total": 2,
+      "mitigated": 1,
+      "mitigation_rate": 50,
+      "results": 2,
+      "risk_id": "CR-04",
+      "risk_name": "Derrumbe",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Biomecánico",
+      "failed": 0,
+      "last_recorded_at": "<date>",
+      "last_result": "mitigated",
+      "level_name": "Nivel 1 - Operación Segura",
+      "mistakes_total": 0,
+      "mitigated": 2,
+      "mitigation_rate": 100,
+      "results": 2,
+      "risk_id": "CR-01",
+      "risk_name": "Vibración",
+    },
+    {
+      "avg_reaction_ms": 1500,
+      "category": "Mecánico",
+      "failed": 0,
+      "last_recorded_at": "<date>",
+      "last_result": "mitigated",
+      "level_name": "Nivel 1 - Operación Segura",
+      "mistakes_total": 0,
+      "mitigated": 1,
+      "mitigation_rate": 100,
+      "results": 1,
+      "risk_id": "CR-03",
+      "risk_name": "Mecánicos",
+    },
+  ],
+  "total_attempts": 2,
+  "user_id": "<uuid>",
+  "weakest_risk": {
+    "avg_reaction_ms": 1500,
+    "category": "Geotécnico",
+    "failed": 1,
+    "last_recorded_at": "<date>",
+    "last_result": "mitigated",
+    "level_name": "Nivel 1 - Operación Segura",
+    "mistakes_total": 2,
+    "mitigated": 1,
+    "mitigation_rate": 50,
+    "results": 2,
+    "risk_id": "CR-04",
+    "risk_name": "Derrumbe",
+  },
+}
+`;
