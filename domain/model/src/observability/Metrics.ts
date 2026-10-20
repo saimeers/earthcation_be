@@ -1,19 +1,21 @@
 // Métricas de las últimas 15 min por ruta (latencia p50/p95 y errores 5xx), para la página "Salud del
-// servicio". Cubetas de 1 minuto: no crece con el tráfico ni necesita Redis (cada instancia mide lo suyo;
-// con una sola instancia en Railway basta). Aquí solo las funciones puras; el estado vive en runtime.ts.
+// servicio". Cubetas de 1 minuto: no crece con el tráfico ni necesita Redis (cada instancia mide lo suyo; con
+// una sola instancia en Railway basta). Aquí solo el cálculo puro; las cubetas las guarda un MetricsStore.
 
-export const WINDOW_MIN = 15
+export const METRICS_WINDOW_MINUTES = 15
 const MAX_SAMPLES = 400 // por ruta y minuto, suficiente para un percentil razonable
 const TOP_ROUTES = 25
 
-export type RouteSample = { readonly durations: readonly number[]; readonly count: number; readonly errors: number }
+export interface RouteSample { readonly durations: readonly number[]; readonly count: number; readonly errors: number }
+/** Muestras de un minuto, por ruta ('GET /api/sessions/:id'). */
 export type MinuteBucket = ReadonlyMap<string, RouteSample>
+/** Cubetas por número de minuto (ms desde 1970 / 60000). */
 export type Buckets = ReadonlyMap<number, MinuteBucket>
 
-type Latency = { readonly p50Ms: number | null; readonly p95Ms: number | null }
-export type RouteMetrics = Latency & { readonly route: string; readonly requests: number; readonly errors: number }
-export type MinuteMetrics = { readonly minute: string; readonly requests: number; readonly errors: number }
-export type MetricsSnapshot = Latency & {
+interface Latency { readonly p50Ms: number | null; readonly p95Ms: number | null }
+export interface RouteMetrics extends Latency { readonly route: string; readonly requests: number; readonly errors: number }
+export interface MinuteMetrics { readonly minute: string; readonly requests: number; readonly errors: number }
+export interface MetricsSnapshot extends Latency {
   readonly windowMinutes: number
   readonly requests: number
   readonly errors: number
@@ -23,13 +25,18 @@ export type MetricsSnapshot = Latency & {
 
 const EMPTY: RouteSample = { durations: [], count: 0, errors: 0 }
 
-export const record = (sample: RouteSample | undefined, ms: number, failed: boolean): RouteSample => {
+/** Número de minuto de una fecha (la llave de las cubetas). */
+export const minuteOf = (at: Date): number => Math.floor(at.getTime() / 60000)
+
+/** La muestra con una petición más (las duraciones se guardan hasta un tope por minuto). */
+export const recordSample = (sample: RouteSample | undefined, ms: number, failed: boolean): RouteSample => {
   const s = sample ?? EMPTY
   const durations = s.durations.length < MAX_SAMPLES ? [...s.durations, ms] : s.durations
   return { durations, count: s.count + 1, errors: s.errors + (failed ? 1 : 0) }
 }
 
-export const isStale = (minute: number, now: number): boolean => minute < now - WINDOW_MIN
+/** El minuto ya salió de la ventana. */
+export const isStaleMinute = (minute: number, now: number): boolean => minute < now - METRICS_WINDOW_MINUTES
 
 const merge = (a: RouteSample, b: RouteSample): RouteSample =>
   ({ durations: [...a.durations, ...b.durations], count: a.count + b.count, errors: a.errors + b.errors })
@@ -59,16 +66,16 @@ const byRoute = (minutes: readonly MinuteBucket[]): ReadonlyMap<string, RouteSam
 const routeMetrics = ([route, s]: readonly [string, RouteSample]): RouteMetrics =>
   ({ route, requests: s.count, errors: s.errors, ...latency(s.durations) })
 
-const slowest = (minutes: readonly MinuteBucket[]): readonly RouteMetrics[] =>
+const slowest = (minutes: readonly MinuteBucket[]): RouteMetrics[] =>
   [...byRoute(minutes)].map(routeMetrics).toSorted((a, b) => (b.p95Ms ?? 0) - (a.p95Ms ?? 0)).slice(0, TOP_ROUTES)
 
-/** Resumen de la ventana: global y por ruta, ordenado por más lentas. */
-export const summarize = (buckets: Buckets, now: number): MetricsSnapshot => {
-  const minutes = [...buckets].filter(([m]) => !isStale(m, now)).toSorted(([a], [b]) => a - b)
+/** Resumen de la ventana que termina en el minuto `now`: global y por ruta, las más lentas primero. */
+export const summarizeMetrics = (buckets: Buckets, now: number): MetricsSnapshot => {
+  const minutes = [...buckets].filter(([m]) => !isStaleMinute(m, now)).toSorted(([a], [b]) => a - b)
   const windowed = minutes.map(([, b]) => b)
   const all = total(windowed.flatMap((b) => [...b.values()]))
   return {
-    windowMinutes: WINDOW_MIN, requests: all.count, errors: all.errors, ...latency(all.durations),
+    windowMinutes: METRICS_WINDOW_MINUTES, requests: all.count, errors: all.errors, ...latency(all.durations),
     perMinute: minutes.map(minuteMetrics), routes: slowest(windowed),
   }
 }

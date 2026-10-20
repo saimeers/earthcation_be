@@ -1,6 +1,9 @@
-// Dispositivo, sistema y navegador a partir del user-agent. Aproximado a propósito (sin librería):
-// alcanza para ver si los mineros juegan en celular o en PC.
-export type Agent = { readonly device: string | null; readonly os: string | null; readonly browser: string | null }
+/** Dispositivo, sistema y navegador de quien abre el juego o inicia sesión (null si no mandó user-agent). */
+export interface DeviceInfo {
+  readonly device: string | null
+  readonly os: string | null
+  readonly browser: string | null
+}
 
 type Rule = readonly [RegExp, string]
 
@@ -21,7 +24,22 @@ const BROWSERS: readonly Rule[] = [
 const classify = (rules: readonly Rule[], ua: string, fallback: string): string | null =>
   ua === '' ? null : (rules.find(([pattern]) => pattern.test(ua))?.[1] ?? fallback)
 
-export const parseUserAgent = (ua: unknown): Agent => {
-  const s = typeof ua === 'string' ? ua : ''
-  return { device: classify(DEVICES, s, 'desktop'), os: classify(SYSTEMS, s, 'Otro'), browser: classify(BROWSERS, s, 'Otro') }
+/**
+ * User-agent leído a mano, aproximado a propósito (sin librería): alcanza para ver si los mineros juegan en
+ * celular o en PC.
+ */
+export class UserAgent {
+  private constructor(private readonly raw: string) {}
+
+  static of(ua: unknown): UserAgent {
+    return new UserAgent(typeof ua === 'string' ? ua : '')
+  }
+
+  deviceInfo(): DeviceInfo {
+    return {
+      device: classify(DEVICES, this.raw, 'desktop'),
+      os: classify(SYSTEMS, this.raw, 'Otro'),
+      browser: classify(BROWSERS, this.raw, 'Otro'),
+    }
+  }
 }

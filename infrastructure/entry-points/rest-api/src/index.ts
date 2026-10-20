@@ -8,3 +8,10 @@ export type { LocationUseCases } from './controllers/catalog/LocationController'
 // ── vark ──
 export { varkRoutesV1, type VarkRoutesDeps } from './routes/vark.routes'
 export type { VarkUseCases } from './controllers/vark/VarkController'
+
+// ── observability ──
+export { visitRoutesV1, healthRoutesV1, publicHealthV1, type ObservabilityRoutesDeps } from './routes/observability.routes'
+export type { VisitUseCases } from './controllers/observability/VisitController'
+export { loginRecorder, type LoginRecorder, type LoginRecorderDeps, type LoggedUser } from './controllers/observability/loginRecorder'
+export { metrics } from './middlewares/metrics'
+export { cloudflareEdge, isCloudflare, type CloudflareEdge } from './middlewares/cloudflare'

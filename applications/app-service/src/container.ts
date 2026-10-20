@@ -1,16 +1,27 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { RequestHandler } from 'express'
-import { InvalidTokenError, ROLES, type AuthenticatedUser, type Role, type TokenVerifier } from '@earthcation/model'
+import {
+  InvalidTokenError, ROLES, systemClock, type AuthenticatedUser, type Role, type RuntimeInfo, type TokenVerifier,
+} from '@earthcation/model'
 import {
   ChangeLocationStatusUseCase, ChangeOrganizationStatusUseCase, CreateLocationUseCase, CreateOrganizationUseCase,
   GetLocationUseCase, GetOrganizationUseCase, ListLocationsUseCase, ListOrganizationsUseCase, ListOrganizationTypesUseCase,
   SearchLocationsUseCase, SearchOrganizationsUseCase, UpdateLocationUseCase, UpdateOrganizationUseCase,
   GetMyVarkResultUseCase, ListVarkResultsByPlaceUseCase, ListVarkResultsByStyleUseCase, ListVarkResultsUseCase,
   SubmitVarkTestUseCase,
+  GetHealthUseCase, GetVisitStatsUseCase, IngestVisitUseCase, RecordLoginUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
+  SequelizeHealthProbe, SequelizeLoginEventRepository, SequelizeVisitRepository, SequelizeVisitStatsReadModel,
 } from '@earthcation/sequelize-repository'
-import { authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1 } from '@earthcation/rest-api'
+import { createRedisClient, RedisCache } from '@earthcation/redis-cache'
+import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
+import {
+  authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1,
+  cloudflareEdge, healthRoutesV1, loginRecorder, metrics, publicHealthV1, visitRoutesV1, type LoginRecorder,
+} from '@earthcation/rest-api'
 import { loadEnv, type Env } from './config/env'
 import jwt from './legacy/utils/jwt.utils'
 
@@ -86,8 +97,58 @@ const vark = {
   },
 }
 
+// ── Observabilidad ───────────────────────────────────────────────────────────
+
+const log = (message: string): void => { console.error(message) }
+
+/** Cliente de Redis (o null): lo comparten la caché y el limitador de peticiones (legacy/config/redis.js). */
+export const redis = createRedisClient(env.REDIS_URL, log)
+/** Caché de lecturas de todos los contextos (legacy/services/cache.service.js la re-exporta). */
+export const cache = new RedisCache(redis)
+/** Visitante detrás de Cloudflare (legacy/utils/clientIp.js lo re-exporta para el limitador). */
+export const edge = cloudflareEdge(env.CF_EDGE_SECRET)
+
+const metricsStore = new InMemoryMetricsStore()
+
+// Versión del desplegable: package.json de app-service (src/ y dist/ están a la misma altura)
+const { version } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8')) as { version: string }
+
+const runtime: RuntimeInfo = {
+  version,
+  uptimeSeconds: () => Math.round(process.uptime()),
+  memoryMb: () => Math.round(process.memoryUsage().rss / 1048576),
+}
+
+const observability = {
+  authenticate: auth,
+  ingestSecret: env.VISITS_INGEST_SECRET,
+  visits: {
+    ingest: new IngestVisitUseCase({ visits: new SequelizeVisitRepository(models), cache }),
+    stats: new GetVisitStatsUseCase({ stats: new SequelizeVisitStatsReadModel(models), cache, clock: systemClock }),
+  },
+  health: new GetHealthUseCase({
+    database: new SequelizeHealthProbe(sequelize), cache, metrics: metricsStore, runtime, clock: systemClock,
+  }),
+}
+
+/** Mide cada petición para /api/health/details (va al principio de la app). */
+export const metricsMiddleware = metrics(metricsStore)
+
+/**
+ * Lo llama el login (identidad, aún en legacy) después de un inicio de sesión exitoso, con la misma firma que
+ * tenía `recordLogin(req, user)` de legacy/contexts/observability.
+ */
+export const recordLogin: LoginRecorder = loginRecorder({
+  recordLogin: new RecordLoginUseCase(new SequelizeLoginEventRepository(models)),
+  fromCloudflare: edge.fromCloudflare,
+  log,
+})
+
 export const routes = {
   organizations: organizationRoutesV1(catalog),
   locations: locationRoutesV1(catalog),
   vark: varkRoutesV1(vark),
+  visits: visitRoutesV1(observability),
+  health: healthRoutesV1(observability),
+  publicHealth: publicHealthV1(observability),
 }
