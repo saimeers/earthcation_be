@@ -1,5 +1,5 @@
 import { cache } from '../../adapters/cache'
-import freeSession from '../../utils/freeSession.utils'
+import { freeSessions } from '../sessions'
 import { analyticsReadModel } from './analyticsReadModel'
 import { makeLearning } from './application'
 import { analyticsRouterV1, levelsRouterV1, progressRouterV1, telemetryRouterV1 } from './httpV1'
@@ -8,8 +8,7 @@ import { learningReadModel, learningRepository } from './sequelizeRepositories'
 // Raíz de composición de aprendizaje: progreso, niveles, telemetría y analítica
 export const learning = makeLearning({
   repo: learningRepository, reads: learningReadModel, analytics: analyticsReadModel, cache,
-  // La sala "Juego libre" sigue en utils/ hasta migrar el contexto de sesiones
-  freeSessions: { resolve: (userId, sessionId) => freeSession.resolveSessionId(userId, sessionId) as Promise<unknown> },
+  freeSessions, // la sala "Juego libre" del contexto de sesiones
   now: () => new Date(),
 })
 
