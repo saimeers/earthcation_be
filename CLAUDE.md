@@ -66,17 +66,22 @@ whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` 
 **learning** (progress, levels, telemetry, analytics): `attempts.ts` (latest-attempt rule), `summaries.ts`
 (`summarizeAttempts`, `summarizeRisks`, `round`, hardest risks, level progress) and `geo.ts` (DIVIPOLA coordinates) are
 pure; `analyticsReadModel.ts` and `telemetryOverview.ts` aggregate in Postgres and shape with those functions.
-`session.service.js` imports `summaries`/`attempts` from the context; the free-play session (`utils/freeSession.utils.js`)
-stays until sessions migrates. `shared/collections.ts` has `groupBy`/`countBy`/`maxBy` (order of first appearance).
+`shared/collections.ts` has `groupBy`/`countBy`/`maxBy`/`keyOf` (order of first appearance).
 `tests/contract/v1.learning.test.js` snapshots the computed VALUES (ids and dates masked), not only the shape.
-Next: sessions (including the session Excel export).
+**sessions** (rooms, free play, panel detail, participant analysis, Excel): `domain.ts` (room code, who controls and who
+sees a room), `detail.ts` (the whole `/progress/admin` computation, pure), `analysis.ts`, `report.ts` (Excel rows as
+data) + `workbook.ts` (ExcelJS drawing), `labels.ts`. The free-play session (`freeSessions.resolve`, cached 10 min) is
+exported to learning. `v1.sessions.test.js` snapshots the detail/analysis values and every Excel cell.
+
+**Phase 3 is complete (2026-10-20): every route lives in a context; `routes/`, `controllers/` and the domain services are
+gone.** What stays in JS: `models/`, `config/`, `middleware/` (auth, role, rate limit), `services/cache.service.js`,
+`utils/` (clientIp, email, hash, jwt, rateLimitStore), `scripts/`.
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
 
-`index.js` only checks `JWT_SECRET` and calls `src/server.js#start` (`prepareDatabase`: enums, sync,
-maintenance, municipios; then `listen`). The Express app itself is `src/app.js`, required without side
-effects by the tests.
+`src/main.ts` validates the env and calls `src/server.js#start` (`prepareDatabase`: migrations, interrupted
+publishes, municipios; then `listen`). The Express app itself is `src/app.js`, required without side effects by the tests.
 
 ## Tests (fase 2, 2026-10-19)
 
@@ -99,19 +104,21 @@ effects by the tests.
 
 ## Architecture
 
-Strict layering, one file per resource at each layer:
+Hexagonal and functional, one folder per bounded context (see "Bounded contexts" above):
 
 ```
-routes/<resource>.routes.js       → wires HTTP verb + path + middleware + controller method
-controllers/<resource>.controller.js → thin: parse req, call service, shape response
-services/<resource>.service.js    → all business logic + Sequelize queries live here
-models/<Resource>.js              → Sequelize model definitions
-models/index.js                   → all associations (read this first to understand relations)
+contexts/<context>/domain.ts      → types, pure rules and validation, DomainError factories
+contexts/<context>/ports.ts       → what the use cases need (repositories, read models, adapters)
+contexts/<context>/application.ts → use cases as factories over their ports, returning Result
+contexts/<context>/sequelize*.ts  → rows ↔ domain, read models (aggregation in Postgres)
+contexts/<context>/httpV1.ts      → v1 routes with the old snake_case responses
+contexts/<context>/index.ts       → composition root, mounted by app.js
+models/<Resource>.js, models/index.js → Sequelize models and all associations (read index first)
 ```
 
-Resources: `analytics`, `auth`, `level`, `location`, `organization`, `progress`, `session`,
-`telemetry` (level attempts + in-game events, see `docs/TELEMETRY.md`), `user`, `vark`. When adding a feature, follow this same four-file pattern — don't put query logic in
-controllers.
+Contexts: `catalog`, `vark`, `observability`, `identity`, `deployment`, `learning` (telemetry: see
+`docs/TELEMETRY.md`), `sessions`. A new feature goes into its context: pure logic in domain/feature modules, queries
+behind a port, never query logic in `httpV1.ts`.
 
 `middleware/auth.middleware.js` validates the JWT from `Authorization` header and attaches
 `req.user`. `middleware/role.middleware.js` exports `requireRole(...roles)` for route-level
@@ -127,22 +134,22 @@ is actually the user's **cédula**, not a chosen username.
   email because they never registered a personal one. `cedula` is the real unique identity.
 - `VarkResult` is **upserted** per user — resubmitting the VARK test overwrites the previous result,
   there is no history of past attempts.
-- `TrainingSession.code` is a **3-digit numeric** room code (`utils/session.utils.js`), easy to
+- `TrainingSession.code` is a **3-digit numeric** room code (`contexts/sessions/domain.ts#roomCode`), easy to
   read/dictate in a classroom. Retry-until-unique only checks against non-`finished` sessions
-  (`session.service.js#createSession`) — a finished session frees its code, needed since 3 digits
+  (`application.ts#freeCode`) — a finished session frees its code, needed since 3 digits
   only gives 1000 combinations. Uniqueness is a **partial unique index** `training_sessions_code_live`
   (non-finished sessions only, created in `scripts/dbMaintenance.js`), and `joinSession` prefers the
   live session for a reused code. `GET /api/sessions/code/:code` (any logged-in user) returns the live
   session (name, instructor) without enrolling — used by the game when the code comes from a QR.
 - `UserRiskProgress.session_id` / `LevelAttempt.session_id`: when the game sends none,
-  `utils/freeSession.utils.js` assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
+  `contexts/sessions` (`freeSessions.resolve`) assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
   player's profile location (a global one if the player has no location) and enrolls the player. Free sessions
   have no instructor or code, are always `active` (start/end return 400), are listed for admins and, in
   `/api/sessions/mine`, for instructors of the same location. `instructor_id`/`location_id` are nullable;
   `index.js` drops their NOT NULL explicitly after `sync` because `alter` does not do it for FK columns.
   Old rows with a null session were left as they were.
 - Instructor access: `GET /:id/progress/admin`, `/:id/participants/:userId/analysis` and
-  `/:id/export.xlsx` allow `instructor` too, guarded by `sessionService.assertCanView` (admin: all;
+  `/:id/export.xlsx` allow `instructor` too, guarded by `assertCanView` in `contexts/sessions/application.ts` (admin: all;
   instructor: own rooms + the "Juego libre" session of their profile location; else 403).
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
@@ -206,7 +213,7 @@ departamento against this catalog first (normalized + Levenshtein distance ≤2 
 create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
 frontend's bulk-import preview) only when nothing in the catalog is close enough.
 
-### Session detail for the admin panel (`session.service.js`)
+### Session detail for the admin panel (`contexts/sessions/detail.ts`, `analysis.ts`)
 
 - `GET /api/sessions/:id/progress/admin` (`getSessionProgressAdmin`) — **3 queries total**
   (session+participants, all `UserRiskProgress` of the session, all `LevelAttempt` of the session),
@@ -223,11 +230,11 @@ frontend's bulk-import preview) only when nothing in the catalog is close enough
   participant's session-scoped data + group averages for comparison (`group`), summed `summary`
   counters, event counts, panel reading time, and prev/next navigation. Reuses
   `getSessionProgressAdmin`.
-- `GET /api/sessions/:id/export.xlsx` (`sessionExport.service.js`, **ExcelJS**, not `xlsx` —
+- `GET /api/sessions/:id/export.xlsx` (`report.ts` rows + `workbook.ts`, **ExcelJS**, not `xlsx` —
   SheetJS CE can't style cells) — sheets Resumen / Participantes / Riesgos de la sesión /
   Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
   tinted result cells. Dates are written in Colombia local time (UTC−5) since Excel has no
-  timezone. Spanish labels for game enums live in `utils/telemetry.labels.js`.
+  timezone. Spanish labels for game enums live in `contexts/sessions/labels.ts`.
 - `contexts/learning/summaries.ts` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
   (used by `getUserSummary` and the session service) — don't duplicate those loops.
 
@@ -315,7 +322,7 @@ generated password is stored but never surfaced, since players never need one.
   by session/user/attempt/recorded_at, `game_events(created_at)`) and drops the free-session NOT NULLs.
 - **Redis optional** (`src/config/redis.js`, `REDIS_URL`; copied from gameploy): without it every
   user falls back to memory. `src/services/cache.service.js` `remember(ns, key, ttl, fn)` / `bump(ns)`
-  (versioned keys). Cached: session detail `getSessionProgressAdmin` 10 s per session (bumped on
+  (versioned keys). Cached: session detail (`sessions` context) 10 s per session (bumped on
   start/end), analytics overview and mines map 60 s, a player's free session 10 min, level ids 1 h.
 - **Rate limits** (`src/middleware/rateLimit.middleware.js`): requests with a token count **per user**
   (1500/15 min), anonymous ones per visitor IP (3000) — a whole classroom shares one public IP.

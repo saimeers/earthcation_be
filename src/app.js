@@ -45,7 +45,7 @@ app.use('/api/users/bulk-import', require('./contexts/identity').bulkImportRoute
 app.use('/api/vark',      require('./contexts/vark').varkRoutesV1);
 app.use('/api/progress',  require('./contexts/learning').progressRoutesV1);
 app.use('/api/levels',    require('./contexts/learning').levelRoutesV1);
-app.use('/api/sessions',  require('./routes/session.routes'));
+app.use('/api/sessions',  require('./contexts/sessions').sessionRoutesV1);
 app.use('/api/analytics', require('./contexts/learning').analyticsRoutesV1);
 app.use('/api/telemetry', require('./contexts/learning').telemetryRoutesV1);
 app.use('/api/locations',     require('./contexts/catalog').locationRoutesV1);

@@ -21,6 +21,10 @@ export const countBy = <T>(items: readonly T[], keyOf: (item: T) => string): Rea
 
 export const sum = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0)
 
+/** Texto de un valor que se usa como clave o etiqueta (como lo haría `${valor}` sin el "undefined"). */
+export const keyOf = (v: unknown): string =>
+  typeof v === 'string' ? v : typeof v === 'number' || typeof v === 'boolean' || typeof v === 'bigint' ? String(v) : ''
+
 /** El de mayor clave (el primero en empate), o undefined si no hay ninguno. */
 export const maxBy = <T>(items: readonly T[], score: (item: T) => number): T | undefined =>
   items.reduce<T | undefined>((best, item) => (best === undefined || score(item) > score(best) ? item : best), undefined)
