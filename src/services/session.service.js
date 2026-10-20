@@ -1,8 +1,8 @@
 const { Op } = require('sequelize');
 const { fn, col, literal } = require('sequelize');
 const { TrainingSession, SessionUser, User, UserProfile, UserRiskProgress, Risk, Level, Location, LevelAttempt, GameEvent } = require('../models');
-const { summarizeAttempts, summarizeRisks, round } = require('./telemetry.service');
-const { summarize, latestAttemptByLevel } = require('../utils/attempt.utils');
+const { summarizeAttempts, summarizeRisks, round } = require('../contexts/learning/summaries');
+const { summarize, latestAttemptByLevel } = require('../contexts/learning/attempts');
 const { generateSessionCode } = require('../utils/session.utils');
 const { remember, bump } = require('./cache.service');
 
