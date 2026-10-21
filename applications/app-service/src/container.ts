@@ -33,7 +33,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
-  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog,
+  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -71,6 +71,17 @@ const databaseConfig = (e: Env) => ({
 export const sequelize = createSequelize(databaseConfig(env))
 export const models = defineModels(sequelize)
 
+// ── Registro, caché y borde de Cloudflare (los usa la seguridad desde la primera petición) ───────────────────
+
+const log = (message: string): void => { console.error(message) }
+
+/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
+const redis = createRedisClient(env.REDIS_URL, log)
+/** Caché de lecturas de todos los contextos. */
+const cache = new RedisCache(redis)
+/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
+const edge = cloudflareEdge(env.CF_EDGE_SECRET)
+
 // ── Seguridad ────────────────────────────────────────────────────────────────
 
 export const security = {
@@ -81,7 +92,10 @@ export const security = {
 // Quién hace la petición en curso (la entrada abre el ámbito y `authenticate` le pone el actor)
 const requestScope = new AsyncRequestContext()
 
-const auth: RequestHandler = authenticate(security.tokens, (user) => { requestScope.setActor({ id: user.id, role: user.role }) })
+// El token solo vale mientras la cuenta esté activa; el estado vigente se consulta con una caché de 60 s
+const accounts = new SequelizeAccountDirectory(models, cache)
+
+const auth: RequestHandler = authenticate(security.tokens, { accounts, onAuthenticated: (user) => { requestScope.setActor({ id: user.id, role: user.role }) } })
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 
@@ -165,15 +179,6 @@ const deploymentUseCases = {
 }
 
 // ── Observabilidad ───────────────────────────────────────────────────────────
-
-const log = (message: string): void => { console.error(message) }
-
-/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
-const redis = createRedisClient(env.REDIS_URL, log)
-/** Caché de lecturas de todos los contextos. */
-const cache = new RedisCache(redis)
-/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
-const edge = cloudflareEdge(env.CF_EDGE_SECRET)
 
 const metricsStore = new InMemoryMetricsStore()
 

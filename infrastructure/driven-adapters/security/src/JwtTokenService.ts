@@ -6,7 +6,12 @@ import {
 
 // Algoritmo fijo al firmar y al verificar: así no se acepta un token firmado con otro (p. ej. "none")
 const ALGORITHM = 'HS256'
-const EXPIRES_IN = '7d'
+// El personal (puede ver y cambiar datos de otros) tiene sesiones cortas; el jugador, una semana: entra desde el juego en
+// una clase y no tiene dónde volver a escribir una contraseña a mitad de una sesión.
+const STAFF_EXPIRES_IN = '24h'
+const PLAYER_EXPIRES_IN = '7d'
+
+const expiresFor = (role: unknown): string => (role === undefined || role === 'player' ? PLAYER_EXPIRES_IN : STAFF_EXPIRES_IN)
 
 const isRole = (v: unknown): v is Role => typeof v === 'string' && (ROLES as readonly string[]).includes(v)
 
@@ -16,7 +21,7 @@ const toAuthenticatedUser = (claims: JwtPayload): AuthenticatedUser => {
   return { id, role, username: typeof username === 'string' ? username : null }
 }
 
-/** Tokens de sesión JWT (HS256, 7 días). El secreto llega validado desde la configuración. */
+/** Tokens de sesión JWT (HS256; 24 horas el personal y 7 días el jugador). El secreto llega validado desde la configuración. */
 export class JwtTokenService implements TokenIssuer, TokenVerifier {
   constructor(private readonly secret: string) {}
 
@@ -30,7 +35,8 @@ export class JwtTokenService implements TokenIssuer, TokenVerifier {
 
   /** Firma un payload arbitrario (el código v1 y las pruebas firman su propio payload). */
   sign(payload: object): string {
-    return jwt.sign(payload, this.secret, { expiresIn: EXPIRES_IN, algorithm: ALGORITHM })
+    const { role } = payload as { role?: unknown }
+    return jwt.sign(payload, this.secret, { expiresIn: expiresFor(role), algorithm: ALGORITHM } as jwt.SignOptions)
   }
 
   /** Payload completo de un token válido; InvalidTokenError si es inválido o venció. */

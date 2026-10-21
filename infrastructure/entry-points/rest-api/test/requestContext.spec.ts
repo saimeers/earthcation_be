@@ -21,7 +21,7 @@ describe('requestContext y authenticate', () => {
     const scope = new Scope()
     const app = express()
     app.use(requestContext(scope, ips, () => '10.0.0.9'))
-    app.get('/quien', authenticate(tokens, (user) => { scope.setActor({ id: user.id, role: user.role }) }), (_req, res) => { res.json(scope.current()) })
+    app.get('/quien', authenticate(tokens, { onAuthenticated: (user) => { scope.setActor({ id: user.id, role: user.role }) } }), (_req, res) => { res.json(scope.current()) })
     const res = await request(app).get('/quien').set('Authorization', 'Bearer x').set('User-Agent', 'pruebas/1.0')
     expect(res.body).toEqual({ origin: { ipHash: 'h(10.0.0.9)', userAgent: 'pruebas/1.0' }, actor: { id: 'u1', role: 'admin' } })
   })
