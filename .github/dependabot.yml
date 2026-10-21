@@ -5,11 +5,21 @@ updates:
     schedule:
       interval: weekly
     target-branch: develop
+    # Política del proyecto: versiones exactas y publicadas hace al menos 14 días
+    cooldown:
+      default-days: 14
+    versioning-strategy: increase
     groups:
       parches:
         update-types: [patch, minor]
+    ignore:
+      # Los tipos de Node siguen a la versión de Node del servicio (22), no a la más reciente
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
     target-branch: develop
+    cooldown:
+      default-days: 14
