@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { AuditEntry, AuditFilter, AuditLog, AuditPage, AuditActor, AuditOrigin, RequestContext, RequestScope } from '@earthcation/model'
+import type { AuditEntry, AuditLog, AuditPage, AuditActor, AuditOrigin, RequestContext, RequestScope } from '@earthcation/model'
 import { DomainError, ValidationError } from '@earthcation/model'
 import { audited, fieldChanges } from '../../src'
 
@@ -13,7 +13,7 @@ class MemoryAudit implements AuditLog {
     return Promise.resolve()
   }
 
-  list(_filter: AuditFilter): Promise<AuditPage> { return Promise.resolve({ rows: [], total: 0 }) }
+  list(): Promise<AuditPage> { return Promise.resolve({ rows: [], total: 0 }) }
 }
 
 class FakeContext implements RequestContext {
