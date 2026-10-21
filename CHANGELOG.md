@@ -2,6 +2,26 @@
 
 Versionado semántico. Cada versión sale de una rama `release/vX.Y.Z` fusionada en `main` con su tag.
 
+## v1.4.0 — 2026-10-21
+
+API v1 nueva en `/api/v1`, al lado de la API anterior (que pasa a llamarse legacy y no cambia).
+
+### Nuevo
+- Todos los contextos en v1: catálogo, VARK, identidad (autenticación y usuarios), sesiones (salas, detalle, análisis
+  y Excel), aprendizaje (intentos, eventos, resultados por riesgo, niveles y analíticas), despliegue de versiones del
+  juego, visitas y salud, e importación masiva.
+- Sobre `{ data, meta }`, errores `{ error: { code, message, details } }`, JSON en camelCase, fechas ISO 8601, ids UUID
+  validados, listados con `page`, `limit` y `sort`, y reglas de negocio con código 422.
+- Cada ruta se define una vez y de ahí salen el router, la validación con zod y el documento OpenAPI 3.1. Swagger UI en
+  `/api/v1/docs` y la especificación en `/api/v1/openapi.json`.
+- Los límites de intentos de login y de restablecimiento también cubren `/api/v1/auth/*`.
+- README del repositorio.
+
+### Despliegue
+- Variable nueva, opcional: `DOCS_ACCESS` (`public` por defecto; `staff` exige token de admin o desarrollador para ver
+  la documentación). En producción está en `staff`.
+- La API legacy no cambia: el panel y las versiones ya publicadas del juego siguen funcionando igual.
+
 ## v1.3.0 — 2026-10-20
 
 Refactor interno (fase 3b): el contrato de la API v1 no cambia.
