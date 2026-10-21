@@ -7,5 +7,5 @@ const require = createRequire(import.meta.url)
 require('../support/env.cjs')
 
 afterAll(async () => {
-  await require('../../dist/legacy/config/database').close()
+  await require('../../dist/container').sequelize.close()
 })

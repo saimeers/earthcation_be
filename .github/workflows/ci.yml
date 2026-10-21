@@ -51,7 +51,7 @@ jobs:
         run: pnpm build
 
       - name: Carga de la app sin BD
-        run: node -e "require('./applications/app-service/dist/legacy/app')"
+        run: node -e "require('./applications/app-service/dist/container').app"
         env:
           JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
           RESEND_API_KEY: ci-sin-envio-de-correos

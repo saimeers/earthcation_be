@@ -63,5 +63,9 @@ export class InMemoryLocationRepository implements LocationRepository {
     return Promise.resolve(created)
   }
 
+  async createMany(locations: readonly NewLocation[]) {
+    for (const l of locations) await this.create(l)
+  }
+
   save(l: Location) { this.rows.set(l.id, l); return Promise.resolve() }
 }

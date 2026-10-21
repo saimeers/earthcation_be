@@ -52,7 +52,7 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: ['/dist/', '/test/', 'applications/app-service/src/legacy/'] },
+    exclude: { path: ['/dist/', '/test/'] },
     tsConfig: { fileName: 'tsconfig.base.json' },
     tsPreCompilationDeps: true,
     combinedDependencies: true,

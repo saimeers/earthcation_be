@@ -8,8 +8,10 @@
 // Solo contra la BD de pruebas: escribe filas reales.
 require('dotenv').config();
 const { Op } = require('sequelize');
-const { User, Risk, LevelAttempt, GameEvent, UserRiskProgress, TrainingSession } = require('../../src/legacy/models');
-const { generateToken } = require('../../src/legacy/utils/jwt.utils');
+// Usa el build (pnpm build): el composition root da los modelos y el firmador de tokens con el JWT_SECRET del .env
+const { models, security } = require('../../dist/container');
+const { User, Risk, LevelAttempt, GameEvent, UserRiskProgress, TrainingSession } = models;
+const generateToken = (payload) => security.tokens.sign(payload);
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, arr) => {
   if (a.startsWith('--')) acc.push([a.slice(2), arr[i + 1] && !arr[i + 1].startsWith('--') ? arr[i + 1] : true]);

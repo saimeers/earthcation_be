@@ -15,5 +15,7 @@ export interface LocationRepository {
   findActiveById(id: string): Promise<Location | null>
   findByPlace(municipality: string, department: string): Promise<Location | null>
   create(location: NewLocation): Promise<Location>
+  /** Alta en lote (una sola consulta), sin revisar duplicados: eso lo decide quien llama. */
+  createMany(locations: readonly NewLocation[]): Promise<void>
   save(location: Location): Promise<void>
 }

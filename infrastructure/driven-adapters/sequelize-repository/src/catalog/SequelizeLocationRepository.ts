@@ -36,6 +36,10 @@ export class SequelizeLocationRepository implements LocationRepository {
     return toLocation(rowOf(await this.models.Location.create({ ...l })))
   }
 
+  async createMany(locations: readonly NewLocation[]): Promise<void> {
+    await this.models.Location.bulkCreate(locations.map((l) => ({ ...l })))
+  }
+
   async save(l: Location): Promise<void> {
     await this.models.Location.update(locationColumns(l), { where: { id: l.id } })
   }

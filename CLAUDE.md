@@ -36,11 +36,12 @@ applications/app-service           the only deployable: config/env.ts, container
 Graph: model ← nothing · usecase ← model · adapters ← model · entry-points ← usecase, model · app-service ← all.
 Style: classes + throw (use cases with `execute(cmd)`, entities/VOs with behavior, typed `DomainError` subclasses
 from `@earthcation/model`, one `errorHandlerV1` in rest-api maps `kind` → status). Packages export only `index.ts`.
-All seven contexts (catalog → vark → observability → identity → deployment → learning → sessions) now live in the
-clean packages; `applications/app-service/src/legacy/contexts/` is gone. What stays in `legacy/` is no longer
-per-context: `models/`, `config/`, `middleware/` (auth, role, rate limit), `services/cache.service.js`, `utils/`
-(clientIp, email, hash, jwt, rateLimitStore), `scripts/`, plus `shared/result.ts` (still used by `config/env.ts`).
-`legacy/app.js` mounts every route from `container.routes.*`.
+All seven contexts (catalog → vark → observability → identity → deployment → learning → sessions) live in the
+clean packages and **`applications/app-service/src/legacy/` no longer exists** (closed 2026-10-20): the Express app is
+rest-api's `createApp(deps)` (helmet, cors, compression, morgan, metrics, `rateLimiters`, every v1 router, 404 +
+`errorHandlerV1`), built by `container.ts` and exported as `app`; boot (`src/boot.ts#prepareDatabase`/`start`) runs
+migrations, `RecoverInterruptedPublishesUseCase` and `SeedPlaceCatalogUseCase` (municipios) before `listen`.
+app-service is TypeScript only (no `allowJs`).
 
 Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location` entities with `prepare`/`change`/
 `disable`/`enable`, errors, `OrganizationRepository`/`LocationRepository`), 13 use cases in
@@ -48,7 +49,8 @@ Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location`
 `OrganizationController`/`LocationController` + `routes/catalog.routes.ts` + `dto/v1/catalog.ts` in rest-api.
 Shared pieces that arrived with it: `@earthcation/sequelize-repository` owns **all models** (`defineModels(sequelize)`),
 the connection factory and the Umzug migrations; `app-service/src/container.ts` creates the connection from
-`config/env.ts` (DB_* validated there) and `legacy/config/database.js` + `legacy/models/index.js` just re-export it.
+`config/env.ts` (DB_* validated there) and exports `sequelize` + `models` (used directly only by the test seed and
+`scripts/load`).
 rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1). `main.ts` validates env
 before loading the app.
 — **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
@@ -60,15 +62,15 @@ and `ActivationPointer`, errors, gateways `GameVersionRepository`/`OriginalsStor
 `PreviewSigner`/`PublishQueue`/`IdGenerator`), 11 use cases in `usecase/src/deployment/{status,versions,publishing,play}/`,
 `SequelizeGameVersionRepository`, new adapters `object-storage` (S3/R2/disk), `zip-reader`, `hmac-signer`,
 `in-process-queue` (the container wires the queue to `PublishVersionUseCase`), `DeploymentController`/`PlayLocalController`
-+ `routes/deployment.routes.ts` + `dto/v1/deployment.ts`; `container.deployment` gives `legacy/app.js` the local-publishing
-flag and `legacy/server.js` the boot recovery. Deploy env vars are validated in `config/env.ts`.
++ `routes/deployment.routes.ts` + `dto/v1/deployment.ts`; the local-publishing flag goes to `createApp`
+(`servePlayLocal`) and the boot recovery to `bootTasks`. Deploy env vars are validated in `config/env.ts`.
 — **observability**: `model/src/observability` (`Visit.fromWorker`, `BotDetector`, `UserAgent`, `LoginEvent` + `loginPlace`/`utf8Header`,
 `VisitWindow`, pure `summarizeMetrics`, `Health` types; gateways `VisitRepository`, `LoginEventRepository`, `VisitStatsReadModel`,
 `MetricsStore`, `DatabaseHealthProbe`/`CacheHealthProbe`, `RuntimeInfo`), 4 use cases in `usecase/src/observability/`, new adapters
 `@earthcation/redis-cache` (`RedisCache`: the shared `Cache`, Redis or memory) and `@earthcation/in-memory-metrics`;
 rest-api `VisitController`/`HealthController`, `metrics` middleware, `cloudflareEdge` (client IP, old `utils/clientIp.js`).
-The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET` and exports `redis`, `cache` and `edge`;
-`legacy/config/redis.js`, `legacy/services/cache.service.js` and `legacy/utils/clientIp.js` just re-export them.
+The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET`; the Redis client feeds both `RedisCache` and
+`RedisWindowCounter` (rate-limit counters), and `edge.clientIp` keys the anonymous rate limits.
 — **identity**: `model/src/identity` (`User` entity with `register`/`imported`/`edit`/`assertEditableBy`/`assertCanLogIn`/
 password reset; VOs `Cedula`, `Email`, `UserRole`; `AnmSheet` = pure ANM Excel reading; domain services `PlaceMatcher`
 (municipio catalog via the `PlaceCatalog` gateway), `IdentifierAvailability`, `ResetTokenFactory`; gateways `UserRepository`,
@@ -77,10 +79,9 @@ password reset; VOs `Cedula`, `Email`, `UserRole`; `AnmSheet` = pure ANM Excel r
 `@earthcation/security` (bcrypt, `JwtTokenService` = `TokenIssuer` + `TokenVerifier`, HS256), `@earthcation/resend-mailer`,
 `@earthcation/excel` (xlsx reader) and `@earthcation/geo-catalog` (`colombia-municipios.json`); `SequelizeUser*` +
 `SequelizeImportDirectory`; rest-api `AuthController`/`UserController`/`BulkImportController` + `routes/identity.routes.ts`.
-The login's `LoginRecorder` is observability's `recordLogin`. `legacy/utils/jwt.utils.js`/`hash.utils.js` re-export the
-container's `security` instances (auth middleware, rate limiter, test seed, `scripts/load`); tests stub `ResendMailer.prototype`
-(`test/support/env.cjs` → `outbox`). Env: `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`. Paths below that say `src/...` mean
-`applications/app-service/src/legacy/...` until then.
+The login's `LoginRecorder` is observability's `recordLogin`. The container exports `security` (tokens + passwords) for
+the test seed and `scripts/load`; tests stub `ResendMailer.prototype` (`test/support/env.cjs` → `outbox`). Env:
+`RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`.
 — **learning**: `model/src/learning` (pure `attempts.ts` = latest-attempt rule, `summaries.ts` = aggregators, `LevelProgress.ts`,
 value objects `RiskResultInput`/`NewAttemptInput`/`EventBatch` with their errors, gateways `LearningRepository`/`LearningReadModel`/
 `AnalyticsReadModel`/`FreePlaySessions`/`MunicipalityCoordinates`), 16 use cases in `usecase/src/learning/{progress,levels,telemetry,
@@ -98,23 +99,20 @@ and `SequelizeSessionDetailReader` (the `/progress/admin` computation cached 10 
 sequelize-repository; `@earthcation/excel`'s `ExcelSessionReportWriter` (ExcelJS, moved from the old `workbook.ts`) implements
 `SessionReportWriter`. `SessionController` + `routes/sessions.routes.ts` + `dto/v1/sessions.ts` in rest-api; `container.routes.sessions`.
 The "Juego libre" gateway (`FreePlaySessions`/`SequelizeFreePlaySessions`) arrived with **learning** above — sessions does not
-re-implement it. `legacy/contexts/` is now empty; `legacy/adapters/`, `legacy/ports/` and `legacy/shared/errors.ts` (the old
-functional `Result`/`DomainError` HTTP plumbing) were deleted with this migration, since sessions was their last consumer.
+re-implement it.
 
-### TypeScript (fase 3, 2026-10-19)
+### TypeScript
 
-- In app-service, JS (v1) and TS coexist (`allowJs`), compiled from `src/` to `dist/`. The entry is
-  `applications/app-service/src/main.ts` (validates env with `src/config/env.ts`, zod, then `legacy/server.js#start`).
+- All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is
+  `applications/app-service/src/main.ts`: validates env with `src/config/env.ts` (zod; throws `InvalidEnvError` with
+  every problem, main prints them and exits) and then calls `src/boot.ts#start`.
   **Production needs the build** — `pnpm start` on a fresh clone without `pnpm build` fails.
 - Contract tests (`applications/app-service/test/`) load `dist/` (turbo builds first), so they check the deployed artifact.
 - The service version reported by `/api/health` is `applications/app-service/package.json#version` (bump it with the
   root one at each release).
-- `shared/result.ts`: `Result<T, E>` (`ok`, `err`, `map`, `flatMap`, `andThen`, `fromNullable`) — domain and
-  application never throw. `shared/errors.ts`: `DomainError { kind, code, message, details? }` and
-  `httpStatusOf` (v2 maps business rules to 422).
-- ESLint on `src/**/*.ts`: typescript-eslint strict-type-checked + eslint-plugin-functional, `max-lines-per-function`
-  10 (blank lines and comments excluded), `complexity` 5, `max-params` 3, `max-depth` 2, no `let`, no mutation,
-  no classes, no `throw`, no loops. TypeScript is pinned to 6.0.x (typescript-eslint does not support 7 yet).
+- ESLint on `src/**/*.ts`: typescript-eslint strict-type-checked, `max-lines-per-function` 10 (blank lines and comments
+  excluded), `complexity` 5, `max-params` 3, `max-depth` 2. TypeScript is pinned to 6.0.x (typescript-eslint does not
+  support 7 yet).
 
 ### Bounded contexts (strangler, historical — fase 3b finished this)
 
@@ -129,11 +127,12 @@ and creates user + profile in one transaction; an unknown `role` or non-numeric 
 from Postgres; an empty `role` in `PUT /api/users/:id` leaves it unchanged; cédula/email are trimmed; deployment's
 `too_large` (413) and `unavailable` (503) error kinds arrived with that migration.
 
-No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
-usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
+Every env var is declared (with its default) in `applications/app-service/src/config/env.ts`, the only place that
+reads `process.env`.
 
-`src/main.ts` validates the env and calls `src/server.js#start` (`prepareDatabase`: migrations, interrupted
-publishes, municipios; then `listen`). The Express app itself is `src/app.js`, required without side effects by the tests.
+`src/main.ts` validates the env and calls `src/boot.ts#start` (`prepareDatabase`: migrations, interrupted
+publishes, municipios; then `listen`). The Express app itself is `container.ts#app`, required without side effects
+by the tests.
 
 ## Tests (fase 2, 2026-10-19)
 
@@ -239,11 +238,11 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
   in the Excel), and an internally generated random password hash that's never emailed or exposed
   (irrelevant since player login is cedula-only).
 
-### Municipios catalog (`@earthcation/geo-catalog`: `src/data/colombia-municipios.json`; `src/scripts/seedMunicipios.js`)
+### Municipios catalog (`@earthcation/geo-catalog`: `src/data/colombia-municipios.json`; `SeedPlaceCatalogUseCase`)
 
 Closed catalog of 33 departments / 1104 municipios (open dataset, DANE-based, with a manual fix
 promoting Bogotá to its own department "Bogotá D.C." instead of a Cundinamarca municipality).
-Seeded idempotently on every boot (`index.js`, after `sequelize.sync`) — safe to re-run, only
+Seeded idempotently on every boot (`boot.ts#prepareDatabase`, after the migrations) — safe to re-run, only
 inserts rows that don't already exist by normalized municipality+department match. Added to fix a
 real production issue: `locations` had accumulated 3 separate rows for "Norte de Santander" from
 free-text Excel imports ("Norte de Santander" / "NORTE DE SANTANDER" / "Norte de Santender").
@@ -290,7 +289,7 @@ computed the same way as `getByOrganization`).
 ### Schema management
 
 **Versioned migrations with Umzug (since fase 3).** `src/infrastructure/migrations/index.ts` runs the pending
-migrations on boot (`server.js#prepareDatabase`) and records them in `schema_migrations`. `sync({ alter: true })`
+migrations on boot (`boot.ts#prepareDatabase`) and records them in `schema_migrations`. `sync({ alter: true })`
 is gone: **changing a model no longer changes the database** — every schema change needs a new migration
 file (`0002_<what>.ts` exporting `name` and `up({ context: sequelize })`, added to the explicit `MIGRATIONS`
 list; no glob, so it works from `src/` and `dist/`).
@@ -362,10 +361,11 @@ generated password is stored but never surfaced, since players never need one.
   write tables lacked (`level_attempts(session_id)`, `(user_id, level_key)`, `user_risk_progress`
   by session/user/attempt/recorded_at, `game_events(created_at)`) and drops the free-session NOT NULLs.
 - **Redis optional** (`@earthcation/redis-cache`, `REDIS_URL`; copied from gameploy): without it every
-  user falls back to memory. `RedisCache` (legacy: `src/services/cache.service.js`) `remember(ns, key, ttl, fn)` / `bump(ns)`
+  user falls back to memory. `RedisCache` `remember(ns, key, ttl, fn)` / `bump(ns)`
   (versioned keys). Cached: session detail (`sessions` context) 10 s per session (bumped on
   start/end), analytics overview and mines map 60 s, a player's free session 10 min, level ids 1 h.
-- **Rate limits** (`src/middleware/rateLimit.middleware.js`): requests with a token count **per user**
+- **Rate limits** (rest-api `middlewares/rateLimit.ts`, counters in Redis via `RedisWindowCounter` when there is
+  one, `RATE_LIMIT_*` in `config/env.ts`): requests with a token count **per user**
   (1500/15 min), anonymous ones per visitor IP (3000) — a whole classroom shares one public IP.
   Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: rest-api `middlewares/cloudflare.ts`.
 - `trust proxy`, `compression`, `ALLOWED_ORIGINS` accepts a comma-separated list.
@@ -427,7 +427,7 @@ developer) aggregates everything, cached 60 s.
 - `PUT /api/users/:id` (any logged-in user, for their own record): non-admins can only change `first_name`,
   `last_name`, `age`, `email`; `role`, `cedula`, `username`, `organization_id`, `location_id` are silently
   ignored (before, a player could send `{role:'admin'}`). Admins keep the full field list.
-- Login limits (`rateLimit.middleware.js`, mounted on `/api/auth/login` after `authLimiter`):
+- Login limits (rest-api `middlewares/rateLimit.ts`, mounted on `/api/auth/login` after the auth limiter):
   `loginCedulaLimiter` 10 failed attempts / 15 min per SHA-256 of the cédula (`skipSuccessfulRequests`);
   `loginIpFailLimiter` 60 / 15 min per IP counting **only cédulas that don't exist** (`skip` = cédula exists),
   so a classroom's typos never lock out players with valid cédulas. Env: `RATE_LIMIT_LOGIN_CEDULA_MAX`,

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LocationFieldsRequiredError, LocationNotFoundError, LocationTakenError } from '@earthcation/model'
 import {
-  ChangeLocationStatusUseCase, CreateLocationUseCase, GetLocationUseCase, SearchLocationsUseCase, UpdateLocationUseCase,
+  ChangeLocationStatusUseCase, CreateLocationUseCase, GetLocationUseCase, SearchLocationsUseCase, SeedPlaceCatalogUseCase,
+  UpdateLocationUseCase,
 } from '../../src'
 import { InMemoryLocationRepository } from '../fakes/InMemoryCatalog'
 
@@ -25,5 +26,23 @@ describe('casos de uso de localidades', () => {
     expect(await new SearchLocationsUseCase(repo).execute({ municipality: 'sardinata' })).toEqual([])
     const enabled = await new ChangeLocationStatusUseCase(repo).execute({ id, active: true })
     expect([enabled.municipality, enabled.isActive]).toEqual(['Sardinata Centro', true])
+  })
+
+  it('siembra el catálogo de municipios una sola vez, sin repetir los que ya existen', async () => {
+    await new CreateLocationUseCase(repo).execute({ municipality: ' tibú ', department: 'NORTE DE SANTANDER' })
+    const catalog = {
+      departments: () => [
+        { name: 'Norte de Santander', municipalities: ['Tibú', 'Sardinata', 'Sardinata'] },
+        { name: 'Boyacá', municipalities: ['Sogamoso'] },
+      ],
+    }
+    const seed = new SeedPlaceCatalogUseCase({ catalog, locations: repo })
+    expect(await seed.execute()).toBe(2)
+    expect(await seed.execute()).toBe(0)
+    expect([...repo.rows.values()].map((l) => [l.municipality, l.department, l.country])).toEqual([
+      [' tibú ', 'NORTE DE SANTANDER', 'Colombia'],
+      ['Sardinata', 'Norte de Santander', 'Colombia'],
+      ['Sogamoso', 'Boyacá', 'Colombia'],
+    ])
   })
 })

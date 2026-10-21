@@ -20,6 +20,7 @@ export * from './catalog/locations/update-location/UpdateLocationCommand'
 export * from './catalog/locations/update-location/UpdateLocationUseCase'
 export * from './catalog/locations/change-location-status/ChangeLocationStatusCommand'
 export * from './catalog/locations/change-location-status/ChangeLocationStatusUseCase'
+export * from './catalog/locations/seed-place-catalog/SeedPlaceCatalogUseCase'
 
 // ── vark ──
 export * from './vark/results/submit-vark-test/SubmitVarkTestCommand'
