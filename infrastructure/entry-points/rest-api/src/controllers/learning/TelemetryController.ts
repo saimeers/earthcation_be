@@ -4,8 +4,8 @@ import type {
   SaveEventsUseCase, StartAttemptUseCase,
 } from '@earthcation/usecase'
 import { currentUser } from '../../middlewares/auth'
-import { endedAttemptV1, savedEventsV1, startedAttemptV1 } from '../../dto/v1/learning'
-import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+import { endedAttemptLegacy, savedEventsLegacy, startedAttemptLegacy } from '../../dto/legacy/learning'
+import { bodyOf, pathParam, queryText } from '../../dto/legacy/request'
 
 export interface TelemetryUseCases {
   readonly startAttempt: StartAttemptUseCase
@@ -25,17 +25,17 @@ export class TelemetryController {
 
   startAttempt = async (req: Request, res: Response): Promise<void> => {
     const attempt = await this.useCases.startAttempt.execute({ userId: currentUser(req).id, body: bodyOf(req) })
-    res.status(201).json(startedAttemptV1(attempt))
+    res.status(201).json(startedAttemptLegacy(attempt))
   }
 
   endAttempt = async (req: Request, res: Response): Promise<void> => {
     const cmd = { userId: currentUser(req).id, attemptId: pathParam(req, 'id'), body: bodyOf(req) }
-    res.json(endedAttemptV1(await this.useCases.endAttempt.execute(cmd)))
+    res.json(endedAttemptLegacy(await this.useCases.endAttempt.execute(cmd)))
   }
 
   saveEvents = async (req: Request, res: Response): Promise<void> => {
     const saved = await this.useCases.saveEvents.execute({ userId: currentUser(req).id, body: bodyOf(req) })
-    res.status(201).json(savedEventsV1(saved))
+    res.status(201).json(savedEventsLegacy(saved))
   }
 
   myAttempts = async (req: Request, res: Response): Promise<void> => {

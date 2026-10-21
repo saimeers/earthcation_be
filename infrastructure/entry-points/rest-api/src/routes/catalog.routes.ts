@@ -13,8 +13,8 @@ export interface CatalogRoutesDeps {
 const writers = (auth: RequestHandler) => [auth, requireRole('admin', 'instructor')]
 const admins = (auth: RequestHandler) => [auth, requireRole('admin')]
 
-/** /api/organizations (v1) */
-export const organizationRoutesV1 = (deps: CatalogRoutesDeps): Router => {
+/** /api/organizations (legacy) */
+export const organizationRoutesLegacy = (deps: CatalogRoutesDeps): Router => {
   const c = new OrganizationController(deps.organizations)
   return Router()
     .get('/', c.list).get('/search', c.search).get('/types', c.types).get('/:id', c.get)
@@ -24,8 +24,8 @@ export const organizationRoutesV1 = (deps: CatalogRoutesDeps): Router => {
     .patch('/:id/enable', ...admins(deps.authenticate), c.enable)
 }
 
-/** /api/locations (v1) */
-export const locationRoutesV1 = (deps: CatalogRoutesDeps): Router => {
+/** /api/locations (legacy) */
+export const locationRoutesLegacy = (deps: CatalogRoutesDeps): Router => {
   const c = new LocationController(deps.locations)
   return Router()
     .get('/', c.list).get('/search', c.search).get('/:id', c.get)

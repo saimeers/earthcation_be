@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import type { ConfirmBulkImportUseCase, PreviewBulkImportUseCase } from '@earthcation/usecase'
-import { importRowsV1, previewV1, reportV1 } from '../../dto/v1/identity'
-import { bodyOf } from '../../dto/v1/request'
+import { importRowsLegacy, previewLegacy, reportLegacy } from '../../dto/legacy/identity'
+import { bodyOf } from '../../dto/legacy/request'
 
 export interface BulkImportUseCases {
   readonly preview: PreviewBulkImportUseCase
@@ -14,11 +14,11 @@ export class BulkImportController {
 
   parse = async (req: Request, res: Response): Promise<void> => {
     const rows = await this.useCases.preview.execute({ file: req.file?.buffer })
-    res.json({ rows: rows.map(previewV1) })
+    res.json({ rows: rows.map(previewLegacy) })
   }
 
   confirm = async (req: Request, res: Response): Promise<void> => {
-    const report = await this.useCases.confirm.execute({ rows: importRowsV1(bodyOf(req).rows) })
-    res.status(201).json(reportV1(report))
+    const report = await this.useCases.confirm.execute({ rows: importRowsLegacy(bodyOf(req).rows) })
+    res.status(201).json(reportLegacy(report))
   }
 }

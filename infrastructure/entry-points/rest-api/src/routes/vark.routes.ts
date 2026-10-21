@@ -10,8 +10,8 @@ export interface VarkRoutesDeps {
 // El jugador envía y consulta su test; los listados del panel son para el personal (lectura)
 const staff = (auth: RequestHandler) => [auth, requireRole('instructor', 'admin', 'developer')]
 
-/** /api/vark (v1) */
-export const varkRoutesV1 = (deps: VarkRoutesDeps): Router => {
+/** /api/vark (legacy) */
+export const varkRoutesLegacy = (deps: VarkRoutesDeps): Router => {
   const c = new VarkController(deps.vark)
   return Router()
     .post('/submit', deps.authenticate, c.submit)

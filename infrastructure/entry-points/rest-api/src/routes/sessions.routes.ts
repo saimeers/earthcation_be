@@ -33,8 +33,8 @@ const detailRoutes = (router: Router, auth: RequestHandler, c: SessionController
   router.get('/:id/export.xlsx', ...readers(auth), c.exportReport)
 }
 
-/** `/api/sessions` (v1) */
-export const sessionRoutesV1 = (deps: SessionsRoutesDeps): Router => {
+/** `/api/sessions` (legacy) */
+export const sessionRoutesLegacy = (deps: SessionsRoutesDeps): Router => {
   const c = new SessionController(deps.sessions)
   const router = Router()
   writeRoutes(router, deps.authenticate, c)

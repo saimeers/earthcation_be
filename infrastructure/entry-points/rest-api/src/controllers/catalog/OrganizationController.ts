@@ -3,8 +3,8 @@ import type {
   ChangeOrganizationStatusUseCase, CreateOrganizationUseCase, GetOrganizationUseCase, ListOrganizationsUseCase,
   ListOrganizationTypesUseCase, SearchOrganizationsUseCase, UpdateOrganizationUseCase,
 } from '@earthcation/usecase'
-import { organizationDetailV1, organizationV1 } from '../../dto/v1/catalog'
-import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+import { organizationDetailLegacy, organizationLegacy } from '../../dto/legacy/catalog'
+import { bodyOf, pathParam, queryText } from '../../dto/legacy/request'
 
 export interface OrganizationUseCases {
   readonly list: ListOrganizationsUseCase
@@ -21,12 +21,12 @@ export class OrganizationController {
   constructor(private readonly useCases: OrganizationUseCases) {}
 
   list = async (_req: Request, res: Response): Promise<void> => {
-    res.json((await this.useCases.list.execute()).map(organizationV1))
+    res.json((await this.useCases.list.execute()).map(organizationLegacy))
   }
 
   search = async (req: Request, res: Response): Promise<void> => {
     const query = { name: queryText(req, 'name'), type: queryText(req, 'type') }
-    res.json((await this.useCases.search.execute(query)).map(organizationV1))
+    res.json((await this.useCases.search.execute(query)).map(organizationLegacy))
   }
 
   types = async (_req: Request, res: Response): Promise<void> => {
@@ -34,19 +34,19 @@ export class OrganizationController {
   }
 
   get = async (req: Request, res: Response): Promise<void> => {
-    res.json(organizationDetailV1(await this.useCases.get.execute(pathParam(req, 'id'))))
+    res.json(organizationDetailLegacy(await this.useCases.get.execute(pathParam(req, 'id'))))
   }
 
   create = async (req: Request, res: Response): Promise<void> => {
     const body = bodyOf(req)
     const organization = await this.useCases.create.execute({ name: body.name, type: body.type })
-    res.status(201).json({ message: 'Organización creada', data: organizationV1(organization) })
+    res.status(201).json({ message: 'Organización creada', data: organizationLegacy(organization) })
   }
 
   update = async (req: Request, res: Response): Promise<void> => {
     const body = bodyOf(req)
     const organization = await this.useCases.update.execute({ id: pathParam(req, 'id'), changes: { name: body.name, type: body.type } })
-    res.json({ message: 'Organización actualizada', data: organizationV1(organization) })
+    res.json({ message: 'Organización actualizada', data: organizationLegacy(organization) })
   }
 
   disable = async (req: Request, res: Response): Promise<void> => {

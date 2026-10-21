@@ -46,7 +46,12 @@ export default tseslint.config(
   },
   {
     // Esquemas de tablas y plantillas HTML de correo: datos declarativos, no lógica
-    files: ['infrastructure/driven-adapters/sequelize-repository/src/models/**/*.ts', 'infrastructure/driven-adapters/resend-mailer/src/templates.ts'],
+    files: [
+      'infrastructure/driven-adapters/sequelize-repository/src/models/**/*.ts',
+      'infrastructure/driven-adapters/resend-mailer/src/templates.ts',
+      // Definición declarativa de las rutas de v1 (método, ruta, esquemas y handler de una línea)
+      'infrastructure/entry-points/rest-api/src/v1/routes/**/*.ts',
+    ],
     rules: { 'max-lines-per-function': 'off' },
   },
 )

@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express'
 import type { GetLevelProgressUseCase, ListProgressUseCase, SaveProgressUseCase } from '@earthcation/usecase'
 import { currentUser } from '../../middlewares/auth'
-import { fullProgressV1, savedProgressV1 } from '../../dto/v1/learning'
-import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+import { fullProgressLegacy, savedProgressLegacy } from '../../dto/legacy/learning'
+import { bodyOf, pathParam, queryText } from '../../dto/legacy/request'
 
 export interface ProgressUseCases {
   readonly save: SaveProgressUseCase
@@ -16,12 +16,12 @@ export class ProgressController {
 
   save = async (req: Request, res: Response): Promise<void> => {
     const progress = await this.useCases.save.execute({ userId: currentUser(req).id, body: bodyOf(req) })
-    res.status(201).json(savedProgressV1(progress))
+    res.status(201).json(savedProgressLegacy(progress))
   }
 
   full = async (req: Request, res: Response): Promise<void> => {
     const userId = currentUser(req).id
-    res.json(fullProgressV1(userId, await this.useCases.list.execute({ userId })))
+    res.json(fullProgressLegacy(userId, await this.useCases.list.execute({ userId })))
   }
 
   mine = async (req: Request, res: Response): Promise<void> => {

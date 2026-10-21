@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import type { GetVisitStatsUseCase, IngestVisitUseCase } from '@earthcation/usecase'
-import { visitStatsV1 } from '../../dto/v1/observability'
-import { bodyOf } from '../../dto/v1/request'
+import { visitStatsLegacy } from '../../dto/legacy/observability'
+import { bodyOf } from '../../dto/legacy/request'
 
 export interface VisitUseCases {
   readonly ingest: IngestVisitUseCase
@@ -18,6 +18,6 @@ export class VisitController {
   }
 
   stats = async (req: Request, res: Response): Promise<void> => {
-    res.json(visitStatsV1(await this.useCases.stats.execute({ days: req.query.days })))
+    res.json(visitStatsLegacy(await this.useCases.stats.execute({ days: req.query.days })))
   }
 }

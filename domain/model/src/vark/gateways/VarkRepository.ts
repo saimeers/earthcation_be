@@ -9,7 +9,7 @@ export interface VarkPlaceFilter {
 
 /**
  * Modelo de lectura de los listados del panel: filas tal como las arma la consulta (resultado + usuario + perfil +
- * organización + localidad). v1 las devuelve crudas; v2 tendrá su propia proyección.
+ * organización + localidad). La API legacy las devuelve crudas; v1 tendrá su propia proyección.
  */
 export type VarkListingRow = Readonly<Record<string, unknown>>
 
