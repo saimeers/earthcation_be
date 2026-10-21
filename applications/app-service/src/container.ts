@@ -55,7 +55,7 @@ import {
   progressRoutesLegacy, levelRoutesLegacy, telemetryRoutesLegacy, analyticsRoutesLegacy,
   sessionRoutesLegacy,
 } from '@earthcation/rest-api'
-import { parseEnv, type Env } from './config/env'
+import { allowedOrigins, parseEnv, type Env } from './config/env'
 
 // Composition root (inyección manual): instancia los adaptadores, se los pasa a los casos de uso y arma la app HTTP.
 // Exporta la app, las tareas de arranque y lo que la semilla de pruebas y scripts/load usan directo (conexión,
@@ -65,7 +65,7 @@ export const env = parseEnv()
 
 const databaseConfig = (e: Env) => ({
   host: e.DB_HOST, port: e.DB_PORT, name: e.DB_NAME, user: e.DB_USER, password: e.DB_PASS,
-  ssl: e.NODE_ENV === 'production', poolMax: e.DB_POOL_MAX, poolMin: e.DB_POOL_MIN,
+  ssl: e.NODE_ENV === 'production', sslCa: e.DB_SSL_CA?.replaceAll('\\n', '\n'), poolMax: e.DB_POOL_MAX, poolMin: e.DB_POOL_MIN,
 })
 
 export const sequelize = createSequelize(databaseConfig(env))
@@ -416,7 +416,7 @@ const routesV1 = createRouterV1({
 const limiters = rateLimiters({
   limits: {
     userMax: env.RATE_LIMIT_USER_MAX, ipMax: env.RATE_LIMIT_IP_MAX, authMax: env.RATE_LIMIT_AUTH_MAX,
-    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX,
+    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX, joinMax: env.RATE_LIMIT_JOIN_MAX,
   },
   tokens: security.tokens,
   clientIp: edge.clientIp,
@@ -432,7 +432,7 @@ export const app = createApp({
   requestContext: requestContext(requestScope, auditHash, edge.clientIp),
   limiters,
   metrics: metrics(metricsStore),
-  allowedOrigins: env.ALLOWED_ORIGINS,
+  allowedOrigins: allowedOrigins(env),
   servePlayLocal: localPublishing,
   ...(env.NODE_ENV !== 'test' && { requestLog: env.NODE_ENV === 'production' ? 'tiny' : 'dev' }),
   log,

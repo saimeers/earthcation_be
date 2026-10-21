@@ -14,6 +14,7 @@ const rateLimits = {
   RATE_LIMIT_AUTH_MAX: maxPerWindow(300),
   RATE_LIMIT_LOGIN_CEDULA_MAX: maxPerWindow(10),
   RATE_LIMIT_LOGIN_IP_FAIL_MAX: maxPerWindow(60),
+  RATE_LIMIT_JOIN_MAX: maxPerWindow(20),
 }
 
 // Varios orígenes separados por coma (panel, juego); sin definir o con '*', cualquiera ('*' dentro de una lista no
@@ -53,6 +54,9 @@ const schema = z.object({
   DB_NAME: z.string().optional(),
   DB_USER: z.string().optional(),
   DB_PASS: z.string().optional(),
+  // Certificado de la CA del servidor de BD (PEM; los saltos de línea pueden ir como \n). Con él la conexión TLS verifica
+  // el certificado; sin él se cifra pero no se verifica el servidor.
+  DB_SSL_CA: optionalText,
   // Sequelize abre 5 conexiones por defecto; con ~50 jugadores escribiendo a la vez hacían cola
   DB_POOL_MAX: z.coerce.number().int().positive().default(20),
   DB_POOL_MIN: z.coerce.number().int().nonnegative().default(2),
@@ -70,6 +74,19 @@ const schema = z.object({
 })
 
 export type Env = z.infer<typeof schema>
+
+// CORS: en producción nunca "cualquiera". Sin lista (o con "*") solo se aceptan el panel y el juego, que salen de
+// FRONTEND_URL y PLAY_URL; fuera de producción sin lista se acepta cualquiera para desarrollar.
+const originOf = (url: string | undefined): string[] => {
+  try {
+    return url ? [new URL(url).origin] : []
+  } catch {
+    return []
+  }
+}
+
+export const allowedOrigins = (e: Env): readonly string[] =>
+  (e.ALLOWED_ORIGINS.length > 0 || e.NODE_ENV !== 'production' ? e.ALLOWED_ORIGINS : [...originOf(e.FRONTEND_URL), ...originOf(e.PLAY_URL)])
 
 const describe = (issue: z.core.$ZodIssue): string => `${issue.path.join('.')}: ${issue.message}`
 

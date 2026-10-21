@@ -77,6 +77,8 @@ const mountLimits = (app: Express, { limiters }: AppDeps): void => {
   // v1: los mismos límites en el login y en la solicitud de restablecimiento
   app.use('/api/v1/auth/login', limiters.auth, limiters.loginIpFail, limiters.loginCedula)
   app.use('/api/v1/auth/password-resets', limiters.auth)
+  // El código de sala son 3 dígitos: unirse y validar códigos se limita por jugador para que no se pueda adivinar
+  for (const path of ['/api/sessions/join', '/api/sessions/code', '/api/v1/sessions/join', '/api/v1/sessions/code']) app.use(path, limiters.join)
 }
 
 const mountV1 = (app: Express, { routesV1 }: AppDeps): void => {

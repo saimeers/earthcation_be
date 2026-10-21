@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { AuthenticatedUser } from '@earthcation/model'
 import { rateLimiters, type RateLimitDeps, type WindowCounter } from '../src'
 
-const LIMITS = { userMax: 3, ipMax: 2, authMax: 100, loginCedulaMax: 2, loginIpFailMax: 2 }
+const LIMITS = { userMax: 3, ipMax: 2, authMax: 100, loginCedulaMax: 2, loginIpFailMax: 2, joinMax: 2 }
 
 // Token de prueba: "Bearer u-<id>" es válido para el usuario <id>; cualquier otro, inválido
 const tokens = {

@@ -9,8 +9,16 @@ export interface DatabaseConfig {
   readonly password?: string
   /** En producción (Railway) la conexión va por TLS. */
   readonly ssl: boolean
+  /** CA del servidor (PEM): con ella se verifica el certificado; sin ella solo se cifra. */
+  readonly sslCa?: string
   readonly poolMax: number
   readonly poolMin: number
+}
+
+// TLS: con la CA del servidor se verifica su certificado; sin ella (Railway entrega uno propio) se cifra sin verificar
+const dialectOptions = (c: DatabaseConfig) => {
+  if (!c.ssl) return {}
+  return { ssl: c.sslCa ? { require: true, ca: c.sslCa, rejectUnauthorized: true } : { require: true, rejectUnauthorized: false } }
 }
 
 // Por defecto Sequelize abre máx. 5 conexiones: con ~50 jugadores escribiendo a la vez las peticiones hacían cola.
@@ -19,7 +27,7 @@ export const createSequelize = (c: DatabaseConfig): Sequelize => new Sequelize(c
   host: c.host,
   port: c.port,
   dialect: 'postgres',
-  dialectOptions: c.ssl ? { ssl: { require: true, rejectUnauthorized: false } } : {},
+  dialectOptions: dialectOptions(c),
   logging: false,
   pool: { max: c.poolMax, min: c.poolMin, idle: 10000, acquire: 30000 },
 })
