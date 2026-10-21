@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import type {
-  ChangeUserStatusUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase, ListUsersUseCase, UpdateUserUseCase,
+  AnonymizeUserUseCase, ChangeUserStatusUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase, ListUsersUseCase, UpdateUserUseCase,
 } from '@earthcation/usecase'
 import { currentUser } from '../../middlewares/auth'
 import { creationLegacy, userFieldsLegacy } from '../../dto/legacy/identity'
@@ -13,6 +13,8 @@ export interface UserUseCases {
   readonly create: CreateUserUseCase
   readonly update: UpdateUserUseCase
   readonly changeStatus: ChangeUserStatusUseCase
+  /** Solo la API v1 la expone (derecho de supresión). */
+  readonly anonymize: AnonymizeUserUseCase
 }
 
 /** Traduce HTTP ↔ casos de uso de usuarios. Las lecturas de legacy salen como filas crudas, igual que antes. */

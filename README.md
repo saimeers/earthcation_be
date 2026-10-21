@@ -239,6 +239,8 @@ modelo no cambia la base. Una migración nueva es un archivo `00NN_descripcion.t
   entidades y el dominio solo ve puertos.
 - **Límites de peticiones pensados para un salón.** Un grupo entero comparte una IP pública, así que las peticiones con
   token cuentan por usuario y solo las anónimas por IP. En el login solo cuentan los intentos fallidos.
+- **Datos personales.** Qué se guarda, quién lo ve y cómo se atiende el derecho de supresión está en
+  [`docs/PRIVACIDAD.md`](./docs/PRIVACIDAD.md); la anonimización a pedido del titular es `POST /api/v1/users/:id/anonymization`.
 - **Nada se borra.** Usuarios, organizaciones, localidades y versiones se deshabilitan para no perder el histórico
   del progreso.
 

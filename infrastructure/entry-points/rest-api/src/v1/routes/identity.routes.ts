@@ -115,6 +115,15 @@ const userRoutes = (uc: UserUseCases): Route[] => [
       return ok({ id: params.id, isActive: body.isActive })
     },
   }),
+  route({
+    method: 'post', path: '/users/:id/anonymization', tag: 'Usuarios', summary: 'Anonimiza una cuenta (derecho de supresión)', roles: ADMINS,
+    params: idParams,
+    response: { status: 204, description: 'Cuenta anonimizada: sin nombre, cédula, usuario, correo ni edad; deshabilitada y sin contraseña. Conserva su progreso. No se deshace' },
+    handler: async ({ params, user }) => {
+      await uc.anonymize.execute({ id: params.id, requester: userOf({ user }) })
+      return noContent()
+    },
+  }),
 ]
 
 /** Rutas de v1 de identidad: autenticación y usuarios. */

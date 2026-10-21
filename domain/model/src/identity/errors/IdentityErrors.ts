@@ -76,3 +76,11 @@ export class AnmColumnsMissingError extends ValidationError {
     super('ANM_COLUMNS_MISSING', `No se encontraron las columnas requeridas en el Excel: ${missing.join(', ')}`, { missing })
   }
 }
+
+export class UserAnonymizationSelfError extends ForbiddenError {
+  constructor() { super('CANNOT_ANONYMIZE_SELF', 'No puedes anonimizar tu propia cuenta') }
+}
+
+export class UserAlreadyAnonymizedError extends ConflictError {
+  constructor() { super('USER_ALREADY_ANONYMIZED', 'La cuenta ya está anonimizada') }
+}
