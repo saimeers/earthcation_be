@@ -1,4 +1,4 @@
-import express, { type Express, type ErrorRequestHandler, type RequestHandler, type Router } from 'express'
+import express, { type Express, type ErrorRequestHandler, type Request, type RequestHandler, type Router } from 'express'
 import compression from 'compression'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -58,7 +58,11 @@ const mountCommon = (app: Express, deps: AppDeps): void => {
 }
 
 // Estado público mínimo y visitas van antes del límite global: las visitas llegan todas desde las IP del Worker
-const mountUnlimited = (app: Express, { routes }: AppDeps): void => {
+// La ingesta de visitas de v1 (POST /api/v1/visits) también va antes del límite: llega desde las IP del Worker
+const isVisitIngest = (req: Request): boolean => req.method === 'POST' && req.path === '/visits'
+
+const mountUnlimited = (app: Express, { routes, routesV1 }: AppDeps): void => {
+  app.use('/api/v1', (req, res, next) => { if (isVisitIngest(req)) routesV1(req, res, next); else next() })
   app.get('/api/health', routes.publicHealth)
   app.use('/api/visits', routes.visits)
 }

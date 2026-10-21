@@ -11,7 +11,7 @@ export interface PageMeta {
 /** Lo que devuelve un handler de v1; `send` lo traduce al sobre `{ data, meta }` y al estado HTTP. */
 export interface Reply {
   /** 200 por defecto; 201 con `location` al crear; 202 si se aceptó y se procesará; 204 sin cuerpo. */
-  readonly status?: 200 | 201 | 202 | 204
+  readonly status?: number
   readonly data?: unknown
   readonly meta?: PageMeta
   /** Ruta del recurso creado (cabecera `Location`). */

@@ -30,6 +30,10 @@ export interface RouteSpec<P, Q, B> {
   readonly params?: ZodType<P>
   readonly query?: ZodType<Q>
   readonly body?: ZodType<B>
+  /** Middlewares propios de la ruta (cuerpo binario, multipart, secreto de ingesta), después de los roles. */
+  readonly middlewares?: readonly RequestHandler[]
+  /** Cuerpo que no es JSON (un ZIP, un archivo multipart): solo para documentarlo. */
+  readonly upload?: { readonly contentType: string, readonly description: string, readonly field?: string }
   readonly response: { readonly status: 200 | 201 | 202 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean, readonly contentType?: string }
   readonly handler: (ctx: RouteContext<P, Q, B>) => Promise<Reply>
 }
@@ -44,6 +48,7 @@ export interface OperationDoc {
   readonly params?: ZodType
   readonly query?: ZodType
   readonly body?: ZodType
+  readonly upload?: RouteSpec<unknown, unknown, unknown>['upload']
   readonly response: RouteSpec<unknown, unknown, unknown>['response']
 }
 
@@ -78,6 +83,6 @@ const handlerOf = <P, Q, B>(spec: RouteSpec<P, Q, B>): RequestHandler => async (
 export const route = <P = undefined, Q = undefined, B = undefined>(spec: RouteSpec<P, Q, B>): Route => ({
   doc: spec,
   mount: (router, authenticate) => {
-    router[spec.method](spec.path, ...guards(spec.roles, authenticate), handlerOf(spec))
+    router[spec.method](spec.path, ...guards(spec.roles, authenticate), ...(spec.middlewares ?? []), handlerOf(spec))
   },
 })

@@ -40,7 +40,7 @@ const successResponse = (doc: OperationDoc) => {
   return { description, content: { 'application/json': { schema: { type: 'object', required: ['data'], properties } } } }
 }
 
-const hasInput = (doc: OperationDoc): boolean => Boolean(doc.params ?? doc.query ?? doc.body)
+const hasInput = (doc: OperationDoc): boolean => Boolean(doc.params ?? doc.query ?? doc.body ?? doc.upload)
 
 const errorResponses = (doc: OperationDoc) => ({
   ...(hasInput(doc) && { 400: errorResponse('La solicitud no es válida (VALIDATION_ERROR)') }),
@@ -54,8 +54,13 @@ const security = (doc: OperationDoc) => (!doc.roles ? {} : {
   description: doc.roles.length > 0 ? `Roles: ${doc.roles.join(', ')}.` : 'Requiere autenticación.',
 })
 
-const requestBody = (doc: OperationDoc) =>
-  (doc.body ? { requestBody: { required: true, content: { 'application/json': { schema: toSchema(doc.body, 'input') } } } } : {})
+const uploadSchema = (u: NonNullable<OperationDoc['upload']>) =>
+  (u.field ? { type: 'object', required: [u.field], properties: { [u.field]: { type: 'string', format: 'binary' } } } : { type: 'string', format: 'binary' })
+
+const requestBody = (doc: OperationDoc) => {
+  if (doc.upload) return { requestBody: { required: true, description: doc.upload.description, content: { [doc.upload.contentType]: { schema: uploadSchema(doc.upload) } } } }
+  return doc.body ? { requestBody: { required: true, content: { 'application/json': { schema: toSchema(doc.body, 'input') } } } } : {}
+}
 
 const operation = (doc: OperationDoc) => ({
   tags: [doc.tag],
