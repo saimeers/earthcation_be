@@ -1,7 +1,7 @@
 import type { DomainError } from '../../shared/errors'
 import { andThen, err, fromNullable, ok, type Result } from '../../shared/result'
 import { sum } from '../../shared/collections'
-import { latestAttemptByLevel, summarize } from '../learning/attempts'
+import { latestAttemptByLevel, summarize } from '@earthcation/model'
 import { participantAnalysis, participantIndex } from './analysis'
 import { sessionDetail, type Plain, type SessionDetail } from './detail'
 import {

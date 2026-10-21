@@ -42,17 +42,17 @@ app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth',      container.routes.auth);
 app.use('/api/users',     container.routes.users);
 app.use('/api/users/bulk-import', container.routes.bulkImport);
-app.use('/api/progress',  require('./contexts/learning').progressRoutesV1);
-app.use('/api/levels',    require('./contexts/learning').levelRoutesV1);
 app.use('/api/sessions',  require('./contexts/sessions').sessionRoutesV1);
-app.use('/api/analytics', require('./contexts/learning').analyticsRoutesV1);
-app.use('/api/telemetry', require('./contexts/learning').telemetryRoutesV1);
 // Contextos ya migrados a la arquitectura limpia: sus rutas las arma el composition root
 app.use('/api/locations',     container.routes.locations);
 app.use('/api/organizations', container.routes.organizations);
 app.use('/api/vark',          container.routes.vark);
 app.use('/api/health',    container.routes.health);
 app.use('/api/deploy',    container.routes.deploy);
+app.use('/api/progress',  container.routes.progress);
+app.use('/api/levels',    container.routes.levels);
+app.use('/api/analytics', container.routes.analytics);
+app.use('/api/telemetry', container.routes.telemetry);
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

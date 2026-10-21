@@ -79,6 +79,16 @@ The login's `LoginRecorder` is observability's `recordLogin`. `legacy/utils/jwt.
 container's `security` instances (auth middleware, rate limiter, test seed, `scripts/load`); tests stub `ResendMailer.prototype`
 (`test/support/env.cjs` → `outbox`). Env: `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
+— **learning**: `model/src/learning` (pure `attempts.ts` = latest-attempt rule, `summaries.ts` = aggregators, `LevelProgress.ts`,
+value objects `RiskResultInput`/`NewAttemptInput`/`EventBatch` with their errors, gateways `LearningRepository`/`LearningReadModel`/
+`AnalyticsReadModel`/`FreePlaySessions`/`MunicipalityCoordinates`), 16 use cases in `usecase/src/learning/{progress,levels,telemetry,
+analytics}/`, `SequelizeLearningRepository`/`SequelizeLearningReadModel`/`SequelizeAnalyticsReadModel` (Postgres aggregation + the
+model's pure functions) and `SequelizeFreePlaySessions` (the "Juego libre" gateway, cached 10 min) in sequelize-repository;
+`ProgressController`/`LevelController`/`TelemetryController`/`AnalyticsController` + `routes/learning.routes.ts` + `dto/v1/learning.ts`
+in rest-api; `container.routes.{progress,levels,telemetry,analytics}`. New adapter `@earthcation/geo-catalog`'s `DivipolaCoordinates`
+(DIVIPOLA municipio/department matching, reusing `levenshtein` from `@earthcation/model`) replaces the old `geo.ts`.
+`shared/collections.ts` (`groupBy`/`countBy`/`maxBy`/`keyOf`/`sum`) moved to `model/src/shared/collections.ts`. The legacy `sessions`
+context (not yet migrated) now imports these pure functions from `@earthcation/model` instead of `contexts/learning`.
 
 ### TypeScript (fase 3, 2026-10-19)
 
@@ -119,11 +129,8 @@ an empty `role` in `PUT /api/users/:id` leaves it unchanged (before it was writt
 **deployment** now lives in the clean packages (see above). Error kinds `too_large` (413) and `unavailable` (503)
 arrived with it. Contract tests in `v1.deploy.test.js` run the
 whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
-**learning** (progress, levels, telemetry, analytics): `attempts.ts` (latest-attempt rule), `summaries.ts`
-(`summarizeAttempts`, `summarizeRisks`, `round`, hardest risks, level progress) and `geo.ts` (DIVIPOLA coordinates) are
-pure; `analyticsReadModel.ts` and `telemetryOverview.ts` aggregate in Postgres and shape with those functions.
-`shared/collections.ts` has `groupBy`/`countBy`/`maxBy`/`keyOf` (order of first appearance).
-`tests/contract/v1.learning.test.js` snapshots the computed VALUES (ids and dates masked), not only the shape.
+**learning** now lives in the clean packages (see above). `tests/contract/v1.learning.test.js` still snapshots the
+computed VALUES (ids and dates masked), not only the shape.
 **sessions** (rooms, free play, panel detail, participant analysis, Excel): `domain.ts` (room code, who controls and who
 sees a room), `detail.ts` (the whole `/progress/admin` computation, pure), `analysis.ts`, `report.ts` (Excel rows as
 data) + `workbook.ts` (ExcelJS drawing), `labels.ts`. The free-play session (`freeSessions.resolve`, cached 10 min) is
@@ -172,9 +179,9 @@ contexts/<context>/index.ts       → composition root, mounted by app.js
 models/<Resource>.js, models/index.js → Sequelize models and all associations (read index first)
 ```
 
-Contexts: `catalog`, `vark`, `observability`, `identity`, `deployment`, `learning` (telemetry: see
-`docs/TELEMETRY.md`), `sessions`. A new feature goes into its context: pure logic in domain/feature modules, queries
-behind a port, never query logic in `httpV1.ts`.
+Contexts still here: `sessions`. A new feature goes into its context: pure logic in domain/feature modules, queries
+behind a port, never query logic in `httpV1.ts`. See `docs/TELEMETRY.md` for the telemetry wire format (now served by
+the `learning` context in the clean packages).
 
 `middleware/auth.middleware.js` validates the JWT from `Authorization` header and attaches
 `req.user`. `middleware/role.middleware.js` exports `requireRole(...roles)` for route-level
@@ -209,7 +216,7 @@ is actually the user's **cédula**, not a chosen username.
   instructor: own rooms + the "Juego libre" session of their profile location; else 403).
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
-- `GET /api/analytics/overview` (`contexts/learning/analyticsReadModel.ts#overview`) also returns `riesgos_mas_fallados` (top failed risks by fail
+- `GET /api/analytics/overview` (`SequelizeAnalyticsReadModel.ts#overview`, sequelize-repository) also returns `riesgos_mas_fallados` (top failed risks by fail
   rate, grouped over `UserRiskProgress`) and `tendencia_temporal` (weekly mitigation % via
   `date_trunc('week', recorded_at)`) — both computed on the fly, no new columns.
 
@@ -291,12 +298,12 @@ frontend's bulk-import preview) only when nothing in the catalog is close enough
   Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
   tinted result cells. Dates are written in Colombia local time (UTC−5) since Excel has no
   timezone. Spanish labels for game enums live in `contexts/sessions/labels.ts`.
-- `contexts/learning/summaries.ts` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
-  (used by `getUserSummary` and the session service) — don't duplicate those loops.
+- `model/src/learning/summaries.ts` (`@earthcation/model`) exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
+  (used by learning's use cases and the session service) — don't duplicate those loops.
 
 ### Analytics — mines map (`GET /api/analytics/map`)
 
-`analyticsReadModel.ts#minesMap` powers the frontend's Leaflet map of mining units. `Organization`
+`SequelizeAnalyticsReadModel.ts#minesMap` (sequelize-repository) powers the frontend's Leaflet map of mining units. `Organization`
 has no `location_id` of its own — each org's location is inferred as the most frequent
 municipality/department among its active players' `UserProfile.location`. Returns one row per
 organization with `municipality`/`department`/`player_count`/`percentage` (mitigation rate,
@@ -330,7 +337,7 @@ to a constraint here, dropping the index directly fails). If a unique/not-null f
 change again, verify with a raw query against `pg_constraint` that the old constraint actually left
 before assuming the model change took effect.
 
-### Success percentages = latest attempt (`contexts/learning/attempts.ts`)
+### Success percentages = latest attempt (`model/src/learning/attempts.ts`)
 
 Every success % (analytics overview/by level/by organization/by location, mines map, session
 participants, `GET /api/progress/level/:levelId`) uses only the **latest attempt of each player in each
@@ -339,12 +346,12 @@ not average with older tries. Rows without `attempt_id` are grouped per session 
 `riesgos_mas_fallados` and `tendencia_temporal` still use the full history on purpose (difficulty /
 trend). The frontend mirrors this in `earthcation_fe/src/lib/attempts.js`.
 
-### Mines map coordinates (`contexts/learning/geo.ts`)
+### Mines map coordinates (`@earthcation/geo-catalog`'s `DivipolaCoordinates`)
 
-`src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
-`gdxc-w37w`). `coordsFor(municipality, department)` matches catalog names tolerant to accents,
+`geo-catalog/src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
+`gdxc-w37w`). `DivipolaCoordinates#locate(municipality, department)` matches catalog names tolerant to accents,
 articles and official vs popular names (1104 of the 1105 catalog municipios resolve); unmatched
-ones fall back to the department capital (`location_exact: false`). `GET /api/analytics/map`
+ones fall back to the department capital (`exact: false`). `GET /api/analytics/map`
 returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 ### Known gaps (don't "fix" without being asked — these are accepted current state)

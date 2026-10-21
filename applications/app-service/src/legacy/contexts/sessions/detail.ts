@@ -1,6 +1,5 @@
 import { groupBy, keyOf, maxBy, sum } from '../../shared/collections'
-import { latestAttemptByLevel, summarize, type LatestAttempt } from '../learning/attempts'
-import { round, summarizeAttempts, summarizeRisks } from '../learning/summaries'
+import { latestAttemptByLevel, round, summarize, summarizeAttempts, summarizeRisks, type LatestAttempt } from '@earthcation/model'
 
 // Detalle de una sesión para el panel, calculado sin E/S a partir de 3 consultas (sesión con participantes,
 // resultados por riesgo de la sesión e intentos de nivel de la sesión). Las claves son las de v1.

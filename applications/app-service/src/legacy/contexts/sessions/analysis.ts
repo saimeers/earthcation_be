@@ -1,7 +1,7 @@
 import { err, ok, type Result } from '../../shared/result'
 import type { DomainError } from '../../shared/errors'
 import { groupBy, keyOf, sum } from '../../shared/collections'
-import { round } from '../learning/summaries'
+import { round } from '@earthcation/model'
 import { avg, type Plain, type SessionDetail } from './detail'
 import { notParticipant } from './domain'
 

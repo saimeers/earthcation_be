@@ -18,12 +18,17 @@ import {
   ChangeUserStatusUseCase, ConfirmBulkImportUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase,
   ListUsersUseCase, LoginUseCase, PreviewBulkImportUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase,
   UpdateUserUseCase,
+  SaveProgressUseCase, ListProgressUseCase, GetLevelProgressUseCase, ListLevelsUseCase, GetLevelUseCase,
+  StartAttemptUseCase, EndAttemptUseCase, SaveEventsUseCase, ListAttemptsUseCase, GetAttemptDetailUseCase,
+  GetUserSummaryUseCase, GetTelemetryOverviewUseCase, GetAnalyticsOverviewUseCase, GetAnalyticsByOrganizationUseCase,
+  GetAnalyticsByLocationUseCase, GetMinesMapUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
   SequelizeHealthProbe, SequelizeLoginEventRepository, SequelizeVisitRepository, SequelizeVisitStatsReadModel,
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
+  SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -34,12 +39,13 @@ import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
 import { BcryptPasswordHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
 import { ResendMailer } from '@earthcation/resend-mailer'
 import { XlsxSpreadsheetReader } from '@earthcation/excel'
-import { JsonPlaceCatalog } from '@earthcation/geo-catalog'
+import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
   authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1,
   cloudflareEdge, deployRoutesV1, healthRoutesV1, loginRecorder, metrics, playLocalRoutes, publicHealthV1, visitRoutesV1,
   type LoginRecorder,
   authRoutesV1, bulkImportRoutesV1, userRoutesV1,
+  progressRoutesV1, levelRoutesV1, telemetryRoutesV1, analyticsRoutesV1,
 } from '@earthcation/rest-api'
 import { loadEnv, type Env } from './config/env'
 
@@ -244,6 +250,42 @@ const identity = {
   },
 }
 
+// ── Aprendizaje ──────────────────────────────────────────────────────────────
+
+const learningRepository = new SequelizeLearningRepository(models)
+const learningReadModel = new SequelizeLearningReadModel(models)
+const analyticsReadModel = new SequelizeAnalyticsReadModel(models, new DivipolaCoordinates())
+// La sala "Juego libre" la resuelve el contexto de sesiones (gateway); aprendizaje solo la consume
+const freePlaySessions = new SequelizeFreePlaySessions(models, cache)
+
+const learning = {
+  authenticate: auth,
+  progress: {
+    save: new SaveProgressUseCase({ repo: learningRepository, freePlaySessions }),
+    list: new ListProgressUseCase(learningReadModel),
+    levelProgress: new GetLevelProgressUseCase(learningReadModel),
+  },
+  levels: {
+    list: new ListLevelsUseCase(learningReadModel),
+    get: new GetLevelUseCase(learningReadModel),
+  },
+  telemetry: {
+    startAttempt: new StartAttemptUseCase({ repo: learningRepository, freePlaySessions, cache, clock: systemClock }),
+    endAttempt: new EndAttemptUseCase({ repo: learningRepository, clock: systemClock }),
+    saveEvents: new SaveEventsUseCase(learningRepository),
+    listAttempts: new ListAttemptsUseCase(learningReadModel),
+    attemptDetail: new GetAttemptDetailUseCase(learningReadModel),
+    userSummary: new GetUserSummaryUseCase(learningReadModel),
+    overview: new GetTelemetryOverviewUseCase(learningReadModel),
+  },
+  analytics: {
+    overview: new GetAnalyticsOverviewUseCase({ analytics: analyticsReadModel, cache }),
+    byOrganization: new GetAnalyticsByOrganizationUseCase(analyticsReadModel),
+    byLocation: new GetAnalyticsByLocationUseCase(analyticsReadModel),
+    minesMap: new GetMinesMapUseCase({ analytics: analyticsReadModel, cache }),
+  },
+}
+
 export const routes = {
   organizations: organizationRoutesV1(catalog),
   locations: locationRoutesV1(catalog),
@@ -256,4 +298,8 @@ export const routes = {
   auth: authRoutesV1(identity),
   users: userRoutesV1(identity),
   bulkImport: bulkImportRoutesV1(identity),
+  progress: progressRoutesV1(learning),
+  levels: levelRoutesV1(learning),
+  telemetry: telemetryRoutesV1(learning),
+  analytics: analyticsRoutesV1(learning),
 }

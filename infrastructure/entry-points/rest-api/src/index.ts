@@ -25,3 +25,10 @@ export { authRoutesV1, userRoutesV1, bulkImportRoutesV1, type IdentityRoutesDeps
 export type { AuthUseCases } from './controllers/identity/AuthController'
 export type { UserUseCases } from './controllers/identity/UserController'
 export type { BulkImportUseCases } from './controllers/identity/BulkImportController'
+
+// ── learning ──
+export { progressRoutesV1, levelRoutesV1, telemetryRoutesV1, analyticsRoutesV1, type LearningRoutesDeps } from './routes/learning.routes'
+export type { ProgressUseCases } from './controllers/learning/ProgressController'
+export type { LevelUseCases } from './controllers/learning/LevelController'
+export type { TelemetryUseCases } from './controllers/learning/TelemetryController'
+export type { AnalyticsUseCases } from './controllers/learning/AnalyticsController'
