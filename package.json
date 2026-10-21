@@ -1,6 +1,6 @@
 {
   "name": "earthcation",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "API de Earthcation: monorepo de arquitectura limpia (dominio, casos de uso, adaptadores y app desplegable)",
   "packageManager": "pnpm@9.15.9",
