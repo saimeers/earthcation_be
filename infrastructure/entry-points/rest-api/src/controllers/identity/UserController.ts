@@ -3,8 +3,8 @@ import type {
   ChangeUserStatusUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase, ListUsersUseCase, UpdateUserUseCase,
 } from '@earthcation/usecase'
 import { currentUser } from '../../middlewares/auth'
-import { creationV1, userFieldsV1 } from '../../dto/v1/identity'
-import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+import { creationLegacy, userFieldsLegacy } from '../../dto/legacy/identity'
+import { bodyOf, pathParam, queryText } from '../../dto/legacy/request'
 
 export interface UserUseCases {
   readonly list: ListUsersUseCase
@@ -15,7 +15,7 @@ export interface UserUseCases {
   readonly changeStatus: ChangeUserStatusUseCase
 }
 
-/** Traduce HTTP ↔ casos de uso de usuarios. Las lecturas de v1 salen como filas crudas, igual que antes. */
+/** Traduce HTTP ↔ casos de uso de usuarios. Las lecturas de legacy salen como filas crudas, igual que antes. */
 export class UserController {
   constructor(private readonly useCases: UserUseCases) {}
 
@@ -33,11 +33,11 @@ export class UserController {
   }
 
   create = async (req: Request, res: Response): Promise<void> => {
-    res.status(201).json(creationV1(await this.useCases.create.execute({ fields: userFieldsV1(bodyOf(req)) })))
+    res.status(201).json(creationLegacy(await this.useCases.create.execute({ fields: userFieldsLegacy(bodyOf(req)) })))
   }
 
   update = async (req: Request, res: Response): Promise<void> => {
-    const cmd = { id: pathParam(req, 'id'), editor: currentUser(req), fields: userFieldsV1(bodyOf(req)) }
+    const cmd = { id: pathParam(req, 'id'), editor: currentUser(req), fields: userFieldsLegacy(bodyOf(req)) }
     res.json({ message: 'Usuario actualizado', user: await this.useCases.update.execute(cmd) })
   }
 

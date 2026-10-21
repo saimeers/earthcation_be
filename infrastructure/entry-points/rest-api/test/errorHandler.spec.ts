@@ -2,20 +2,20 @@ import express from 'express'
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { BusinessRuleError, NotFoundError, TooLargeError } from '@earthcation/model'
-import { errorHandlerV1, notFoundV1 } from '../src'
+import { errorHandlerLegacy, notFoundLegacy } from '../src'
 
 const appThrowing = (error: unknown, logs: string[] = []) => {
   const app = express()
   app.get('/x', () => { throw error })
   app.use(express.json())
   app.post('/json', (_req, res) => { res.json({}) })
-  app.use(notFoundV1)
-  app.use(errorHandlerV1((m) => logs.push(m)))
+  app.use(notFoundLegacy)
+  app.use(errorHandlerLegacy((m) => logs.push(m)))
   return app
 }
 
-describe('errorHandlerV1', () => {
-  it('traduce errores de dominio al estado y mensaje de v1', async () => {
+describe('errorHandlerLegacy', () => {
+  it('traduce errores de dominio al estado y mensaje de legacy', async () => {
     const res = await request(appThrowing(new NotFoundError('SESSION_NOT_FOUND', 'Sesión no encontrada'))).get('/x')
     expect([res.status, res.body]).toEqual([404, { error: 'Sesión no encontrada' }])
     expect((await request(appThrowing(new TooLargeError('ZIP_TOO_LARGE', 'Grande'))).get('/x')).status).toBe(413)

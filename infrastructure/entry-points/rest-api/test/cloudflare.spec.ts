@@ -1,7 +1,7 @@
 import express from 'express'
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
-import { cloudflareEdge, errorHandlerV1, isCloudflare } from '../src'
+import { cloudflareEdge, errorHandlerLegacy, isCloudflare } from '../src'
 import { requireIngestSecret } from '../src/middlewares/ingestSecret'
 
 describe('Cloudflare', () => {
@@ -24,7 +24,7 @@ describe('Cloudflare', () => {
 describe('secreto de ingesta', () => {
   const app = (secret: string | undefined) => express()
     .post('/ingest', requireIngestSecret(secret), (_req, res) => { res.status(204).end() })
-    .use(errorHandlerV1(() => undefined))
+    .use(errorHandlerLegacy(() => undefined))
 
   it('401 "No autorizado" sin el secreto correcto o sin secreto configurado', async () => {
     expect((await request(app('s')).post('/ingest').set('x-ingest-secret', 's')).status).toBe(204)

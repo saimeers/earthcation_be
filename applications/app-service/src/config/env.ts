@@ -2,10 +2,10 @@ import { z } from 'zod'
 
 // Variables del entorno, validadas al arrancar. Es el único lugar del código que lee process.env.
 
-// Texto opcional: vacío cuenta como ausente (así las leía v1 con `||`)
+// Texto opcional: vacío cuenta como ausente (así las leía legacy con `||`)
 const optionalText = z.string().optional().transform((v) => (v === '' ? undefined : v))
 
-// Máximo por ventana de 15 min: ausente, inválido o 0 vuelve al valor por defecto (así lo leía v1 con `Number(x) || n`)
+// Máximo por ventana de 15 min: ausente, inválido o 0 vuelve al valor por defecto (así lo leía legacy con `Number(x) || n`)
 const maxPerWindow = (fallback: number) => z.coerce.number().int().positive().catch(fallback)
 
 const rateLimits = {
@@ -41,6 +41,8 @@ const schema = z.object({
   ...deployment,
   ...rateLimits,
   ALLOWED_ORIGINS: origins,
+  // Documentación de la API v1 (Swagger UI y OpenAPI): pública o solo para admin y desarrollador con token
+  DOCS_ACCESS: z.enum(['public', 'staff']).catch('public'),
   JWT_SECRET: z.string({ error: 'falta' }).min(32, 'debe tener al menos 32 caracteres'),
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.string().default('development'),
