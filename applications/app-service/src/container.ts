@@ -46,7 +46,7 @@ import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
-  createApp, createRouterV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, rateLimiters,
+  createApp, createRouterV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, rateLimiters,
   authenticate, locationRoutesLegacy, organizationRoutesLegacy, varkRoutesLegacy,
   cloudflareEdge, deployRoutesLegacy, healthRoutesLegacy, loginRecorder, metrics, playLocalRoutes, publicHealthLegacy, visitRoutesLegacy,
   type LoginRecorder,
@@ -330,7 +330,7 @@ const routes = {
 }
 
 const routesV1 = createRouterV1({
-  routes: [...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions)],
+  routes: [...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning)],
   authenticate: auth,
   docsAccess: env.DOCS_ACCESS,
   info: { title: 'API de Earthcation', version: '2.0.0', description: 'API v1 de la plataforma de capacitación en seguridad minera Earthcation.' },

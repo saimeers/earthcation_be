@@ -16,6 +16,10 @@ describe('camelize', () => {
     })
   })
 
+  it('el payload de un evento es JSON libre: no se toca ni en sus valores', () => {
+    expect(camelize({ event_type: 'x', payload: { some_key: { inner_key: 1 } } })).toEqual({ eventType: 'x', payload: { some_key: { inner_key: 1 } } })
+  })
+
   it('un arreglo llamado fail_reasons (de objetos) sí se convierte', () => {
     expect(camelize({ fail_reasons: [{ fail_reason: 'derrumbe', level_key: 'level1' }] })).toEqual({ failReasons: [{ failReason: 'derrumbe', levelKey: 'level1' }] })
   })

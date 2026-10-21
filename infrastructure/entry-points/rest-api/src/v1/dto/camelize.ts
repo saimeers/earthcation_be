@@ -11,10 +11,15 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
 // de campo, y se conservan tal cual; solo se convierten sus valores.
 const DICTIONARIES: ReadonlySet<string> = new Set(['fail_reasons', 'fail_stages', 'journeys'])
 
-const convert = (key: string, value: unknown): unknown =>
-  (DICTIONARIES.has(key) && isPlainObject(value)
-    ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, camelize(v)]))
-    : camelize(value))
+// El `payload` de un evento es JSON libre del juego: sus claves son datos y no se tocan, ni en lo que se guarda (snake.ts)
+// ni en lo que se responde.
+const FREE_FORM: ReadonlySet<string> = new Set(['payload'])
+
+const convert = (key: string, value: unknown): unknown => {
+  if (FREE_FORM.has(key)) return value
+  if (DICTIONARIES.has(key) && isPlainObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, camelize(v)]))
+  return camelize(value)
+}
 
 /** Convierte las claves a camelCase y las fechas a texto ISO; el resto de valores queda igual. */
 export const camelize = (value: unknown): unknown => {
