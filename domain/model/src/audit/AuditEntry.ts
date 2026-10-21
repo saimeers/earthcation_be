@@ -6,7 +6,7 @@
 /** Acciones que se auditan. Un valor nuevo se agrega aquí y se declara en el contenedor. */
 export const AUDIT_ACTIONS = [
   'auth.login_succeeded', 'auth.login_failed', 'auth.password_reset_requested', 'auth.password_reset_completed',
-  'user.created', 'user.updated', 'user.enabled', 'user.disabled', 'user.imported',
+  'user.created', 'user.updated', 'user.enabled', 'user.disabled', 'user.imported', 'user.anonymized',
   'organization.created', 'organization.updated', 'organization.enabled', 'organization.disabled',
   'location.created', 'location.updated', 'location.enabled', 'location.disabled',
   'session.started', 'session.ended', 'session.exported',

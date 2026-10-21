@@ -108,6 +108,9 @@ const draftOf = (fields: UserFields, username: string): NewUser => ({
   firstName: formText(fields.firstName), lastName: formText(fields.lastName), age: ageOf(fields.age), placement: placementOf(fields),
 })
 
+const ANONYMIZED_PREFIX = 'anon-'
+const ANONYMIZED_ID_CHARS = 8
+
 /**
  * Cuenta de la plataforma. Los jugadores entran al juego solo con la cédula; el staff entra al panel con contraseña.
  * Nunca se borra: se deshabilita para conservar su progreso histórico.
@@ -181,6 +184,22 @@ export class User {
 
   disable(): void { this.props.isActive = false }
   enable(): void { this.props.isActive = true }
+
+  /** Una cuenta anonimizada ya no identifica a nadie: su cédula y su usuario son un alias `anon-…`. */
+  get isAnonymized(): boolean { return this.props.username.startsWith(ANONYMIZED_PREFIX) }
+
+  /**
+   * Derecho de supresión (Ley 1581 de 2012): quita lo que identifica a la persona (nombre, cédula, usuario, correo, edad) y
+   * deja la cuenta deshabilitada y sin contraseña utilizable. El progreso queda, desvinculado de cualquier identidad.
+   * No se deshace. `unusablePasswordHash` es el hash de un secreto aleatorio que nadie conoce.
+   */
+  anonymize(unusablePasswordHash: string): void {
+    const alias = `${ANONYMIZED_PREFIX}${this.props.id.slice(0, ANONYMIZED_ID_CHARS)}`
+    Object.assign(this.props, {
+      firstName: 'Anonimizado', lastName: null, age: null, email: null, cedula: alias, username: alias,
+      isActive: false, passwordHash: unusablePasswordHash, resetToken: null,
+    })
+  }
 
   toProps(): Readonly<UserProps> { return { ...this.props } }
 

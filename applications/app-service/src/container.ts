@@ -25,7 +25,7 @@ import {
   CreateRoomUseCase, JoinRoomUseCase, StartRoomUseCase, EndRoomUseCase, GetRoomByCodeUseCase, ListMyRoomsUseCase,
   ListAllRoomsUseCase, ListRoomsByLocationUseCase, GetRoomProgressUseCase, GetRoomDetailUseCase,
   GetParticipantAnalysisUseCase, ExportRoomReportUseCase,
-  SeedPlaceCatalogUseCase, ListAuditLogsUseCase, audited, fieldChanges, scoped, deniedTo,
+  SeedPlaceCatalogUseCase, ListAuditLogsUseCase, audited, fieldChanges, scoped, deniedTo, AnonymizeUserUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
@@ -246,6 +246,7 @@ const identity = {
     }),
     update: new UpdateUserUseCase({ users: userRepository, availability, readModel: userReadModel }),
     changeStatus: new ChangeUserStatusUseCase(userRepository),
+    anonymize: new AnonymizeUserUseCase({ users: userRepository, passwords: security.passwords, generator: passwordGenerator }),
   },
   bulkImport: {
     preview: new PreviewBulkImportUseCase({ spreadsheets: new XlsxSpreadsheetReader(), users: userRepository }),
@@ -347,6 +348,7 @@ people.update = audited(people.update, { action: 'user.updated', describe: ([c])
 people.changeStatus = audited(people.changeStatus, {
   action: ([c]) => (c.active ? 'user.enabled' : 'user.disabled'), describe: ([c]) => ({ targetType: 'user', targetId: c.id }),
 }, auditDeps)
+people.anonymize = audited(people.anonymize, { action: 'user.anonymized', describe: ([c]) => ({ targetType: 'user', targetId: c.id }) }, auditDeps)
 identity.bulkImport.confirm = audited(identity.bulkImport.confirm, {
   action: 'user.imported',
   describe: (_a, r) => ({ targetType: 'user', targetId: null, changes: { created: r.created.length, skipped: r.skipped.length, errors: r.errors.length } }),
