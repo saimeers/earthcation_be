@@ -14,7 +14,7 @@ class FakeContext implements RequestContext {
 const scope: ReadScope = { visiblePlayerIds: (id) => Promise.resolve(new Set(id === 'ins-1' ? ['p1', 'p2'] : [])) }
 
 const rows = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }, { id: 'admin-1' }]
-const listUsers = { execute: (_q: { role?: string }) => Promise.resolve(rows) }
+const listUsers = { execute: (): Promise<typeof rows> => Promise.resolve(rows) }
 const getUser = { execute: (id: string) => Promise.resolve({ id }) }
 
 const as = (role: string, id = 'ins-1') => ({ scope, context: new FakeContext({ id, role }) })
@@ -22,12 +22,12 @@ const as = (role: string, id = 'ins-1') => ({ scope, context: new FakeContext({ 
 describe('scoped', () => {
   it('el instructor solo ve las filas de su alcance', async () => {
     const list = scoped(listUsers, { rowOwner: (r) => r.id as string }, as('instructor'))
-    expect(await list.execute({})).toEqual([{ id: 'p1' }, { id: 'p2' }, { id: 'admin-1' }].filter((r) => r.id !== 'admin-1'))
+    expect(await list.execute()).toEqual([{ id: 'p1' }, { id: 'p2' }, { id: 'admin-1' }].filter((r) => r.id !== 'admin-1'))
   })
 
   it('el instructor se ve a sí mismo en una lista', async () => {
     const list = scoped(listUsers, { rowOwner: (r) => r.id as string }, as('instructor', 'p3'))
-    expect((await list.execute({})).map((r) => r.id)).toEqual(['p3'])
+    expect((await list.execute()).map((r) => r.id)).toEqual(['p3'])
   })
 
   it('pedir a alguien fuera de su alcance es 403, antes de ejecutar; dentro del alcance pasa', async () => {
@@ -49,11 +49,11 @@ describe('scoped', () => {
 
   it('admin, desarrollador, jugador y llamadas fuera de una petición no se acotan', async () => {
     for (const role of ['admin', 'developer', 'player']) {
-      expect(await scoped(listUsers, { rowOwner: (r) => r.id as string }, as(role)).execute({})).toHaveLength(4)
+      expect(await scoped(listUsers, { rowOwner: (r) => r.id as string }, as(role)).execute()).toHaveLength(4)
       expect(await scoped(getUser, { target: ([id]) => id }, as(role)).execute('p3')).toEqual({ id: 'p3' })
     }
     const noRequest = { scope, context: new FakeContext(null) }
-    expect(await scoped(listUsers, { rowOwner: (r) => r.id as string }, noRequest).execute({})).toHaveLength(4)
+    expect(await scoped(listUsers, { rowOwner: (r) => r.id as string }, noRequest).execute()).toHaveLength(4)
   })
 
   it('sigue siendo del mismo tipo', () => {
