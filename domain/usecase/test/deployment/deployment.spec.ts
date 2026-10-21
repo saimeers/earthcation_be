@@ -6,7 +6,7 @@ import {
 import {
   ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPlayFileUseCase,
   GetPreviewUrlUseCase, ListVersionsUseCase, PublishVersionUseCase, ReceiveLocalZipUseCase,
-  RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
+  EditVersionNotesUseCase, RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
 } from '../../src'
 import {
   fakeZips, InMemoryGameVersionRepository, InMemoryOriginals, InMemoryPublished, ManualQueue,
@@ -32,6 +32,7 @@ const setup = (kinds: { originals?: 's3' | 'local'; published?: 'r2' | 'local' }
     complete: new CompleteUploadUseCase({ versions, originals, queue }),
     activate: new ActivateVersionUseCase({ versions, published, clock }),
     remove: new RemoveVersionUseCase({ versions, originals, published }),
+    editNotes: new EditVersionNotesUseCase(versions),
     preview: new GetPreviewUrlUseCase({ versions, published, clock, settings, signer: { sign: (p) => (secret === null ? null : `${secret}|${p}`) } }),
     status: new GetDeployStatusUseCase({ versions, originals, published, settings }),
     list: new ListVersionsUseCase(versions),
@@ -96,6 +97,15 @@ describe('casos de uso del despliegue', () => {
     const stale = await d.versions.findById('v1')
     d.versions.startProcessing = () => Promise.resolve(false)
     await expect(d.complete.execute(stale?.id ?? '')).rejects.toThrow(VersionStateChangedError)
+  })
+
+  it('cambia la nota sin tocar el estado: se recorta, un texto vacío la borra y una versión que no existe falla', async () => {
+    await newVersion(d)
+    const edited = await d.editNotes.execute({ id: 'v1', notes: '  Versión corregida con tildes: multigás  ' })
+    expect([edited.notes, edited.status]).toEqual(['Versión corregida con tildes: multigás', 'uploading'])
+    expect((await d.versions.findById('v1'))?.notes).toBe('Versión corregida con tildes: multigás')
+    expect((await d.editNotes.execute({ id: 'v1', notes: '   ' })).notes).toBeNull()
+    await expect(d.editNotes.execute({ id: 'no-existe', notes: 'x' })).rejects.toThrow(VersionNotFoundError)
   })
 
   it('borra la versión y sus archivos; recupera publicaciones cortadas', async () => {

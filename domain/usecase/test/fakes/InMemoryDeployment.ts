@@ -30,6 +30,12 @@ export class InMemoryGameVersionRepository implements GameVersionRepository {
     return Promise.resolve(created)
   }
 
+  saveNotes(v: GameVersion) {
+    const stored = this.rows.get(v.id)
+    if (stored) stored.describe(v.notes)
+    return Promise.resolve()
+  }
+
   /** Cambio condicional: solo si la fila guardada sigue en `from`. */
   startProcessing(v: GameVersion, from: VersionStatus) {
     const stored = this.rows.get(v.id)

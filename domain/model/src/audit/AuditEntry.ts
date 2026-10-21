@@ -10,7 +10,7 @@ export const AUDIT_ACTIONS = [
   'organization.created', 'organization.updated', 'organization.enabled', 'organization.disabled',
   'location.created', 'location.updated', 'location.enabled', 'location.disabled',
   'session.started', 'session.ended', 'session.exported',
-  'game_version.created', 'game_version.completed', 'game_version.activated', 'game_version.removed',
+  'game_version.created', 'game_version.updated', 'game_version.completed', 'game_version.activated', 'game_version.removed',
 ] as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]

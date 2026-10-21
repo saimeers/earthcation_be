@@ -5,7 +5,7 @@ import { created, noContent, ok, page } from '../http/reply'
 import { route, userOf, type Route } from '../http/route'
 import type { DeploymentUseCases } from '../../controllers/deployment/DeploymentController'
 import {
-  createdVersionDto, createVersionBody, deployStatusDto, listedVersionDto, previewDto, toCreatedVersionDto, toDeployStatusDto,
+  createdVersionDto, createVersionBody, deployStatusDto, editVersionBody, listedVersionDto, previewDto, toCreatedVersionDto, toDeployStatusDto,
   toListedVersionDto, toPreviewDto, toVersionDto, versionDto,
 } from '../dto/deployment'
 
@@ -80,6 +80,12 @@ export const deploymentRoutesV1 = ({ deployment: uc, maxUploadMb }: DeploymentV1
     params: idParams,
     response: { status: 200, description: 'El enlace firmado y su vigencia', schema: previewDto },
     handler: async ({ params, req }) => ok(toPreviewDto(await uc.preview.execute({ id: params.id, apiBase: `${req.protocol}://${req.get('host') ?? ''}` }))),
+  }),
+  route({
+    method: 'patch', path: '/game-versions/:id', tag: 'Despliegue', summary: 'Cambia la nota de una versión', roles: DEPLOYERS,
+    params: idParams, body: editVersionBody,
+    response: { status: 200, description: 'La versión con su nota nueva', schema: versionDto },
+    handler: async ({ params, body }) => ok(toVersionDto(await uc.editNotes.execute({ id: params.id, notes: body.notes }))),
   }),
   route({
     method: 'delete', path: '/game-versions/:id', tag: 'Despliegue', summary: 'Elimina una versión que no está activa', roles: DEPLOYERS,

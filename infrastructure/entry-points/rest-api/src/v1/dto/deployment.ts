@@ -53,6 +53,10 @@ export const createVersionBody = z.object({
   sizeBytes: z.number().int().positive().describe('Tamaño del ZIP en bytes'),
 })
 
+export const editVersionBody = z.object({
+  notes: z.string().max(2000).nullable().describe("Nota de la versión; vacío o null la borra"),
+})
+
 export const uploadTargetDto = z.object({
   mode: z.string().describe('presigned: se sube a la URL de S3; local: se sube a la API (desarrollo)'),
   method: z.literal('PUT'),
