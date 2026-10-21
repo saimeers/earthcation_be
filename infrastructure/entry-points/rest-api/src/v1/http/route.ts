@@ -30,7 +30,7 @@ export interface RouteSpec<P, Q, B> {
   readonly params?: ZodType<P>
   readonly query?: ZodType<Q>
   readonly body?: ZodType<B>
-  readonly response: { readonly status: 200 | 201 | 202 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean }
+  readonly response: { readonly status: 200 | 201 | 202 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean, readonly contentType?: string }
   readonly handler: (ctx: RouteContext<P, Q, B>) => Promise<Reply>
 }
 

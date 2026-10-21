@@ -2,6 +2,7 @@
 export { createRouterV1, type RouterV1Deps } from './v1/createRouterV1'
 export { catalogRoutesV1, type CatalogV1Deps } from './v1/routes/catalog.routes'
 export { varkRoutesV1 } from './v1/routes/vark.routes'
+export { sessionRoutesV1 } from './v1/routes/sessions.routes'
 export { identityRoutesV1 } from './v1/routes/identity.routes'
 export type { Route } from './v1/http/route'
 export { createApp, type AppDeps, type AppRoutesLegacy } from './createApp'

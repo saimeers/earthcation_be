@@ -32,8 +32,9 @@ const errorResponse = (description: string) =>
   ({ description, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } })
 
 const successResponse = (doc: OperationDoc) => {
-  const { status, description, schema, paginated } = doc.response
+  const { status, description, schema, paginated, contentType } = doc.response
   if (status === 204) return { description }
+  if (contentType) return { description, content: { [contentType]: { schema: { type: 'string', format: 'binary' } } } }
   const properties: Record<string, unknown> = { data: schema ? toSchema(schema, 'output') : {} }
   if (paginated) properties.meta = { $ref: '#/components/schemas/PageMeta' }
   return { description, content: { 'application/json': { schema: { type: 'object', required: ['data'], properties } } } }
