@@ -127,7 +127,12 @@ once no client calls it (visits stats show zero traffic). There is no `v2`.
   learning (`/risk-results`, `/levels`, `/attempts` + `/attempts/:id/events`, `/users/:id/attempts`, `/telemetry/overview`,
   `/analytics/*`). Request bodies reach the use cases in snake_case: `v1/dto/snake.ts` converts them (an event `payload`
   is left untouched; on reads `payload` is also kept as is, `camelize` converts every other key).
-  Pending: bulk import, deployment, observability; then the panel and the
+  deployment (`/game-versions`, `/status`, `/:id/upload` raw ZIP, `/completion`, `/activation`, `/preview-url`), observability
+  (`POST /visits` guarded by `x-ingest-secret`, `/visits/stats`, `/health`, `/health/details`) and bulk import
+  (`/user-imports/previews` multipart, `/user-imports`). Route specs can add `middlewares` (raw/multipart/secret) and
+  `upload` (documents a non-JSON body); `POST /api/v1/visits` is mounted before the global rate limit like the legacy
+  ingest (the Worker still calls the legacy path until legacy is removed; then its `API_URL` path changes).
+  **All contexts are now on v1.** Next: the panel and the game move over, legacy is removed, READMEs; then the panel and the
   game move over, legacy is removed and the READMEs are written.
 - Read models (users, VARK listings) still arrive as raw snake_case rows: `v1/dto/camelize.ts` turns them into
   camelCase with ISO dates (keys of data dictionaries such as `fail_reasons`, `fail_stages` and `journeys` are kept as is); the zod response schemas document the shape. Binary replies use `file(contentType, filename, content)` and `response.contentType` in the route spec. `createApp` mounts the same login /
