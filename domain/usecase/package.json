@@ -1,0 +1,21 @@
+{
+  "name": "@earthcation/usecase",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Casos de uso (un caso por carpeta, con su Command). Solo depende del modelo de dominio.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@earthcation/model": "workspace:*"
+  }
+}

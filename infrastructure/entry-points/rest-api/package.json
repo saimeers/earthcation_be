@@ -1,0 +1,42 @@
+{
+  "name": "@earthcation/rest-api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Punto de entrada HTTP (Express): rutas, controllers, DTO y middlewares. Recibe los casos de uso por parámetro.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@earthcation/model": "workspace:*",
+    "@earthcation/usecase": "workspace:*",
+    "compression": "^1.8.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/compression": "1.8.1",
+    "@types/cors": "2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-serve-static-core": "^5.1.0",
+    "@types/morgan": "1.9.10",
+    "@types/multer": "^2.3.0",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.1"
+  }
+}

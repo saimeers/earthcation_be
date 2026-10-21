@@ -2,6 +2,25 @@
 
 Versionado semántico. Cada versión sale de una rama `release/vX.Y.Z` fusionada en `main` con su tag.
 
+## v1.3.0 — 2026-10-20
+
+Refactor interno (fase 3b): el contrato de la API v1 no cambia.
+
+### Nuevo
+- Arquitectura limpia multimódulo en monorepo pnpm + Turborepo: `domain/model` (entidades, value objects, errores
+  de dominio y puertos), `domain/usecase` (un `XxxUseCase.execute(cmd)` por caso), `infrastructure/driven-adapters/*`
+  (Sequelize, Redis, S3/R2, ZIP, firma HMAC, cola, seguridad, Resend, Excel, catálogo geográfico),
+  `infrastructure/entry-points/rest-api` y `applications/app-service` (único desplegable).
+- Los límites entre capas los hacen cumplir pnpm y dependency-cruiser en CI.
+- La app Express (`createApp`), los límites de peticiones y el arranque salieron de `src/legacy` (que ya no existe);
+  el catálogo de municipios se siembra con un caso de uso.
+
+### Despliegue
+- Railway detecta pnpm por `packageManager` y el lockfile: construye con `pnpm build` (turbo) y arranca con
+  `pnpm start` (`node applications/app-service/dist/main.js`). Node 22 o superior.
+- Variables nuevas, todas opcionales y con valor por defecto: `RATE_LIMIT_USER_MAX`, `RATE_LIMIT_IP_MAX`,
+  `RATE_LIMIT_AUTH_MAX`, `RATE_LIMIT_LOGIN_CEDULA_MAX`, `RATE_LIMIT_LOGIN_IP_FAIL_MAX`.
+
 ## v1.2.0 — 2026-10-20
 
 Refactor interno (fase 3): el contrato de la API v1 no cambia.

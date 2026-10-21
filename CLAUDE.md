@@ -10,78 +10,129 @@ Deployed on Railway at `api-earthcation.saimers.dev`. See `../../project-context
 cross-project picture (data model diagrams, every endpoint, known gaps) — this file only covers
 what's specific to working inside this folder.
 
-## Commands
+## Commands (pnpm workspaces + Turborepo, fase 3b)
 
 ```
-npm run dev        # tsx watch src/main.ts — hot reload (JS and TS)
-npm run build      # tsc → dist/ (Railway runs it before `npm start`)
-npm start          # node index.js → dist/src/main.js
-npm run typecheck  # tsc --noEmit
-npm run lint       # eslint: base rules on JS, functional + size rules on TS
-npm test           # builds, then vitest: unit + v1 contract tests against a disposable Postgres
+pnpm install       # pnpm 9.15.9 (packageManager); turbo needs `pnpm` on PATH
+pnpm build         # turbo: tsc -b in every package, in dependency order (Railway runs it before `pnpm start`)
+pnpm start         # node applications/app-service/dist/main.js
+pnpm dev           # tsx watch on app-service
+pnpm lint          # eslint per package (root eslint.config.mjs)
+pnpm test          # turbo: vitest per package; app-service = v1 contract tests against a disposable Postgres
+pnpm boundaries    # dependency-cruiser: allowed graph between layers
 ```
 
-### TypeScript (fase 3, 2026-10-19)
+### Clean architecture monorepo (fase 3b, 2026-10-20) — complete
 
-- JS (v1, migrated context by context) and TS (new code) coexist: `tsconfig.json` has `allowJs` and compiles
-  `src/**` to `dist/src/**` (CommonJS). Root `index.js` only requires `dist/src/main.js`; the real entry is
-  `src/main.ts` (validates env with `infrastructure/env.ts`, zod, then `server.js#start`). **Production needs
-  the build** — `npm start` on a fresh clone without `npm run build` fails.
-- Contract tests load `dist/` (`pretest` builds), so they check the artifact that is deployed.
-- `shared/result.ts`: `Result<T, E>` (`ok`, `err`, `map`, `flatMap`, `andThen`, `fromNullable`) — domain and
-  application never throw. `shared/errors.ts`: `DomainError { kind, code, message, details? }` and
-  `httpStatusOf` (v2 maps business rules to 422).
-- ESLint on `src/**/*.ts`: typescript-eslint strict-type-checked + eslint-plugin-functional, `max-lines-per-function`
-  10 (blank lines and comments excluded), `complexity` 5, `max-params` 3, `max-depth` 2, no `let`, no mutation,
-  no classes, no `throw`, no loops. TypeScript is pinned to 6.0.x (typescript-eslint does not support 7 yet).
+Bancolombia-style scaffold: every layer and adapter is a package with its own `package.json`; pnpm forbids importing
+what a package did not declare, dependency-cruiser (`.dependency-cruiser.cjs`) forbids declaring the wrong thing.
+```
+domain/model                       @earthcation/model    entities, value objects, DomainError subclasses, gateways
+domain/usecase                     @earthcation/usecase  <context>/<case>/XxxUseCase.ts (+ Command); deps: model
+infrastructure/driven-adapters/*   implement gateways; deps: model + their library
+infrastructure/entry-points/*      rest-api (routes, controllers, dto, middlewares, errorHandler); deps: usecase, model
+applications/app-service           the only deployable: config/env.ts, container, main; deps: everything
+```
+Graph: model ← nothing · usecase ← model · adapters ← model · entry-points ← usecase, model · app-service ← all.
+Style: classes + throw (use cases with `execute(cmd)`, entities/VOs with behavior, typed `DomainError` subclasses
+from `@earthcation/model`, one `errorHandlerV1` in rest-api maps `kind` → status). Packages export only `index.ts`.
+All seven contexts (catalog → vark → observability → identity → deployment → learning → sessions) live in the
+clean packages and **`applications/app-service/src/legacy/` no longer exists** (closed 2026-10-20): the Express app is
+rest-api's `createApp(deps)` (helmet, cors, compression, morgan, metrics, `rateLimiters`, every v1 router, 404 +
+`errorHandlerV1`), built by `container.ts` and exported as `app`; boot (`src/boot.ts#prepareDatabase`/`start`) runs
+migrations, `RecoverInterruptedPublishesUseCase` and `SeedPlaceCatalogUseCase` (municipios) before `listen`.
+app-service is TypeScript only (no `allowJs`).
 
-### Bounded contexts (strangler, one PR per context)
+Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location` entities with `prepare`/`change`/
+`disable`/`enable`, errors, `OrganizationRepository`/`LocationRepository`), 13 use cases in
+`usecase/src/catalog/{organizations,locations}/<case>/`, `SequelizeOrganizationRepository`/`SequelizeLocationRepository`,
+`OrganizationController`/`LocationController` + `routes/catalog.routes.ts` + `dto/v1/catalog.ts` in rest-api.
+Shared pieces that arrived with it: `@earthcation/sequelize-repository` owns **all models** (`defineModels(sequelize)`),
+the connection factory and the Umzug migrations; `app-service/src/container.ts` creates the connection from
+`config/env.ts` (DB_* validated there) and exports `sequelize` + `models` (used directly only by the test seed and
+`scripts/load`).
+rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1). `main.ts` validates env
+before loading the app.
+— **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
+errors, `VarkRepository` whose panel listings are the `VarkListingRow` read model of raw rows), 5 use cases in
+`usecase/src/vark/results/<case>/`, `SequelizeVarkRepository`, `VarkController` + `routes/vark.routes.ts` +
+`dto/v1/vark.ts`; mounted from `container.routes.vark`.
+— **deployment**: `model/src/deployment` (`GameVersion` state machine, `VersionLabel`/`ZipSize`, pure `BuildInspection`
+and `ActivationPointer`, errors, gateways `GameVersionRepository`/`OriginalsStorage`/`PublishedStorage`/`ZipReader`/
+`PreviewSigner`/`PublishQueue`/`IdGenerator`), 11 use cases in `usecase/src/deployment/{status,versions,publishing,play}/`,
+`SequelizeGameVersionRepository`, new adapters `object-storage` (S3/R2/disk), `zip-reader`, `hmac-signer`,
+`in-process-queue` (the container wires the queue to `PublishVersionUseCase`), `DeploymentController`/`PlayLocalController`
++ `routes/deployment.routes.ts` + `dto/v1/deployment.ts`; the local-publishing flag goes to `createApp`
+(`servePlayLocal`) and the boot recovery to `bootTasks`. Deploy env vars are validated in `config/env.ts`.
+— **observability**: `model/src/observability` (`Visit.fromWorker`, `BotDetector`, `UserAgent`, `LoginEvent` + `loginPlace`/`utf8Header`,
+`VisitWindow`, pure `summarizeMetrics`, `Health` types; gateways `VisitRepository`, `LoginEventRepository`, `VisitStatsReadModel`,
+`MetricsStore`, `DatabaseHealthProbe`/`CacheHealthProbe`, `RuntimeInfo`), 4 use cases in `usecase/src/observability/`, new adapters
+`@earthcation/redis-cache` (`RedisCache`: the shared `Cache`, Redis or memory) and `@earthcation/in-memory-metrics`;
+rest-api `VisitController`/`HealthController`, `metrics` middleware, `cloudflareEdge` (client IP, old `utils/clientIp.js`).
+The container reads `REDIS_URL`/`VISITS_INGEST_SECRET`/`CF_EDGE_SECRET`; the Redis client feeds both `RedisCache` and
+`RedisWindowCounter` (rate-limit counters), and `edge.clientIp` keys the anonymous rate limits.
+— **identity**: `model/src/identity` (`User` entity with `register`/`imported`/`edit`/`assertEditableBy`/`assertCanLogIn`/
+password reset; VOs `Cedula`, `Email`, `UserRole`; `AnmSheet` = pure ANM Excel reading; domain services `PlaceMatcher`
+(municipio catalog via the `PlaceCatalog` gateway), `IdentifierAvailability`, `ResetTokenFactory`; gateways `UserRepository`,
+`UserReadModel`, `PasswordHasher`, `PasswordGenerator`, `ResetTokenService`, `TokenIssuer`, `Mailer`, `SpreadsheetReader`,
+`ImportDirectory`, `LoginRecorder`), 11 use cases in `usecase/src/identity/{auth,users,bulk-import}/`, new adapters
+`@earthcation/security` (bcrypt, `JwtTokenService` = `TokenIssuer` + `TokenVerifier`, HS256), `@earthcation/resend-mailer`,
+`@earthcation/excel` (xlsx reader) and `@earthcation/geo-catalog` (`colombia-municipios.json`); `SequelizeUser*` +
+`SequelizeImportDirectory`; rest-api `AuthController`/`UserController`/`BulkImportController` + `routes/identity.routes.ts`.
+The login's `LoginRecorder` is observability's `recordLogin`. The container exports `security` (tokens + passwords) for
+the test seed and `scripts/load`; tests stub `ResendMailer.prototype` (`test/support/env.cjs` → `outbox`). Env:
+`RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`.
+— **learning**: `model/src/learning` (pure `attempts.ts` = latest-attempt rule, `summaries.ts` = aggregators, `LevelProgress.ts`,
+value objects `RiskResultInput`/`NewAttemptInput`/`EventBatch` with their errors, gateways `LearningRepository`/`LearningReadModel`/
+`AnalyticsReadModel`/`FreePlaySessions`/`MunicipalityCoordinates`), 16 use cases in `usecase/src/learning/{progress,levels,telemetry,
+analytics}/`, `SequelizeLearningRepository`/`SequelizeLearningReadModel`/`SequelizeAnalyticsReadModel` (Postgres aggregation + the
+model's pure functions) and `SequelizeFreePlaySessions` (the "Juego libre" gateway, cached 10 min) in sequelize-repository;
+`ProgressController`/`LevelController`/`TelemetryController`/`AnalyticsController` + `routes/learning.routes.ts` + `dto/v1/learning.ts`
+in rest-api; `container.routes.{progress,levels,telemetry,analytics}`. New adapter `@earthcation/geo-catalog`'s `DivipolaCoordinates`
+(DIVIPOLA municipio/department matching, reusing `levenshtein` from `@earthcation/model`) replaces the old `geo.ts`.
+`shared/collections.ts` (`groupBy`/`countBy`/`maxBy`/`keyOf`/`sum`) moved to `model/src/shared/collections.ts`.
+— **sessions**: `model/src/sessions` (pure `Room.ts` = room code/`assertCanControl`/`canSee`/`seesEverything`, `NewRoomInput`/`JoinCode`
+value objects, `detail.ts` = the whole `/progress/admin` computation, `analysis.ts`, `report.ts` (Excel rows as data), `labels.ts`,
+errors, gateways `SessionRepository`/`SessionDetailReader`/`SessionReportWriter`), 12 use cases in `usecase/src/sessions/rooms/<case>/`
+(`assertCanView.ts` is a shared non-use-case helper for detail/analysis/export, not a use case calling another). `SequelizeSessionRepository`
+and `SequelizeSessionDetailReader` (the `/progress/admin` computation cached 10 s per session, invalidated on start/end) in
+sequelize-repository; `@earthcation/excel`'s `ExcelSessionReportWriter` (ExcelJS, moved from the old `workbook.ts`) implements
+`SessionReportWriter`. `SessionController` + `routes/sessions.routes.ts` + `dto/v1/sessions.ts` in rest-api; `container.routes.sessions`.
+The "Juego libre" gateway (`FreePlaySessions`/`SequelizeFreePlaySessions`) arrived with **learning** above — sessions does not
+re-implement it.
 
-`src/contexts/<context>/`: `domain.ts` (types, pure validation, `DomainError` factories), `ports.ts`
-(repository types), `application.ts` (use cases as factories over their ports, returning `Result`),
-`sequelizeRepositories.ts` (rows ↔ domain), `httpV1.ts` (v1 routes, same snake_case responses), `index.ts`
-(composition root mounted by `app.js`). `adapters/http/v1/respond.ts#sendV1` answers an `Err` the v1 way
-(`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
-contract snapshots must stay identical in every migration PR.
+### TypeScript
 
-Migrated: **catalog** (organizations, locations), **vark** (scoring is the pure `scoreVark`; the panel
-listings are a v1 read model of raw rows) and **observability** (visits, login locations, health, metrics: pure
-`toVisit`/`loginPlace`/`parseUserAgent` and `metrics.ts#summarize`; `runtime.ts` holds the only mutable state, the
-per-minute buckets; the stats are a read model cached under namespace `visit-stats`) and **identity** (auth, users,
-bulk import: `domain.ts` field rules, `anm.ts` pure Excel reading, `places.ts` catalog matching, `bulkImport.ts`;
-crypto/JWT/email/xlsx adapters in `adapters.ts` over `utils/hash|jwt|email.utils.js`, which stay because the auth
-middleware, rate limiter and tests use them). Their old
-routes/controllers/services/utils were deleted. Cross-context ports live in `src/ports/` (`Cache`, adapter
-`src/adapters/cache` over `services/cache.service.js`).
-Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
-(`name`, `type` / `municipality`, `department`, `country`); before, the whole body reached the model.
-Behavior changes in identity (contract unchanged): an inactive staff user with a wrong password now gets
-"Credenciales inválidas" (the password is checked before revealing "Usuario inactivo"); the bulk-import preview
-looks up registered cédulas in one query; confirm resolves organization/location first and creates user + profile
-in one transaction (no user without profile if a later step fails).
-**deployment** is migrated too: `build.ts` (pure WebGL inspection and `headersFor`), state rules in `domain.ts`,
-`adapters.ts` over `config/deployStorage.js` + adm-zip + HMAC + the in-memory publish queue, `playLocal.ts` for
-`/play-local`. New error kinds `too_large` (413) and `unavailable` (503). Contract tests in `v1.deploy.test.js` run the
-whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
-**learning** (progress, levels, telemetry, analytics): `attempts.ts` (latest-attempt rule), `summaries.ts`
-(`summarizeAttempts`, `summarizeRisks`, `round`, hardest risks, level progress) and `geo.ts` (DIVIPOLA coordinates) are
-pure; `analyticsReadModel.ts` and `telemetryOverview.ts` aggregate in Postgres and shape with those functions.
-`shared/collections.ts` has `groupBy`/`countBy`/`maxBy`/`keyOf` (order of first appearance).
-`tests/contract/v1.learning.test.js` snapshots the computed VALUES (ids and dates masked), not only the shape.
-**sessions** (rooms, free play, panel detail, participant analysis, Excel): `domain.ts` (room code, who controls and who
-sees a room), `detail.ts` (the whole `/progress/admin` computation, pure), `analysis.ts`, `report.ts` (Excel rows as
-data) + `workbook.ts` (ExcelJS drawing), `labels.ts`. The free-play session (`freeSessions.resolve`, cached 10 min) is
-exported to learning. `v1.sessions.test.js` snapshots the detail/analysis values and every Excel cell.
+- All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is
+  `applications/app-service/src/main.ts`: validates env with `src/config/env.ts` (zod; throws `InvalidEnvError` with
+  every problem, main prints them and exits) and then calls `src/boot.ts#start`.
+  **Production needs the build** — `pnpm start` on a fresh clone without `pnpm build` fails.
+- Contract tests (`applications/app-service/test/`) load `dist/` (turbo builds first), so they check the deployed artifact.
+- The service version reported by `/api/health` is `applications/app-service/package.json#version` (bump it with the
+  root one at each release).
+- ESLint on `src/**/*.ts`: typescript-eslint strict-type-checked, `max-lines-per-function` 10 (blank lines and comments
+  excluded), `complexity` 5, `max-params` 3, `max-depth` 2. TypeScript is pinned to 6.0.x (typescript-eslint does not
+  support 7 yet).
 
-**Phase 3 is complete (2026-10-20): every route lives in a context; `routes/`, `controllers/` and the domain services are
-gone.** What stays in JS: `models/`, `config/`, `middleware/` (auth, role, rate limit), `services/cache.service.js`,
-`utils/` (clientIp, email, hash, jwt, rateLimitStore), `scripts/`.
+### Bounded contexts (strangler, historical — fase 3b finished this)
 
-No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
-usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
+Before the clean-package move (fase 3), each context lived under `src/contexts/<context>/` in a hexagonal-functional
+style (`domain.ts`/`ports.ts`/`application.ts` returning `Result`, `sequelizeRepositories.ts`, `httpV1.ts`, `index.ts`
+composition root mounted by `app.js`). All seven contexts have since moved into the clean packages (see "Migrated so
+far" above) and `src/contexts/` no longer exists. Behavior changes picked up along the way, kept for the record:
+`PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields (before, the whole body reached the
+model); an inactive staff user with a wrong password gets "Credenciales inválidas" (checked before "Usuario
+inactivo"); the bulk-import preview looks up registered cédulas in one query; confirm resolves organization/location
+and creates user + profile in one transaction; an unknown `role` or non-numeric `age` answer 400 instead of a 500
+from Postgres; an empty `role` in `PUT /api/users/:id` leaves it unchanged; cédula/email are trimmed; deployment's
+`too_large` (413) and `unavailable` (503) error kinds arrived with that migration.
 
-`src/main.ts` validates the env and calls `src/server.js#start` (`prepareDatabase`: migrations, interrupted
-publishes, municipios; then `listen`). The Express app itself is `src/app.js`, required without side effects by the tests.
+Every env var is declared (with its default) in `applications/app-service/src/config/env.ts`, the only place that
+reads `process.env`.
+
+`src/main.ts` validates the env and calls `src/boot.ts#start` (`prepareDatabase`: migrations, interrupted
+publishes, municipios; then `listen`). The Express app itself is `container.ts#app`, required without side effects
+by the tests.
 
 ## Tests (fase 2, 2026-10-19)
 
@@ -89,7 +140,7 @@ publishes, municipios; then `listen`). The Express app itself is `src/app.js`, r
   desarrollador, admin) and the writes (permissions + happy paths) snapshot `{ status, content-type,
   shape }`, where shape = keys and types (`uuid`, `date`, `string`…), not values. Plus the session Excel
   (sheets, headers, row counts). While v1 lives these snapshots must not change; an intended change is
-  updated with `npm test -- -u` and explained in the PR.
+  updated with `pnpm --filter @earthcation/app-service test -- -u` and explained in the PR.
 - `tests/support/seed.cjs` (global setup, once per run): `DROP SCHEMA public CASCADE`, `prepareDatabase`,
   levels/risks + admin/developer straight into the models, and everything else through the API like
   production (organization, instructor, 3 players, VARK, a session with joins, attempts with events and
@@ -104,25 +155,14 @@ publishes, municipios; then `listen`). The Express app itself is `src/app.js`, r
 
 ## Architecture
 
-Hexagonal and functional, one folder per bounded context (see "Bounded contexts" above):
-
-```
-contexts/<context>/domain.ts      → types, pure rules and validation, DomainError factories
-contexts/<context>/ports.ts       → what the use cases need (repositories, read models, adapters)
-contexts/<context>/application.ts → use cases as factories over their ports, returning Result
-contexts/<context>/sequelize*.ts  → rows ↔ domain, read models (aggregation in Postgres)
-contexts/<context>/httpV1.ts      → v1 routes with the old snake_case responses
-contexts/<context>/index.ts       → composition root, mounted by app.js
-models/<Resource>.js, models/index.js → Sequelize models and all associations (read index first)
-```
-
-Contexts: `catalog`, `vark`, `observability`, `identity`, `deployment`, `learning` (telemetry: see
-`docs/TELEMETRY.md`), `sessions`. A new feature goes into its context: pure logic in domain/feature modules, queries
-behind a port, never query logic in `httpV1.ts`.
+Clean/hexagonal, one context per vertical slice (see "Clean architecture monorepo" above for the package layout).
+A new feature goes into its context: pure logic/entities in `domain/model`, orchestration in `domain/usecase`, I/O in
+a `driven-adapters` package, HTTP in `rest-api` — never query logic in a controller. See `docs/TELEMETRY.md` for the
+telemetry wire format served by the `learning` context.
 
 `middleware/auth.middleware.js` validates the JWT from `Authorization` header and attaches
 `req.user`. `middleware/role.middleware.js` exports `requireRole(...roles)` for route-level
-authorization. `utils/jwt.utils.js` signs `{ id, username, role }` — note `username` in that payload
+authorization. The login (`JwtTokenService` in `@earthcation/security`) signs `{ id, username, role }` — note `username` in that payload
 is actually the user's **cédula**, not a chosen username.
 
 ### Data model essentials (see `../../project-context.md` §2 for full detail)
@@ -134,26 +174,26 @@ is actually the user's **cédula**, not a chosen username.
   email because they never registered a personal one. `cedula` is the real unique identity.
 - `VarkResult` is **upserted** per user — resubmitting the VARK test overwrites the previous result,
   there is no history of past attempts.
-- `TrainingSession.code` is a **3-digit numeric** room code (`contexts/sessions/domain.ts#roomCode`), easy to
+- `TrainingSession.code` is a **3-digit numeric** room code (`model/src/sessions/Room.ts#roomCode`), easy to
   read/dictate in a classroom. Retry-until-unique only checks against non-`finished` sessions
-  (`application.ts#freeCode`) — a finished session frees its code, needed since 3 digits
+  (`CreateRoomUseCase#freeCode`) — a finished session frees its code, needed since 3 digits
   only gives 1000 combinations. Uniqueness is a **partial unique index** `training_sessions_code_live`
   (non-finished sessions only, created in `scripts/dbMaintenance.js`), and `joinSession` prefers the
   live session for a reused code. `GET /api/sessions/code/:code` (any logged-in user) returns the live
   session (name, instructor) without enrolling — used by the game when the code comes from a QR.
 - `UserRiskProgress.session_id` / `LevelAttempt.session_id`: when the game sends none,
-  `contexts/sessions` (`freeSessions.resolve`) assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
+  `FreePlaySessions`/`SequelizeFreePlaySessions` assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
   player's profile location (a global one if the player has no location) and enrolls the player. Free sessions
   have no instructor or code, are always `active` (start/end return 400), are listed for admins and, in
   `/api/sessions/mine`, for instructors of the same location. `instructor_id`/`location_id` are nullable;
   `index.js` drops their NOT NULL explicitly after `sync` because `alter` does not do it for FK columns.
   Old rows with a null session were left as they were.
 - Instructor access: `GET /:id/progress/admin`, `/:id/participants/:userId/analysis` and
-  `/:id/export.xlsx` allow `instructor` too, guarded by `assertCanView` in `contexts/sessions/application.ts` (admin: all;
+  `/:id/export.xlsx` allow `instructor` too, guarded by `assertCanView` in `usecase/src/sessions/rooms/assertCanView.ts` (admin: all;
   instructor: own rooms + the "Juego libre" session of their profile location; else 403).
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
-- `GET /api/analytics/overview` (`contexts/learning/analyticsReadModel.ts#overview`) also returns `riesgos_mas_fallados` (top failed risks by fail
+- `GET /api/analytics/overview` (`SequelizeAnalyticsReadModel.ts#overview`, sequelize-repository) also returns `riesgos_mas_fallados` (top failed risks by fail
   rate, grouped over `UserRiskProgress`) and `tendencia_temporal` (weekly mitigation % via
   `date_trunc('week', recorded_at)`) — both computed on the fly, no new columns.
 
@@ -174,7 +214,7 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
 
 ### Bulk user import (ANM Excel format)
 
-`src/contexts/identity/` (`anm.ts`, `places.ts`, `bulkImport.ts`, routes in `httpV1.ts`), mounted at
+`model/src/identity/bulk-import/` (`AnmSheet`, `PlaceMatcher`), `usecase/src/identity/bulk-import/`, routes in rest-api `routes/identity.routes.ts`, mounted at
 `/api/users/bulk-import` (both routes `auth` + `requireRole('admin','instructor')`):
 
 - `POST /parse` (multipart, `multer` in-memory, field name `file`) — parses the official ANM
@@ -198,26 +238,26 @@ through `POST /api/users` (single, admin/instructor UI) or the bulk-import flow 
   in the Excel), and an internally generated random password hash that's never emailed or exposed
   (irrelevant since player login is cedula-only).
 
-### Municipios catalog (`src/data/colombia-municipios.json`, `src/scripts/seedMunicipios.js`)
+### Municipios catalog (`@earthcation/geo-catalog`: `src/data/colombia-municipios.json`; `SeedPlaceCatalogUseCase`)
 
 Closed catalog of 33 departments / 1104 municipios (open dataset, DANE-based, with a manual fix
 promoting Bogotá to its own department "Bogotá D.C." instead of a Cundinamarca municipality).
-Seeded idempotently on every boot (`index.js`, after `sequelize.sync`) — safe to re-run, only
+Seeded idempotently on every boot (`boot.ts#prepareDatabase`, after the migrations) — safe to re-run, only
 inserts rows that don't already exist by normalized municipality+department match. Added to fix a
 real production issue: `locations` had accumulated 3 separate rows for "Norte de Santander" from
 free-text Excel imports ("Norte de Santander" / "NORTE DE SANTANDER" / "Norte de Santender").
 
-`contexts/identity/places.ts#placeQuery` matches the Excel's free-text municipio/
+`PlaceMatcher#query` (`model/src/identity/bulk-import/PlaceMatcher.ts`) matches the Excel's free-text municipio/
 departamento against this catalog first (normalized + Levenshtein distance ≤2 for typo tolerance,
 `DEPT_ALIASES` for common abbreviations like "Bogota" → "Bogotá D.C."), falling back to
 create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
 frontend's bulk-import preview) only when nothing in the catalog is close enough.
 
-### Session detail for the admin panel (`contexts/sessions/detail.ts`, `analysis.ts`)
+### Session detail for the admin panel (`model/src/sessions/detail.ts`, `analysis.ts`)
 
-- `GET /api/sessions/:id/progress/admin` (`getSessionProgressAdmin`) — **3 queries total**
-  (session+participants, all `UserRiskProgress` of the session, all `LevelAttempt` of the session),
-  grouped in memory by `user_id`. It used to do one query per participant. Response keeps the old
+- `GET /api/sessions/:id/progress/admin` (`GetRoomDetailUseCase` → `SequelizeSessionDetailReader` → `sessionDetail()`)
+  — **3 queries total** (session+participants, all `UserRiskProgress` of the session, all `LevelAttempt` of the
+  session), grouped in memory by `user_id`. It used to do one query per participant. Response keeps the old
   per-participant fields (`total_attempts`, `mitigated`, `percentage`, `avg_reaction_ms`,
   `by_level`) and adds `band`, `risks`, `weakest_risk`, `telemetry` (attempt totals, per-level
   summary, `journeys` = attempt-by-attempt outcomes per level), plus top-level `summary`, `risks`
@@ -226,21 +266,21 @@ frontend's bulk-import preview) only when nothing in the catalog is close enough
 - `performanceBand(pct, hasData)` — `destacado` ≥80 · `en_progreso` 40–79 · `refuerzo` <40 ·
   `sin_datos`. The frontend (`modules/admin/sessions/bands.js`) and the Excel export use the same
   cut-offs — change them together.
-- `GET /api/sessions/:id/participants/:userId/analysis` (`getParticipantAnalysis`) — one
+- `GET /api/sessions/:id/participants/:userId/analysis` (`GetParticipantAnalysisUseCase`) — one
   participant's session-scoped data + group averages for comparison (`group`), summed `summary`
-  counters, event counts, panel reading time, and prev/next navigation. Reuses
-  `getSessionProgressAdmin`.
-- `GET /api/sessions/:id/export.xlsx` (`report.ts` rows + `workbook.ts`, **ExcelJS**, not `xlsx` —
-  SheetJS CE can't style cells) — sheets Resumen / Participantes / Riesgos de la sesión /
-  Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
+  counters, event counts, panel reading time, and prev/next navigation. Reuses the same cached
+  `SequelizeSessionDetailReader#read` as the detail above (not a use-case-to-use-case call: the cache key is shared).
+- `GET /api/sessions/:id/export.xlsx` (`model/src/sessions/report.ts` rows + `@earthcation/excel`'s
+  `ExcelSessionReportWriter`, **ExcelJS**, not `xlsx` — SheetJS CE can't style cells) — sheets Resumen / Participantes /
+  Riesgos de la sesión / Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
   tinted result cells. Dates are written in Colombia local time (UTC−5) since Excel has no
-  timezone. Spanish labels for game enums live in `contexts/sessions/labels.ts`.
-- `contexts/learning/summaries.ts` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
-  (used by `getUserSummary` and the session service) — don't duplicate those loops.
+  timezone. Spanish labels for game enums live in `model/src/sessions/labels.ts`.
+- `model/src/learning/summaries.ts` (`@earthcation/model`) exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
+  (used by learning's use cases and the session service) — don't duplicate those loops.
 
 ### Analytics — mines map (`GET /api/analytics/map`)
 
-`analyticsReadModel.ts#minesMap` powers the frontend's Leaflet map of mining units. `Organization`
+`SequelizeAnalyticsReadModel.ts#minesMap` (sequelize-repository) powers the frontend's Leaflet map of mining units. `Organization`
 has no `location_id` of its own — each org's location is inferred as the most frequent
 municipality/department among its active players' `UserProfile.location`. Returns one row per
 organization with `municipality`/`department`/`player_count`/`percentage` (mitigation rate,
@@ -249,7 +289,7 @@ computed the same way as `getByOrganization`).
 ### Schema management
 
 **Versioned migrations with Umzug (since fase 3).** `src/infrastructure/migrations/index.ts` runs the pending
-migrations on boot (`server.js#prepareDatabase`) and records them in `schema_migrations`. `sync({ alter: true })`
+migrations on boot (`boot.ts#prepareDatabase`) and records them in `schema_migrations`. `sync({ alter: true })`
 is gone: **changing a model no longer changes the database** — every schema change needs a new migration
 file (`0002_<what>.ts` exporting `name` and `up({ context: sequelize })`, added to the explicit `MIGRATIONS`
 list; no glob, so it works from `src/` and `dist/`).
@@ -274,7 +314,7 @@ to a constraint here, dropping the index directly fails). If a unique/not-null f
 change again, verify with a raw query against `pg_constraint` that the old constraint actually left
 before assuming the model change took effect.
 
-### Success percentages = latest attempt (`contexts/learning/attempts.ts`)
+### Success percentages = latest attempt (`model/src/learning/attempts.ts`)
 
 Every success % (analytics overview/by level/by organization/by location, mines map, session
 participants, `GET /api/progress/level/:levelId`) uses only the **latest attempt of each player in each
@@ -283,12 +323,12 @@ not average with older tries. Rows without `attempt_id` are grouped per session 
 `riesgos_mas_fallados` and `tendencia_temporal` still use the full history on purpose (difficulty /
 trend). The frontend mirrors this in `earthcation_fe/src/lib/attempts.js`.
 
-### Mines map coordinates (`contexts/learning/geo.ts`)
+### Mines map coordinates (`@earthcation/geo-catalog`'s `DivipolaCoordinates`)
 
-`src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
-`gdxc-w37w`). `coordsFor(municipality, department)` matches catalog names tolerant to accents,
+`geo-catalog/src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
+`gdxc-w37w`). `DivipolaCoordinates#locate(municipality, department)` matches catalog names tolerant to accents,
 articles and official vs popular names (1104 of the 1105 catalog municipios resolve); unmatched
-ones fall back to the department capital (`location_exact: false`). `GET /api/analytics/map`
+ones fall back to the department capital (`exact: false`). `GET /api/analytics/map`
 returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 ### Known gaps (don't "fix" without being asked — these are accepted current state)
@@ -300,7 +340,7 @@ returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 ### Admin-created users
 
-`POST /api/users` (`toNewUser` in `contexts/identity/domain.ts`) normalizes `''` → `null` for optional fields (an empty email used to fail
+`POST /api/users` (`User.register` in `model/src/identity/User.ts`) normalizes `''` → `null` for optional fields (an empty email used to fail
 `isEmail`, an empty age broke the INTEGER column), defaults `username` to the cédula, and requires
 email only for `instructor`/`admin`. **Players never get the welcome email.** If the email send
 fails for staff, the user is still created and the response says `email_sent: false` instead of
@@ -311,7 +351,7 @@ Admins never set a password when creating a user (`POST /api/users`, single-crea
 matters for `admin`/`instructor` accounts, which log in through the web panel and do need a real
 password. The service generates a secure random password, creates a reset token (SHA-256 hash,
 15-min expiry), and emails the temporary password + set-password link via Resend
-(`utils/email.utils.js`). Bulk-imported `player` accounts (see above) skip the email entirely — a
+(`@earthcation/resend-mailer`). Bulk-imported `player` accounts (see above) skip the email entirely — a
 generated password is stored but never surfaced, since players never need one.
 
 ### Concurrency & performance (built for ~50 players per session)
@@ -320,16 +360,17 @@ generated password is stored but never surfaced, since players never need one.
 - **Indexes**: `src/scripts/dbMaintenance.js` (run on every boot, idempotent) creates the indexes the
   write tables lacked (`level_attempts(session_id)`, `(user_id, level_key)`, `user_risk_progress`
   by session/user/attempt/recorded_at, `game_events(created_at)`) and drops the free-session NOT NULLs.
-- **Redis optional** (`src/config/redis.js`, `REDIS_URL`; copied from gameploy): without it every
-  user falls back to memory. `src/services/cache.service.js` `remember(ns, key, ttl, fn)` / `bump(ns)`
+- **Redis optional** (`@earthcation/redis-cache`, `REDIS_URL`; copied from gameploy): without it every
+  user falls back to memory. `RedisCache` `remember(ns, key, ttl, fn)` / `bump(ns)`
   (versioned keys). Cached: session detail (`sessions` context) 10 s per session (bumped on
   start/end), analytics overview and mines map 60 s, a player's free session 10 min, level ids 1 h.
-- **Rate limits** (`src/middleware/rateLimit.middleware.js`): requests with a token count **per user**
+- **Rate limits** (rest-api `middlewares/rateLimit.ts`, counters in Redis via `RedisWindowCounter` when there is
+  one, `RATE_LIMIT_*` in `config/env.ts`): requests with a token count **per user**
   (1500/15 min), anonymous ones per visitor IP (3000) — a whole classroom shares one public IP.
-  Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: `src/utils/clientIp.js`.
+  Login/forgot-password 300/15 min per IP. Visitor IP behind Cloudflare: rest-api `middlewares/cloudflare.ts`.
 - `trust proxy`, `compression`, `ALLOWED_ORIGINS` accepts a comma-separated list.
 - **Health**: `GET /api/health` (public, minimal) and `GET /api/health/details` (DB/Redis ping, pool,
-  p50/p95 and errors per route over 15 min from `src/contexts/observability/runtime.ts`, in memory).
+  p50/p95 and errors per route over 15 min from `@earthcation/in-memory-metrics`, in memory).
 - **Load test**: `node scripts/load/simulate-players.js [--players 50 --seconds 60 --panels 2]`
   (signs tokens for existing players, writes rows tagged `level_key = 'loadtest'`;
   `--cleanup` deletes them). 2026-10-18, local API → Railway DB, 50 players + 2 panels:
@@ -343,30 +384,30 @@ every `router.get` that allows `admin` also allows `developer`; all writes stay 
 `dbMaintenance.ensureEnumValues()` **before** `sync` (alter does not add ENUM values reliably).
 Deploy/visits/health endpoints allow `admin` and `developer`.
 
-### Game deployment (`/api/deploy/*`, `src/contexts/deployment/`, admin + developer)
+### Game deployment (`/api/deploy/*`, `model/src/deployment` + `usecase/src/deployment`, admin + developer)
 
 `GameVersion` (status `uploading → processing → ready | failed`) + `GameSetting` key
 `active_version_id` (single pointer, changed in a transaction). Flow: `POST /versions` creates the row and
 returns where to `PUT` the ZIP (S3 presigned URL, or `/versions/:id/upload` through the API when there is
 no S3) → `POST /versions/:id/complete` (atomic `uploading|failed → processing`) queues the publish
-(in-process, one at a time): unzip (`inspectBuild`, same rules as the panel's `buildCheck.js`), upload each
-file to `builds/<id>/` with `headersFor` (`x.wasm.br` = `application/wasm` + `Content-Encoding: br`,
+(in-process, one at a time): unzip (`BuildInspection.inspect`, same rules as the panel's `buildCheck.js`), upload each
+file to `builds/<id>/` with `BuildInspection.headersFor` (`x.wasm.br` = `application/wasm` + `Content-Encoding: br`,
 everything immutable except `index.html`) → `ready` with `manifest` (files, compression, Unity
 `productVersion`, warnings). `POST /:id/activate` writes `current.json` (read by the Worker) inside the
 transaction; rollback = activate an older one. `GET /:id/preview` = `<PLAY_URL>/v/<id>/?t=<exp>.<hmac>`
 (`PLAY_SIGNING_SECRET`, shared with the Worker). On boot, `processing` rows become `failed` (retryable).
-Storage (`src/config/deployStorage.js`): originals in AWS S3 (`AWS_S3_BUCKET`, `AWS_REGION`,
+Storage (`infrastructure/driven-adapters/object-storage`, configured from `config/env.ts`): originals in AWS S3 (`AWS_S3_BUCKET`, `AWS_REGION`,
 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`; bucket CORS must allow PUT from the panel) and published
 files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). Without
 them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
 published game at `/play-local/` (mounted before helmet, no token check) — dev only. `DEPLOY_MAX_MB` (500).
 
-### Visits & login locations (`src/contexts/observability/`)
+### Visits & login locations (`model/src/observability`, `usecase/src/observability`)
 
 `POST /api/visits/ingest` (no token; header `x-ingest-secret` = `VISITS_INGEST_SECRET`, shared with the
 Worker; mounted **before** the global rate limit since every visit comes from Cloudflare's IPs) stores a
 `GameVisit` per opening of the live game: Cloudflare country/region/city/colo/coordinates, device/OS/browser
-(`userAgent.ts`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
+(`UserAgent.ts`), version, `session_code` when it came from a room QR. `visitor` is the Worker's
 `HMAC(VISIT_SALT, ip)` — no IP is stored; `is_unique` = first opening of that visitor in 30 min
 (`setIfAbsent`). Successful logins write a `LoginEvent` (role, `cf-ipcountry`/`cf-region`/`cf-ipcity`
 — trusted only when `req.ip` is Cloudflare; region/city need the zone's "Add visitor location headers"
@@ -374,7 +415,7 @@ managed transform) without blocking the response. `GET /api/visits/stats?days=7|
 developer) aggregates everything, cached 60 s.
 - **Trusting `cf-*` headers**: behind Railway, `req.ip` is not reliably a Cloudflare address. A zone Transform
   Rule (`http_request_late_transform`, host `api-earthcation.saimers.dev`) sets `x-earthcation-edge` to
-  `CF_EDGE_SECRET`; `utils/clientIp.js#fromCloudflare(req)` checks it (falls back to `isCloudflare(req.ip)`).
+  `CF_EDGE_SECRET`; rest-api `cloudflareEdge(secret).fromCloudflare(req)` checks it (falls back to `isCloudflare(req.ip)`).
   Node reads headers as latin1 and Cloudflare sends `cf-ipcity`/`cf-region` in UTF-8 → `utf8Header()`;
   " Department" is stripped from Colombian region names.
 - **Bots**: visits with a bot user-agent or from a datacenter network (`as_organization` from the Worker, e.g.
@@ -386,7 +427,7 @@ developer) aggregates everything, cached 60 s.
 - `PUT /api/users/:id` (any logged-in user, for their own record): non-admins can only change `first_name`,
   `last_name`, `age`, `email`; `role`, `cedula`, `username`, `organization_id`, `location_id` are silently
   ignored (before, a player could send `{role:'admin'}`). Admins keep the full field list.
-- Login limits (`rateLimit.middleware.js`, mounted on `/api/auth/login` after `authLimiter`):
+- Login limits (rest-api `middlewares/rateLimit.ts`, mounted on `/api/auth/login` after the auth limiter):
   `loginCedulaLimiter` 10 failed attempts / 15 min per SHA-256 of the cédula (`skipSuccessfulRequests`);
   `loginIpFailLimiter` 60 / 15 min per IP counting **only cédulas that don't exist** (`skip` = cédula exists),
   so a classroom's typos never lock out players with valid cédulas. Env: `RATE_LIMIT_LOGIN_CEDULA_MAX`,

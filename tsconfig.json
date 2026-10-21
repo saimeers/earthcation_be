@@ -1,25 +1,21 @@
 {
-  // JS (v1, se va migrando) y TS (código nuevo) conviven: tsc revisa el TS y compila ambos a dist/
-  "compilerOptions": {
-    "target": "ES2023",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "rootDir": ".",
-    "outDir": "dist",
-    "allowJs": true,
-    "checkJs": false,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "types": ["node"]
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  // Solo referencias: el editor ve todos los paquetes; cada paquete se compila con su propio `tsc -b`
+  "files": [],
+  "references": [
+    { "path": "domain/model" },
+    { "path": "domain/usecase" },
+    { "path": "infrastructure/driven-adapters/sequelize-repository" },
+    { "path": "infrastructure/driven-adapters/object-storage" },
+    { "path": "infrastructure/driven-adapters/zip-reader" },
+    { "path": "infrastructure/driven-adapters/hmac-signer" },
+    { "path": "infrastructure/driven-adapters/in-process-queue" },
+    { "path": "infrastructure/driven-adapters/redis-cache" },
+    { "path": "infrastructure/driven-adapters/in-memory-metrics" },
+    { "path": "infrastructure/driven-adapters/security" },
+    { "path": "infrastructure/driven-adapters/resend-mailer" },
+    { "path": "infrastructure/driven-adapters/excel" },
+    { "path": "infrastructure/driven-adapters/geo-catalog" },
+    { "path": "infrastructure/entry-points/rest-api" },
+    { "path": "applications/app-service" }
+  ]
 }

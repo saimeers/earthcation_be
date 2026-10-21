@@ -1,0 +1,23 @@
+{
+  "name": "@earthcation/object-storage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adaptador de almacenamiento del despliegue: originales en AWS S3 (URL prefirmada), publicados en Cloudflare R2, o disco local en desarrollo.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@earthcation/model": "workspace:*"
+  }
+}

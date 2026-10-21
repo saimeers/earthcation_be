@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": false,
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../domain/model" },
+    { "path": "../../domain/usecase" },
+    { "path": "../../infrastructure/driven-adapters/sequelize-repository" },
+    { "path": "../../infrastructure/driven-adapters/object-storage" },
+    { "path": "../../infrastructure/driven-adapters/zip-reader" },
+    { "path": "../../infrastructure/driven-adapters/hmac-signer" },
+    { "path": "../../infrastructure/driven-adapters/in-process-queue" },
+    { "path": "../../infrastructure/driven-adapters/redis-cache" },
+    { "path": "../../infrastructure/driven-adapters/in-memory-metrics" },
+    { "path": "../../infrastructure/driven-adapters/security" },
+    { "path": "../../infrastructure/driven-adapters/resend-mailer" },
+    { "path": "../../infrastructure/driven-adapters/excel" },
+    { "path": "../../infrastructure/driven-adapters/geo-catalog" },
+    { "path": "../../infrastructure/entry-points/rest-api" }
+  ]
+}

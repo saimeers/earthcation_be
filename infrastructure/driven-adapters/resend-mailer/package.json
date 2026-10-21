@@ -1,0 +1,22 @@
+{
+  "name": "@earthcation/resend-mailer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adaptador de correo: bienvenida y restablecimiento de contraseña con Resend.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@earthcation/model": "workspace:*",
+    "resend": "^6.12.2"
+  }
+}

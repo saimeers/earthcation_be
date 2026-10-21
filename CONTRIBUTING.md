@@ -25,6 +25,6 @@ docs | test | chore | ci | perf: ...
 ```
 
 ## Antes de abrir el PR
-- `npm ci` y que el CI local pase (lint, pruebas, build).
+- `pnpm install` y que el CI local pase: `pnpm build`, `pnpm boundaries`, `pnpm lint`, `pnpm test`.
 - Describir qué cambia, cómo se probó y si toca el contrato de la API o los datos.
 - Nada de secretos ni datos personales en el código, los commits o los PR (el CI corre gitleaks).
