@@ -10,8 +10,8 @@ export interface PageMeta {
 
 /** Lo que devuelve un handler de v1; `send` lo traduce al sobre `{ data, meta }` y al estado HTTP. */
 export interface Reply {
-  /** 200 por defecto; 201 con `location` al crear; 204 sin cuerpo. */
-  readonly status?: 200 | 201 | 204
+  /** 200 por defecto; 201 con `location` al crear; 202 si se aceptó y se procesará; 204 sin cuerpo. */
+  readonly status?: 200 | 201 | 202 | 204
   readonly data?: unknown
   readonly meta?: PageMeta
   /** Ruta del recurso creado (cabecera `Location`). */
@@ -23,6 +23,8 @@ export const ok = (data: unknown): Reply => ({ data })
 export const page = (data: readonly unknown[], meta: PageMeta): Reply => ({ data, meta })
 
 export const created = (location: string, data: unknown): Reply => ({ status: 201, data, location })
+
+export const accepted = (data: unknown): Reply => ({ status: 202, data })
 
 export const noContent = (): Reply => ({ status: 204 })
 

@@ -67,6 +67,9 @@ const mountLimits = (app: Express, { limiters }: AppDeps): void => {
   app.use('/api', limiters.global)
   app.use('/api/auth/login', limiters.auth, limiters.loginIpFail, limiters.loginCedula)
   app.use('/api/auth/forgot-password', limiters.auth)
+  // v1: los mismos límites en el login y en la solicitud de restablecimiento
+  app.use('/api/v1/auth/login', limiters.auth, limiters.loginIpFail, limiters.loginCedula)
+  app.use('/api/v1/auth/password-resets', limiters.auth)
 }
 
 const mountV1 = (app: Express, { routesV1 }: AppDeps): void => {

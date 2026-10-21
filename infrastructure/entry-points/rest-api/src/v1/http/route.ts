@@ -1,6 +1,6 @@
 import type { Request, RequestHandler, Router } from 'express'
 import type { ZodType } from 'zod'
-import type { AuthenticatedUser, Role } from '@earthcation/model'
+import { TokenRequiredError, type AuthenticatedUser, type Role } from '@earthcation/model'
 import { requireRole } from '../../middlewares/auth'
 import { send, type Reply } from './reply'
 import { parseWith } from './validate'
@@ -9,6 +9,8 @@ export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
 /** Lo que recibe el handler de una ruta: la solicitud ya validada y tipada. */
 export interface RouteContext<P, Q, B> {
+  /** La solicitud de Express, para lo que depende del origen (IP, cabeceras). */
+  readonly req: Request
   readonly params: P
   readonly query: Q
   readonly body: B
@@ -28,7 +30,7 @@ export interface RouteSpec<P, Q, B> {
   readonly params?: ZodType<P>
   readonly query?: ZodType<Q>
   readonly body?: ZodType<B>
-  readonly response: { readonly status: 200 | 201 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean }
+  readonly response: { readonly status: 200 | 201 | 202 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean }
   readonly handler: (ctx: RouteContext<P, Q, B>) => Promise<Reply>
 }
 
@@ -50,6 +52,12 @@ export interface Route {
   readonly mount: (router: Router, authenticate: RequestHandler) => void
 }
 
+/** El usuario de una ruta con `roles` (ya pasó por `authenticate`). */
+export const userOf = (ctx: { readonly user: AuthenticatedUser | undefined }): AuthenticatedUser => {
+  if (!ctx.user) throw new TokenRequiredError()
+  return ctx.user
+}
+
 const guards = (roles: readonly Role[] | undefined, authenticate: RequestHandler): RequestHandler[] =>
   (roles ? [authenticate, ...(roles.length > 0 ? [requireRole(...roles)] : [])] : [])
 
@@ -59,6 +67,7 @@ const contextOf = <P, Q, B>(spec: RouteSpec<P, Q, B>, req: Request): RouteContex
   // express.json deja el cuerpo sin definir si no vino
   body: parseWith(spec.body, req.body ?? {}, 'body'),
   user: req.user,
+  req,
 })
 
 const handlerOf = <P, Q, B>(spec: RouteSpec<P, Q, B>): RequestHandler => async (req, res) => {
