@@ -62,6 +62,9 @@ importers:
       '@earthcation/redis-cache':
         specifier: workspace:*
         version: link:../../infrastructure/driven-adapters/redis-cache
+      '@earthcation/request-context':
+        specifier: workspace:*
+        version: link:../../infrastructure/driven-adapters/request-context
       '@earthcation/resend-mailer':
         specifier: workspace:*
         version: link:../../infrastructure/driven-adapters/resend-mailer
@@ -188,6 +191,12 @@ importers:
       ioredis:
         specifier: 6.0.0
         version: 6.0.0
+
+  infrastructure/driven-adapters/request-context:
+    dependencies:
+      '@earthcation/model':
+        specifier: workspace:*
+        version: link:../../../domain/model
 
   infrastructure/driven-adapters/resend-mailer:
     dependencies:

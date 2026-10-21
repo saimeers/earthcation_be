@@ -1,0 +1,24 @@
+{
+  "name": "@earthcation/request-context",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ámbito de la petición en curso (quién la hace y desde dónde) con AsyncLocalStorage; implementa RequestContext.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@earthcation/model": "workspace:*"
+  }
+}

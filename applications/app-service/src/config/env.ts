@@ -43,6 +43,8 @@ const schema = z.object({
   ALLOWED_ORIGINS: origins,
   // Documentación de la API v1 (Swagger UI y OpenAPI): pública o solo para admin y desarrollador con token
   DOCS_ACCESS: z.enum(['public', 'staff']).catch('public'),
+  // Sal de las huellas de IP del registro de auditoría; sin ella se deriva del JWT_SECRET
+  AUDIT_IP_SALT: optionalText,
   JWT_SECRET: z.string({ error: 'falta' }).min(32, 'debe tener al menos 32 caracteres'),
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.string().default('development'),

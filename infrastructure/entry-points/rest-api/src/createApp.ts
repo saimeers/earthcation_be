@@ -34,6 +34,8 @@ export interface AppDeps {
   readonly limiters: RateLimiters
   /** Mide cada petición (va al principio). */
   readonly metrics: RequestHandler
+  /** Abre el ámbito de la petición (origen y, después, actor) para la auditoría; va antes de las rutas. */
+  readonly requestContext: RequestHandler
   /** Orígenes permitidos por CORS; vacío = cualquiera. */
   readonly allowedOrigins: readonly string[]
   /** Sin R2 (desarrollo) la API sirve el juego publicado en /play-local, como lo haría el Worker. */
@@ -55,6 +57,7 @@ const mountCommon = (app: Express, deps: AppDeps): void => {
   app.use(express.json({ limit: '1mb' }))
   if (deps.requestLog) app.use(morgan(deps.requestLog))
   app.use(deps.metrics)
+  app.use(deps.requestContext)
 }
 
 // Estado público mínimo y visitas van antes del límite global: las visitas llegan todas desde las IP del Worker

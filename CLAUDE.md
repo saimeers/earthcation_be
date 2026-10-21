@@ -141,6 +141,23 @@ once no client calls it (visits stats show zero traffic). There is no `v2`.
 - Tests: `rest-api/test/v1.spec.ts` (unit, stub use cases), `createApp.spec.ts`, and
   `app-service/test/contract/v1.catalog.test.js` (real Postgres).
 
+### Audit log (fase 5)
+
+Who did what to what, in `audit_logs` (migration `0002_audit_logs`, append-only: a trigger rejects UPDATE, DELETE and
+TRUNCATE). The model has `AuditEntry`/`AUDIT_ACTIONS` and the ports `AuditLog`, `RequestContext`, `IpHasher`; use cases
+are wrapped with `audited(useCase, { action, describe, failure? }, deps)` (`usecase/src/audit/audited`) **in the
+composition root** (`container.ts`, "Auditoría" block), so the legacy and v1 APIs are both audited with no change to the
+commands. Actor and origin come from the request scope: `requestContext` middleware (rest-api) opens it with the
+visitor-IP HMAC and user agent, `authenticate(tokens, onAuthenticated)` sets the actor; `@earthcation/request-context`
+implements it with AsyncLocalStorage. The IP is never stored (HMAC with `AUDIT_IP_SALT`, default derived from
+`JWT_SECRET`). `changes` never holds personal data: `fieldChanges()` keeps field names (and the role).
+Audited: staff login ok (players are not) and every failed login (cedula hash only), password reset request/completion,
+user create/update/enable/disable/import, organization and location create/update/enable/disable, session
+start/end/export, game version create/complete/activate/remove. A failure to write the audit entry does not undo the
+action (it is reported to the service log; it is not in the same DB transaction as the change). Read it with
+`GET /api/v1/audit-logs` (filters, paging) and `/audit-logs/export` (CSV), admin and developer only.
+Add an action: extend `AUDIT_ACTIONS`, then wrap the use case in the container.
+
 ### TypeScript
 
 - All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is

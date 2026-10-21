@@ -2,3 +2,4 @@
 export { BcryptPasswordHasher } from './BcryptPasswordHasher'
 export { JwtTokenService } from './JwtTokenService'
 export { RandomPasswordGenerator, Sha256ResetTokenService } from './RandomSecrets'
+export { HmacIpHasher } from './HmacIpHasher'
