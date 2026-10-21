@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { ActivationPointer, BuildInspection, InvalidBuildError, type ZipEntry } from '../../src'
+import { ActivationPointer, BuildInspection, InvalidBuildError, MAX_UNPACKED_BYTES, MAX_ZIP_ENTRIES, type ZipEntry } from '../../src'
 
-const entry = (name: string, text = name): ZipEntry => ({ name, isDirectory: false, read: () => new TextEncoder().encode(text) })
+const entry = (name: string, text = name): ZipEntry => ({ name, isDirectory: false, size: text.length, read: () => new TextEncoder().encode(text) })
 const unityFiles = (root: string, ext = '.br') =>
   ['x.loader.js', `x.framework.js${ext}`, `x.wasm${ext}`, `x.data${ext}`].map((f) => entry(`${root}Build/${f}`))
 
@@ -45,5 +45,36 @@ describe('ActivationPointer', () => {
     expect(ActivationPointer.prefixOf('{"prefix":1}')).toBeNull()
     expect(ActivationPointer.prefixOf('null')).toBeNull()
     expect(ActivationPointer.prefixOf('no es json')).toBeNull()
+  })
+
+  describe('protecciones contra un ZIP malicioso', () => {
+    const valid = () => [entry('index.html'), ...unityFiles('')]
+
+    it('rechaza rutas que escapan de la carpeta de la versión', () => {
+      for (const bad of ['../fuera.txt', 'Build/../../fuera.txt', '/etc/passwd', 'Build\\..\\fuera.txt']) {
+        expect(() => BuildInspection.inspect([...valid(), entry(bad)])).toThrow('rutas no permitidas')
+      }
+    })
+
+    it('rechaza un ZIP con demasiados archivos', () => {
+      const many = Array.from({ length: MAX_ZIP_ENTRIES }, (_, i) => entry(`TemplateData/f${i}.png`))
+      expect(() => BuildInspection.inspect([...valid(), ...many])).toThrow('demasiados archivos')
+    })
+
+    it('rechaza un contenido que descomprimido pesa demasiado, sin llegar a leerlo', () => {
+      let reads = 0
+      const huge: ZipEntry = { name: 'Build/x.data.br', isDirectory: false, size: MAX_UNPACKED_BYTES + 1, read: () => { reads += 1; return new Uint8Array() } }
+      expect(() => BuildInspection.inspect([entry('index.html'), huge])).toThrow('supera los 800 MB')
+      expect(reads).toBe(0)
+    })
+
+    it('rechaza un archivo que al descomprimir pesa más de lo que el ZIP declaró', () => {
+      const liar: ZipEntry = { name: 'Build/x.data.br', isDirectory: false, size: 4, read: () => new Uint8Array(1000) }
+      expect(() => BuildInspection.inspect([entry('index.html'), ...unityFiles('').filter((e) => !e.name.endsWith('x.data.br')), liar])).toThrow('pesa más de lo que declara')
+    })
+
+    it('un build normal sigue pasando', () => {
+      expect(BuildInspection.inspect(valid()).files).toHaveLength(5)
+    })
   })
 })

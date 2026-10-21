@@ -54,18 +54,19 @@ describe('el código de sala no se puede adivinar', () => {
   it('después de varios intentos con códigos distintos el jugador queda limitado, en v1 y en legacy', async () => {
     const player = await createPlayer('9400500603')
     const statuses = []
-    for (let i = 0; i < 25; i++) statuses.push((await guess(player, String(100 + i))).status)
+    // Códigos que no pueden ser de una sala (los reales son de 3 dígitos y otras pruebas dejan salas abiertas)
+    for (let i = 0; i < 25; i++) statuses.push((await guess(player, `X${i}`)).status)
     expect(statuses.slice(0, 20).every((st) => st === 404)).toBe(true)
     expect(statuses.slice(20).every((st) => st === 429)).toBe(true)
     const limited = await guess(player, '999')
     expect(limited.body.error.code).toBe('RATE_LIMITED')
-    const check = await send('get', '/api/v1/sessions/code/123', player)
+    const check = await send('get', '/api/v1/sessions/code/ZZZ', player)
     expect(check.status).toBe(429)
   })
 
   it('otro jugador no se ve afectado y un código bueno sigue funcionando para quien no ha agotado sus intentos', async () => {
     const other = await createPlayer('9400500604')
-    expect((await guess(other, '000')).status).toBe(404)
+    expect((await guess(other, 'ZZZ')).status).toBe(404)
     const room = (await send('post', '/api/v1/sessions', s.instructor, { name: 'Sala segura', locationId: s.location.id })).body.data
     expect((await guess(other, room.code)).status).toBe(200)
   })

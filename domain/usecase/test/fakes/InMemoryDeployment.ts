@@ -90,7 +90,7 @@ export class ManualQueue implements PublishQueue {
 }
 
 const text = (s: string) => new TextEncoder().encode(s)
-export const entry = (name: string, content = name): ZipEntry => ({ name, isDirectory: false, read: () => text(content) })
+export const entry = (name: string, content = name): ZipEntry => ({ name, isDirectory: false, size: content.length, read: () => text(content) })
 export const webglEntries = (): ZipEntry[] => [
   entry('index.html', 'productVersion: "1.0"'),
   ...['x.loader.js', 'x.framework.js.br', 'x.wasm.br', 'x.data.br'].map((f) => entry(`Build/${f}`)),

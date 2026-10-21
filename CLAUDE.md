@@ -169,6 +169,9 @@ Add an action: extend `AUDIT_ACTIONS`, then wrap the use case in the container.
   `/sessions/join` and `/sessions/code` in legacy and v1.
 - **CORS:** in production a missing or `*` `ALLOWED_ORIGINS` means "only the origins of `FRONTEND_URL` and `PLAY_URL`"
   (`allowedOrigins()` in `config/env.ts`); outside production an empty list still accepts any origin.
+- **Game ZIPs:** `BuildInspection.inspect` rejects (400 `InvalidBuildError`) a ZIP with more than 3000 entries, more than
+  800 MB unpacked (declared size, checked before reading), paths with `..`, backslashes, NUL or absolute paths, and any
+  entry that unpacks bigger than it declared (`ZipEntry.size`, filled by `AdmZipReader`).
 - **DB TLS:** set `DB_SSL_CA` (PEM, `
 ` allowed) to verify the server certificate; without it the connection is
   encrypted but not verified (Railway issues its own certificate). Pending: obtain Railway's CA and set it in production.

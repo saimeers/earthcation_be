@@ -7,6 +7,8 @@ import { InvalidBuildError } from './errors/DeploymentErrors'
 export interface ZipEntry {
   readonly name: string
   readonly isDirectory: boolean
+  /** Tamaño descomprimido que declara el ZIP, en bytes. */
+  readonly size: number
   read(): Uint8Array
 }
 
@@ -125,14 +127,38 @@ const buildFrom = (root: string, files: readonly BuildFile[]): InspectedBuild =>
   return { files, manifest: manifestOf(root, files, has) }
 }
 
+// Un ZIP que dice ser un build puede ser una bomba (miles de archivos o un contenido que explota al descomprimir) o traer
+// rutas con `..` que, en el almacenamiento local, escaparían de la carpeta de la versión.
+export const MAX_ZIP_ENTRIES = 3000
+export const MAX_UNPACKED_BYTES = 800 * 1024 * 1024
+
+const unsafePath = (name: string): boolean =>
+  name.startsWith("/") || name.includes(String.fromCharCode(92)) || name.includes(String.fromCharCode(0)) || name.split("/").includes("..")
+
+const guard = (entries: readonly ZipEntry[]): void => {
+  if (entries.length > MAX_ZIP_ENTRIES) throw new InvalidBuildError(`El ZIP tiene demasiados archivos (máximo ${MAX_ZIP_ENTRIES})`)
+  if (entries.some((e) => unsafePath(e.name))) throw new InvalidBuildError('El ZIP tiene rutas no permitidas: sin .., barras invertidas ni rutas absolutas')
+  if (entries.reduce((total, e) => total + e.size, 0) > MAX_UNPACKED_BYTES) {
+    throw new InvalidBuildError('El contenido del ZIP descomprimido supera los 800 MB permitidos')
+  }
+}
+
+// Lo que sale al descomprimir no puede pasar de lo que el ZIP declaró (un tamaño falso escondería una bomba)
+const readChecked = (e: ZipEntry): Uint8Array => {
+  const data = e.read()
+  if (data.byteLength > e.size) throw new InvalidBuildError(`El archivo ${e.name} pesa más de lo que declara el ZIP`)
+  return data
+}
+
 /** Valida que las entradas del ZIP sean un build WebGL de Unity; si no, InvalidBuildError con el motivo. */
 const inspect = (entries: readonly ZipEntry[]): InspectedBuild => {
+  guard(entries)
   // __MACOSX/ son metadatos del compresor de macOS, no parte del build
   const usable = entries.filter((e) => !e.isDirectory && !e.name.startsWith('__MACOSX/'))
   const root = findRoot(usable.map((e) => e.name))
   if (root === null) throw new InvalidBuildError('El ZIP no tiene index.html: comprime la carpeta del build WebGL')
   const files = usable.filter((e) => e.name.startsWith(root))
-    .map((e) => ({ path: e.name.slice(root.length), data: e.read() }))
+    .map((e) => ({ path: e.name.slice(root.length), data: readChecked(e) }))
     .toSorted((a, b) => a.path.localeCompare(b.path))
   return buildFrom(root, files)
 }
