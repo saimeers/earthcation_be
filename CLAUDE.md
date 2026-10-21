@@ -176,6 +176,21 @@ Add an action: extend `AUDIT_ACTIONS`, then wrap the use case in the container.
 ` allowed) to verify the server certificate; without it the connection is
   encrypted but not verified (Railway issues its own certificate). Pending: obtain Railway's CA and set it in production.
 
+### Scoped reads (fase 5, `SCOPED_READS`, on by default)
+
+Who can read whose personal data. **Instructor:** only the players of their rooms (and those playing in the free-play room
+of their location). Port `ReadScope.visiblePlayerIds` (`SequelizeReadScope`, cached 60 s) and the decorator
+`scoped(useCase, { target?, rowOwner?, resultOwner? }, deps)` (`usecase/src/privacy/scoped.ts`), applied in the container
+("Lecturas acotadas" block): users list/get/sessions, VARK listings, and per-user progress/attempts/telemetry summary/attempt
+detail. Out of scope is 403 `USER_OUT_OF_SCOPE`; lists drop the other rows. **Developer:** no personal data. The
+`maskForRoles(['developer'])` middleware masks cedula, username, email, names (initials) and age in every JSON response
+(`maskPersonalData` in the model, legacy and v1), and `deniedTo` forbids the session Excel (403
+`DATA_NOT_AVAILABLE_TO_ROLE`). Admin sees everything. Set `SCOPED_READS=false` to switch it all off.
+Not scoped on purpose: room listings by location (they are not personal data) and aggregated analytics.
+The legacy `reads` snapshots changed once for this (developer `age` null, instructor user list without non-players):
+intended, approved.
+Panel follow-up: hide the Excel button for the developer role.
+
 ### TypeScript
 
 - All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is

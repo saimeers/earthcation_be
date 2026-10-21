@@ -162,6 +162,7 @@ que lee `process.env`. Si falta una obligatoria la API no arranca y lo dice.
 | `RATE_LIMIT_USER_MAX` `RATE_LIMIT_IP_MAX` `RATE_LIMIT_AUTH_MAX` | No | 1500, 3000 y 300 | Peticiones por 15 minutos: por usuario con token, por IP anónima y en login |
 | `RATE_LIMIT_LOGIN_CEDULA_MAX` `RATE_LIMIT_LOGIN_IP_FAIL_MAX` | No | 10 y 60 | Intentos de login fallidos por cédula y por IP |
 | `RATE_LIMIT_JOIN_MAX` | No | 20 | Intentos por jugador (cada 15 minutos) de unirse a una sala o validar un código, para que un código de 3 dígitos no se pueda adivinar |
+| `SCOPED_READS` | No | `true` | Lecturas acotadas: el instructor solo lee a los jugadores de sus salas y el desarrollador no ve datos personales ni exporta el Excel. `false` la apaga |
 | `AUDIT_IP_SALT` | No | derivada de `JWT_SECRET` | Sal de las huellas de IP del registro de auditoría (la IP nunca se guarda) |
 | `DOCS_ACCESS` | No | `public` | `staff` exige token de admin o desarrollador para ver la documentación |
 

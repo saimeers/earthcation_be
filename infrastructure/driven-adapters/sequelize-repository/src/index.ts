@@ -21,6 +21,7 @@ export { SequelizeHealthProbe } from './observability/SequelizeHealthProbe'
 export { SequelizeUserRepository } from './identity/SequelizeUserRepository'
 export { SequelizeUserReadModel } from './identity/SequelizeUserReadModel'
 export { SequelizeAccountDirectory } from './identity/SequelizeAccountDirectory'
+export { SequelizeReadScope } from './privacy/SequelizeReadScope'
 export { SequelizeImportDirectory } from './identity/SequelizeImportDirectory'
 
 // ── learning ──

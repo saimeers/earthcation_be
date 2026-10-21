@@ -8,7 +8,7 @@ describe('parseEnv', () => {
     expect(parseEnv({ JWT_SECRET: secret })).toEqual({
       JWT_SECRET: secret, PORT: 3000, NODE_ENV: 'development', DB_PORT: 5432, DB_POOL_MAX: 20, DB_POOL_MIN: 2,
       DEPLOY_MAX_MB: 500, DEPLOY_LOCAL_DIR: '.deploy', PLAY_URL: 'https://play.earthcation.saimers.dev', AWS_REGION: 'us-east-1',
-      EMAIL_FROM: 'noreply@saimers.dev', ALLOWED_ORIGINS: [], DOCS_ACCESS: 'public',
+      EMAIL_FROM: 'noreply@saimers.dev', ALLOWED_ORIGINS: [], DOCS_ACCESS: 'public', SCOPED_READS: true,
       RATE_LIMIT_USER_MAX: 1500, RATE_LIMIT_IP_MAX: 3000, RATE_LIMIT_AUTH_MAX: 300,
       RATE_LIMIT_LOGIN_CEDULA_MAX: 10, RATE_LIMIT_LOGIN_IP_FAIL_MAX: 60, RATE_LIMIT_JOIN_MAX: 20,
     })

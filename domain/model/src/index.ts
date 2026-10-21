@@ -102,3 +102,7 @@ export * from './audit/AuditEntry'
 export * from './audit/gateways/AuditLog'
 export * from './audit/gateways/RequestContext'
 export * from './audit/gateways/IpHasher'
+
+// ── privacy ──
+export * from './privacy/ReadScope'
+export * from './privacy/PersonalData'
