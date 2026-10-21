@@ -25,6 +25,7 @@ import {
   CreateRoomUseCase, JoinRoomUseCase, StartRoomUseCase, EndRoomUseCase, GetRoomByCodeUseCase, ListMyRoomsUseCase,
   ListAllRoomsUseCase, ListRoomsByLocationUseCase, GetRoomProgressUseCase, GetRoomDetailUseCase,
   GetParticipantAnalysisUseCase, ExportRoomReportUseCase,
+  SeedPlaceCatalogUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
@@ -38,13 +39,14 @@ import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
 import { HmacPreviewSigner } from '@earthcation/hmac-signer'
 import { InProcessPublishQueue } from '@earthcation/in-process-queue'
-import { createRedisClient, RedisCache } from '@earthcation/redis-cache'
+import { createRedisClient, RedisCache, RedisWindowCounter } from '@earthcation/redis-cache'
 import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
 import { BcryptPasswordHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
 import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
+  createApp, rateLimiters,
   authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1,
   cloudflareEdge, deployRoutesV1, healthRoutesV1, loginRecorder, metrics, playLocalRoutes, publicHealthV1, visitRoutesV1,
   type LoginRecorder,
@@ -52,12 +54,13 @@ import {
   progressRoutesV1, levelRoutesV1, telemetryRoutesV1, analyticsRoutesV1,
   sessionRoutesV1,
 } from '@earthcation/rest-api'
-import { loadEnv, type Env } from './config/env'
+import { parseEnv, type Env } from './config/env'
 
-// Composition root (inyección manual): instancia los adaptadores, se los pasa a los casos de uso y arma las rutas.
-// src/legacy toma de aquí la conexión y los modelos mientras sus contextos se migran.
+// Composition root (inyección manual): instancia los adaptadores, se los pasa a los casos de uso y arma la app HTTP.
+// Exporta la app, las tareas de arranque y lo que la semilla de pruebas y scripts/load usan directo (conexión,
+// modelos, tokens y contraseñas).
 
-export const env = loadEnv()
+export const env = parseEnv()
 
 const databaseConfig = (e: Env) => ({
   host: e.DB_HOST, port: e.DB_PORT, name: e.DB_NAME, user: e.DB_USER, password: e.DB_PASS,
@@ -69,7 +72,6 @@ export const models = defineModels(sequelize)
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 
-// legacy/utils/jwt.utils y hash.utils reexportan estas instancias para el código v1, la semilla y scripts/load
 export const security = {
   tokens: new JwtTokenService(env.JWT_SECRET),
   passwords: new BcryptPasswordHasher(),
@@ -158,24 +160,16 @@ const deploymentUseCases = {
   }),
 }
 
-/** Lo que legacy/server.js y legacy/app.js usan del despliegue. */
-export const deployment = {
-  /** Sin R2 (desarrollo) la API sirve el juego publicado en /play-local, montado antes de helmet. */
-  localPublishing,
-  /** Al arrancar: las publicaciones cortadas por el reinicio quedan fallidas. */
-  recoverInterrupted: () => new RecoverInterruptedPublishesUseCase(gameVersions).execute(),
-}
-
 // ── Observabilidad ───────────────────────────────────────────────────────────
 
 const log = (message: string): void => { console.error(message) }
 
-/** Cliente de Redis (o null): lo comparten la caché y el limitador de peticiones (legacy/config/redis.js). */
-export const redis = createRedisClient(env.REDIS_URL, log)
-/** Caché de lecturas de todos los contextos (legacy/services/cache.service.js la re-exporta). */
-export const cache = new RedisCache(redis)
-/** Visitante detrás de Cloudflare (legacy/utils/clientIp.js lo re-exporta para el limitador). */
-export const edge = cloudflareEdge(env.CF_EDGE_SECRET)
+/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
+const redis = createRedisClient(env.REDIS_URL, log)
+/** Caché de lecturas de todos los contextos. */
+const cache = new RedisCache(redis)
+/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
+const edge = cloudflareEdge(env.CF_EDGE_SECRET)
 
 const metricsStore = new InMemoryMetricsStore()
 
@@ -200,8 +194,6 @@ const observability = {
   }),
 }
 
-/** Mide cada petición para /api/health/details (va al principio de la app). */
-export const metricsMiddleware = metrics(metricsStore)
 
 /** Ubicación del inicio de sesión (desde la IP y las cabeceras cf-*); lo usa el login de identidad. */
 const recordLogin: LoginRecorder = loginRecorder({
@@ -316,7 +308,9 @@ const sessions = {
   },
 }
 
-export const routes = {
+// ── App HTTP ─────────────────────────────────────────────────────────────────
+
+const routes = {
   organizations: organizationRoutesV1(catalog),
   locations: locationRoutesV1(catalog),
   vark: varkRoutesV1(vark),
@@ -333,4 +327,35 @@ export const routes = {
   telemetry: telemetryRoutesV1(learning),
   analytics: analyticsRoutesV1(learning),
   sessions: sessionRoutesV1(sessions),
+}
+
+const limiters = rateLimiters({
+  limits: {
+    userMax: env.RATE_LIMIT_USER_MAX, ipMax: env.RATE_LIMIT_IP_MAX, authMax: env.RATE_LIMIT_AUTH_MAX,
+    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX,
+  },
+  tokens: security.tokens,
+  clientIp: edge.clientIp,
+  cedulaExists: (cedula) => userRepository.cedulaExists(cedula),
+  // Con Redis los contadores sobreviven a los despliegues; sin él, cada limitador cuenta en memoria
+  ...(redis && { counters: (prefix: string) => new RedisWindowCounter(redis, prefix) }),
+})
+
+/** La app Express completa, sin escuchar: la arranca boot.ts y la usan las pruebas de contrato (supertest). */
+export const app = createApp({
+  routes,
+  limiters,
+  metrics: metrics(metricsStore),
+  allowedOrigins: env.ALLOWED_ORIGINS,
+  servePlayLocal: localPublishing,
+  ...(env.NODE_ENV !== 'test' && { requestLog: env.NODE_ENV === 'production' ? 'tiny' : 'dev' }),
+  log,
+})
+
+/** Lo que corre una vez al arrancar, después de las migraciones. */
+export const bootTasks = {
+  /** Las publicaciones cortadas por el reinicio quedan fallidas. */
+  recoverInterruptedPublishes: new RecoverInterruptedPublishesUseCase(gameVersions),
+  /** Catálogo oficial de municipios (idempotente). */
+  seedPlaceCatalog: new SeedPlaceCatalogUseCase({ catalog: new JsonPlaceCatalog(), locations: locationRepository }),
 }

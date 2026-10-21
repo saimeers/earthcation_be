@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../dist/legacy/app');
+const { app } = require('../../dist/container');
 const { tokenFor } = require('./auth.cjs');
 
 // Contrato = estado HTTP + forma del JSON (claves y tipos), no los valores: ids, fechas y códigos de sala

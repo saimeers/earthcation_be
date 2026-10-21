@@ -1,11 +1,24 @@
 import { z } from 'zod'
-import { err, ok, type Result } from '../legacy/shared/result'
 
-// Variables del entorno, validadas al arrancar. Es el único lugar del código nuevo que lee process.env (src/legacy
-// todavía lee algunas por su cuenta hasta migrar su contexto).
+// Variables del entorno, validadas al arrancar. Es el único lugar del código que lee process.env.
 
 // Texto opcional: vacío cuenta como ausente (así las leía v1 con `||`)
 const optionalText = z.string().optional().transform((v) => (v === '' ? undefined : v))
+
+// Máximo por ventana de 15 min: ausente, inválido o 0 vuelve al valor por defecto (así lo leía v1 con `Number(x) || n`)
+const maxPerWindow = (fallback: number) => z.coerce.number().int().positive().catch(fallback)
+
+const rateLimits = {
+  RATE_LIMIT_USER_MAX: maxPerWindow(1500),
+  RATE_LIMIT_IP_MAX: maxPerWindow(3000),
+  RATE_LIMIT_AUTH_MAX: maxPerWindow(300),
+  RATE_LIMIT_LOGIN_CEDULA_MAX: maxPerWindow(10),
+  RATE_LIMIT_LOGIN_IP_FAIL_MAX: maxPerWindow(60),
+}
+
+// Varios orígenes separados por coma (panel, juego); sin definir o con '*', cualquiera ('*' dentro de una lista no
+// es comodín para cors: se compararía literal)
+const origins = optionalText.transform((v) => (v ?? '').split(',').map((o) => o.trim()).filter((o) => o !== '' && o !== '*'))
 
 // Despliegue del juego: sin bucket de S3 o de R2, cada almacenamiento cae a disco (DEPLOY_LOCAL_DIR)
 const deployment = {
@@ -26,6 +39,8 @@ const deployment = {
 
 const schema = z.object({
   ...deployment,
+  ...rateLimits,
+  ALLOWED_ORIGINS: origins,
   JWT_SECRET: z.string({ error: 'falta' }).min(32, 'debe tener al menos 32 caracteres'),
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.string().default('development'),
@@ -54,14 +69,17 @@ export type Env = z.infer<typeof schema>
 
 const describe = (issue: z.core.$ZodIssue): string => `${issue.path.join('.')}: ${issue.message}`
 
-export const parseEnv = (source: NodeJS.ProcessEnv): Result<Env, readonly string[]> => {
-  const parsed = schema.safeParse(source)
-  return parsed.success ? ok(parsed.data) : err(parsed.error.issues.map(describe))
+/** Falta una variable obligatoria o tiene un valor inválido: la API no arranca. */
+export class InvalidEnvError extends Error {
+  constructor(readonly problems: readonly string[]) {
+    super(`Configuración inválida: ${problems.join('; ')}`)
+    this.name = 'InvalidEnvError'
+  }
 }
 
-/** El entorno ya validado (main.ts sale con un mensaje claro antes de llegar aquí si falta algo). */
-export const loadEnv = (source: NodeJS.ProcessEnv = process.env): Env => {
-  const parsed = parseEnv(source)
-  if (!parsed.ok) throw new Error(`Configuración inválida: ${parsed.error.join('; ')}`)
-  return parsed.value
+/** El entorno validado y con sus valores por defecto; lanza InvalidEnvError con todos los problemas juntos. */
+export const parseEnv = (source: NodeJS.ProcessEnv = process.env): Env => {
+  const parsed = schema.safeParse(source)
+  if (!parsed.success) throw new InvalidEnvError(parsed.error.issues.map(describe))
+  return parsed.data
 }

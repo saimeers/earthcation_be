@@ -1,4 +1,6 @@
 // API pública del punto de entrada HTTP
+export { createApp, type AppDeps, type AppRoutesV1 } from './createApp'
+export { rateLimiters, type RateLimitDeps, type RateLimiters, type RateLimits, type WindowCounter } from './middlewares/rateLimit'
 export { errorHandlerV1, notFoundV1 } from './middlewares/errorHandler'
 export { authenticate, requireRole, currentUser } from './middlewares/auth'
 export { organizationRoutesV1, locationRoutesV1, type CatalogRoutesDeps } from './routes/catalog.routes'

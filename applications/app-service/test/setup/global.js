@@ -8,6 +8,6 @@ export default async function setup(project) {
   const { seed } = require('../support/seed.cjs')
   project.provide('seed', JSON.parse(JSON.stringify(await seed())))
   return async () => {
-    await require('../../dist/legacy/config/database').close()
+    await require('../../dist/container').sequelize.close()
   }
 }
