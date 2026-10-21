@@ -1,4 +1,5 @@
 import type { Sequelize } from 'sequelize'
+import { defineAuditLog } from './AuditLog'
 import { defineGameEvent } from './GameEvent'
 import { defineGameSetting } from './GameSetting'
 import { defineGameVersion } from './GameVersion'
@@ -22,6 +23,7 @@ const defineAll = (sequelize: Sequelize) => ({
   UserProfile: defineUserProfile(sequelize), TrainingSession: defineTrainingSession(sequelize), SessionUser: defineSessionUser(sequelize),
   LevelAttempt: defineLevelAttempt(sequelize), GameEvent: defineGameEvent(sequelize), GameVersion: defineGameVersion(sequelize),
   GameSetting: defineGameSetting(sequelize), GameVisit: defineGameVisit(sequelize), LoginEvent: defineLoginEvent(sequelize),
+  AuditLog: defineAuditLog(sequelize),
 })
 
 export type Models = ReturnType<typeof defineAll>

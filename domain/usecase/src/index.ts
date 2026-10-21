@@ -127,3 +127,8 @@ export * from './sessions/rooms/get-participant-analysis/GetParticipantAnalysisU
 export * from './sessions/rooms/export-room-report/ExportRoomReportQuery'
 export * from './sessions/rooms/export-room-report/RoomReport'
 export * from './sessions/rooms/export-room-report/ExportRoomReportUseCase'
+
+// ── audit ──
+export * from './audit/audited/audited'
+export * from './audit/list-audit-logs/ListAuditLogsUseCase'
+export * from './audit/audited/changes'

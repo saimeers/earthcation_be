@@ -95,3 +95,9 @@ export * from './sessions/errors/SessionErrors'
 export * from './sessions/gateways/SessionRepository'
 export * from './sessions/gateways/SessionDetailReader'
 export * from './sessions/gateways/SessionReportWriter'
+
+// ── audit ──
+export * from './audit/AuditEntry'
+export * from './audit/gateways/AuditLog'
+export * from './audit/gateways/RequestContext'
+export * from './audit/gateways/IpHasher'

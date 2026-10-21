@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Request, RequestHandler } from 'express'
 import {
-  randomIds, systemClock, type RuntimeInfo,
+  randomIds, systemClock, DomainError, type RuntimeInfo,
   IdentifierAvailability, PlaceMatcher, ResetTokenFactory, type LoginRecorder as LoginRecorderPort,
 } from '@earthcation/model'
 import {
@@ -25,7 +25,7 @@ import {
   CreateRoomUseCase, JoinRoomUseCase, StartRoomUseCase, EndRoomUseCase, GetRoomByCodeUseCase, ListMyRoomsUseCase,
   ListAllRoomsUseCase, ListRoomsByLocationUseCase, GetRoomProgressUseCase, GetRoomDetailUseCase,
   GetParticipantAnalysisUseCase, ExportRoomReportUseCase,
-  SeedPlaceCatalogUseCase,
+  SeedPlaceCatalogUseCase, ListAuditLogsUseCase, audited, fieldChanges,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
@@ -33,7 +33,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
-  SequelizeSessionRepository, SequelizeSessionDetailReader,
+  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -41,12 +41,13 @@ import { HmacPreviewSigner } from '@earthcation/hmac-signer'
 import { InProcessPublishQueue } from '@earthcation/in-process-queue'
 import { createRedisClient, RedisCache, RedisWindowCounter } from '@earthcation/redis-cache'
 import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
-import { BcryptPasswordHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
+import { BcryptPasswordHasher, HmacIpHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
+import { AsyncRequestContext } from '@earthcation/request-context'
 import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
-  createApp, createRouterV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
+  createApp, createRouterV1, requestContext, auditRoutesV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
   authenticate, locationRoutesLegacy, organizationRoutesLegacy, varkRoutesLegacy,
   cloudflareEdge, deployRoutesLegacy, healthRoutesLegacy, loginRecorder, metrics, playLocalRoutes, publicHealthLegacy, visitRoutesLegacy,
   type LoginRecorder,
@@ -77,7 +78,10 @@ export const security = {
   passwords: new BcryptPasswordHasher(),
 }
 
-const auth: RequestHandler = authenticate(security.tokens)
+// Quién hace la petición en curso (la entrada abre el ámbito y `authenticate` le pone el actor)
+const requestScope = new AsyncRequestContext()
+
+const auth: RequestHandler = authenticate(security.tokens, (user) => { requestScope.setActor({ id: user.id, role: user.role }) })
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 
@@ -310,6 +314,70 @@ const sessions = {
 
 // ── App HTTP ─────────────────────────────────────────────────────────────────
 
+// ── Auditoría ────────────────────────────────────────────────────────────────
+
+// Quién hizo qué sobre qué. Los casos de uso se envuelven aquí, así la API legacy y la v1 quedan auditadas por igual.
+// El registro es de solo inserción (disparador en la BD) y solo guarda nombres de campos y valores no personales.
+const auditLog = new SequelizeAuditLog(models)
+const auditHash = new HmacIpHasher(env.AUDIT_IP_SALT ?? `${env.JWT_SECRET}:audit`)
+const auditDeps = { audit: auditLog, context: requestScope, clock: systemClock, report: log }
+
+const org = catalog.organizations
+org.create = audited(org.create, { action: 'organization.created', describe: (_a, o) => ({ targetType: 'organization', targetId: o.id, changes: { name: o.name, type: o.type } }) }, auditDeps)
+org.update = audited(org.update, { action: 'organization.updated', describe: ([c], o) => ({ targetType: 'organization', targetId: o.id, changes: fieldChanges(c.changes) }) }, auditDeps)
+org.changeStatus = audited(org.changeStatus, {
+  action: ([c]) => (c.active ? 'organization.enabled' : 'organization.disabled'), describe: ([c]) => ({ targetType: 'organization', targetId: c.id }),
+}, auditDeps)
+
+const place = catalog.locations
+place.create = audited(place.create, { action: 'location.created', describe: (_a, l) => ({ targetType: 'location', targetId: l.id, changes: { municipality: l.municipality, department: l.department } }) }, auditDeps)
+place.update = audited(place.update, { action: 'location.updated', describe: ([c], l) => ({ targetType: 'location', targetId: l.id, changes: fieldChanges(c.changes) }) }, auditDeps)
+place.changeStatus = audited(place.changeStatus, {
+  action: ([c]) => (c.active ? 'location.enabled' : 'location.disabled'), describe: ([c]) => ({ targetType: 'location', targetId: c.id }),
+}, auditDeps)
+
+const people = identity.users
+people.create = audited(people.create, { action: 'user.created', describe: ([c], created) => ({ targetType: 'user', targetId: created.userId, changes: fieldChanges(c.fields) }) }, auditDeps)
+people.update = audited(people.update, { action: 'user.updated', describe: ([c]) => ({ targetType: 'user', targetId: c.id, changes: fieldChanges(c.fields) }) }, auditDeps)
+people.changeStatus = audited(people.changeStatus, {
+  action: ([c]) => (c.active ? 'user.enabled' : 'user.disabled'), describe: ([c]) => ({ targetType: 'user', targetId: c.id }),
+}, auditDeps)
+identity.bulkImport.confirm = audited(identity.bulkImport.confirm, {
+  action: 'user.imported',
+  describe: (_a, r) => ({ targetType: 'user', targetId: null, changes: { created: r.created.length, skipped: r.skipped.length, errors: r.errors.length } }),
+}, auditDeps)
+
+// Los inicios de sesión del personal quedan; los de jugadores no (son muchos y no son una acción administrativa). Un
+// intento rechazado se registra siempre, con la huella de la cédula y no la cédula.
+const loginFailure = (cedula: unknown, error: unknown) => ({
+  targetType: 'account', targetId: null,
+  changes: { reason: error instanceof DomainError ? error.code : 'ERROR', cedula: typeof cedula === 'string' ? auditHash.hash(cedula) : null },
+})
+identity.auth.login = audited(identity.auth.login, {
+  action: 'auth.login_succeeded',
+  describe: (_a, r) => (r.user.role === 'player' ? null : { targetType: 'user', targetId: r.user.id, actor: { id: r.user.id, role: r.user.role } }),
+  failure: { action: 'auth.login_failed', describe: ([c], error) => loginFailure(c.cedula, error) },
+}, auditDeps)
+identity.auth.requestPasswordReset = audited(identity.auth.requestPasswordReset, {
+  action: 'auth.password_reset_requested', describe: () => ({ targetType: 'account', targetId: null }),
+}, auditDeps)
+identity.auth.resetPassword = audited(identity.auth.resetPassword, {
+  action: 'auth.password_reset_completed', describe: () => ({ targetType: 'account', targetId: null }),
+}, auditDeps)
+
+const rooms = sessions.sessions
+rooms.start = audited(rooms.start, { action: 'session.started', describe: ([c]) => ({ targetType: 'session', targetId: c.id }) }, auditDeps)
+rooms.end = audited(rooms.end, { action: 'session.ended', describe: ([c]) => ({ targetType: 'session', targetId: c.id }) }, auditDeps)
+rooms.exportReport = audited(rooms.exportReport, { action: 'session.exported', describe: ([c]) => ({ targetType: 'session', targetId: c.id }) }, auditDeps)
+
+const versions = deploymentUseCases
+versions.create = audited(versions.create, {
+  action: 'game_version.created', describe: ([c], created) => ({ targetType: 'game_version', targetId: created.version.id, changes: { label: c.label } }),
+}, auditDeps)
+versions.complete = audited(versions.complete, { action: 'game_version.completed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+versions.activate = audited(versions.activate, { action: 'game_version.activated', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+versions.remove = audited(versions.remove, { action: 'game_version.removed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+
 const routes = {
   organizations: organizationRoutesLegacy(catalog),
   locations: locationRoutesLegacy(catalog),
@@ -330,7 +398,7 @@ const routes = {
 }
 
 const routesV1 = createRouterV1({
-  routes: [...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning),
+  routes: [...auditRoutesV1(new ListAuditLogsUseCase(auditLog)), ...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning),
     ...deploymentRoutesV1({ deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
     ...observabilityRoutesV1({ visits: observability.visits, health: observability.health, ingestSecret: observability.ingestSecret }),
     ...importRoutesV1(identity.bulkImport)],
@@ -356,6 +424,7 @@ const limiters = rateLimiters({
 export const app = createApp({
   routes,
   routesV1,
+  requestContext: requestContext(requestScope, auditHash, edge.clientIp),
   limiters,
   metrics: metrics(metricsStore),
   allowedOrigins: env.ALLOWED_ORIGINS,

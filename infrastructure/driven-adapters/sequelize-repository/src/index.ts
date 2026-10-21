@@ -31,3 +31,6 @@ export { SequelizeFreePlaySessions } from './learning/SequelizeFreePlaySessions'
 // ── sessions ──
 export { SequelizeSessionRepository } from './sessions/SequelizeSessionRepository'
 export { SequelizeSessionDetailReader } from './sessions/SequelizeSessionDetailReader'
+
+// ── audit ──
+export { SequelizeAuditLog } from './audit/SequelizeAuditLog'

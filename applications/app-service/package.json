@@ -22,6 +22,7 @@
     "@earthcation/model": "workspace:*",
     "@earthcation/object-storage": "workspace:*",
     "@earthcation/redis-cache": "workspace:*",
+    "@earthcation/request-context": "workspace:*",
     "@earthcation/resend-mailer": "workspace:*",
     "@earthcation/rest-api": "workspace:*",
     "@earthcation/security": "workspace:*",

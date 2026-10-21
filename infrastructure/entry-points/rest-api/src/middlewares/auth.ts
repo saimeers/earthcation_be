@@ -10,12 +10,16 @@ declare module 'express-serve-static-core' {
 
 const bearer = (req: Request): string | undefined => req.headers.authorization?.split(' ')[1]
 
-/** Exige un token válido (`Authorization: Bearer …`) y deja al usuario en `req.user`. */
-export const authenticate = (tokens: TokenVerifier): RequestHandler => (req: Request, _res: Response, next: NextFunction) => {
+/**
+ * Exige un token válido (`Authorization: Bearer …`) y deja al usuario en `req.user`. `onAuthenticated` avisa quién es
+ * (la auditoría lo guarda en el ámbito de la petición).
+ */
+export const authenticate = (tokens: TokenVerifier, onAuthenticated?: (user: AuthenticatedUser) => void): RequestHandler => (req: Request, _res: Response, next: NextFunction) => {
   const token = bearer(req)
   if (!token) throw new TokenRequiredError()
   // eslint-disable-next-line no-param-reassign -- así pasa Express datos entre middlewares (req.user)
   req.user = tokens.verify(token)
+  onAuthenticated?.(req.user)
   next()
 }
 

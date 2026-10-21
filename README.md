@@ -29,6 +29,7 @@ de Ingeniería de Sistemas.
 | Sesiones | Salas de capacitación con código de 3 dígitos, inscripción, inicio y cierre, detalle por participante, análisis individual e informe en Excel |
 | Aprendizaje | Intentos de nivel, eventos de telemetría, resultados por riesgo, niveles y analíticas |
 | Despliegue | Versiones del build WebGL: subida, validación, publicación en R2, vista previa firmada y activación |
+| Auditoría | Registro de solo inserción de las acciones sensibles del personal: quién, qué, sobre qué y desde dónde (huella de la IP). Consulta y exportación CSV para admin y desarrollador |
 | Observabilidad | Visitas al juego (las reporta el Worker), salud del servicio y métricas |
 
 Reglas que se cumplen en toda la API: los registros no se borran, se deshabilitan (`isActive`) para conservar el
@@ -159,6 +160,7 @@ que lee `process.env`. Si falta una obligatoria la API no arranca y lo dice.
 | `DEPLOY_MAX_MB` `DEPLOY_LOCAL_DIR` | No | 500 y `.deploy` | Tope de tamaño del ZIP y carpeta local sin S3 ni R2 |
 | `RATE_LIMIT_USER_MAX` `RATE_LIMIT_IP_MAX` `RATE_LIMIT_AUTH_MAX` | No | 1500, 3000 y 300 | Peticiones por 15 minutos: por usuario con token, por IP anónima y en login |
 | `RATE_LIMIT_LOGIN_CEDULA_MAX` `RATE_LIMIT_LOGIN_IP_FAIL_MAX` | No | 10 y 60 | Intentos de login fallidos por cédula y por IP |
+| `AUDIT_IP_SALT` | No | derivada de `JWT_SECRET` | Sal de las huellas de IP del registro de auditoría (la IP nunca se guarda) |
 | `DOCS_ACCESS` | No | `public` | `staff` exige token de admin o desarrollador para ver la documentación |
 
 ## Documentación de la API
