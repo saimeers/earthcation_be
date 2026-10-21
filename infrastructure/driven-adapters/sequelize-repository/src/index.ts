@@ -21,3 +21,13 @@ export { SequelizeHealthProbe } from './observability/SequelizeHealthProbe'
 export { SequelizeUserRepository } from './identity/SequelizeUserRepository'
 export { SequelizeUserReadModel } from './identity/SequelizeUserReadModel'
 export { SequelizeImportDirectory } from './identity/SequelizeImportDirectory'
+
+// ── learning ──
+export { SequelizeLearningRepository } from './learning/SequelizeLearningRepository'
+export { SequelizeLearningReadModel } from './learning/SequelizeLearningReadModel'
+export { SequelizeAnalyticsReadModel } from './learning/SequelizeAnalyticsReadModel'
+export { SequelizeFreePlaySessions } from './learning/SequelizeFreePlaySessions'
+
+// ── sessions ──
+export { SequelizeSessionRepository } from './sessions/SequelizeSessionRepository'
+export { SequelizeSessionDetailReader } from './sessions/SequelizeSessionDetailReader'

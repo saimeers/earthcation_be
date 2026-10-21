@@ -2,7 +2,7 @@
   "name": "@earthcation/excel",
   "version": "0.0.0",
   "private": true,
-  "description": "Adaptador de Excel: lectura de planillas (xlsx/SheetJS). El escritor con estilos (ExcelJS) llega con el contexto de sesiones.",
+  "description": "Adaptador de Excel: lectura de planillas (xlsx/SheetJS) y escritor con estilos (ExcelJS) para el informe de sesiones.",
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@earthcation/model": "workspace:*",
+    "exceljs": "^4.4.0",
     "xlsx": "^0.18.5"
   }
 }

@@ -22,7 +22,7 @@ pnpm test          # turbo: vitest per package; app-service = v1 contract tests 
 pnpm boundaries    # dependency-cruiser: allowed graph between layers
 ```
 
-### Clean architecture monorepo (fase 3b, 2026-10-20) — in progress
+### Clean architecture monorepo (fase 3b, 2026-10-20) — complete
 
 Bancolombia-style scaffold: every layer and adapter is a package with its own `package.json`; pnpm forbids importing
 what a package did not declare, dependency-cruiser (`.dependency-cruiser.cjs`) forbids declaring the wrong thing.
@@ -36,9 +36,11 @@ applications/app-service           the only deployable: config/env.ts, container
 Graph: model ← nothing · usecase ← model · adapters ← model · entry-points ← usecase, model · app-service ← all.
 Style: classes + throw (use cases with `execute(cmd)`, entities/VOs with behavior, typed `DomainError` subclasses
 from `@earthcation/model`, one `errorHandlerV1` in rest-api maps `kind` → status). Packages export only `index.ts`.
-**Transitional**: the fase 3 code lives in `applications/app-service/src/legacy/` (same files as before, functional
-style, `Result`); each context moves out into the packages in its own PR (catalog → vark → observability → identity →
-deployment → learning → sessions) and `legacy/` disappears at the end.
+All seven contexts (catalog → vark → observability → identity → deployment → learning → sessions) now live in the
+clean packages; `applications/app-service/src/legacy/contexts/` is gone. What stays in `legacy/` is no longer
+per-context: `models/`, `config/`, `middleware/` (auth, role, rate limit), `services/cache.service.js`, `utils/`
+(clientIp, email, hash, jwt, rateLimitStore), `scripts/`, plus `shared/result.ts` (still used by `config/env.ts`).
+`legacy/app.js` mounts every route from `container.routes.*`.
 
 Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location` entities with `prepare`/`change`/
 `disable`/`enable`, errors, `OrganizationRepository`/`LocationRepository`), 13 use cases in
@@ -79,6 +81,25 @@ The login's `LoginRecorder` is observability's `recordLogin`. `legacy/utils/jwt.
 container's `security` instances (auth middleware, rate limiter, test seed, `scripts/load`); tests stub `ResendMailer.prototype`
 (`test/support/env.cjs` → `outbox`). Env: `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`. Paths below that say `src/...` mean
 `applications/app-service/src/legacy/...` until then.
+— **learning**: `model/src/learning` (pure `attempts.ts` = latest-attempt rule, `summaries.ts` = aggregators, `LevelProgress.ts`,
+value objects `RiskResultInput`/`NewAttemptInput`/`EventBatch` with their errors, gateways `LearningRepository`/`LearningReadModel`/
+`AnalyticsReadModel`/`FreePlaySessions`/`MunicipalityCoordinates`), 16 use cases in `usecase/src/learning/{progress,levels,telemetry,
+analytics}/`, `SequelizeLearningRepository`/`SequelizeLearningReadModel`/`SequelizeAnalyticsReadModel` (Postgres aggregation + the
+model's pure functions) and `SequelizeFreePlaySessions` (the "Juego libre" gateway, cached 10 min) in sequelize-repository;
+`ProgressController`/`LevelController`/`TelemetryController`/`AnalyticsController` + `routes/learning.routes.ts` + `dto/v1/learning.ts`
+in rest-api; `container.routes.{progress,levels,telemetry,analytics}`. New adapter `@earthcation/geo-catalog`'s `DivipolaCoordinates`
+(DIVIPOLA municipio/department matching, reusing `levenshtein` from `@earthcation/model`) replaces the old `geo.ts`.
+`shared/collections.ts` (`groupBy`/`countBy`/`maxBy`/`keyOf`/`sum`) moved to `model/src/shared/collections.ts`.
+— **sessions**: `model/src/sessions` (pure `Room.ts` = room code/`assertCanControl`/`canSee`/`seesEverything`, `NewRoomInput`/`JoinCode`
+value objects, `detail.ts` = the whole `/progress/admin` computation, `analysis.ts`, `report.ts` (Excel rows as data), `labels.ts`,
+errors, gateways `SessionRepository`/`SessionDetailReader`/`SessionReportWriter`), 12 use cases in `usecase/src/sessions/rooms/<case>/`
+(`assertCanView.ts` is a shared non-use-case helper for detail/analysis/export, not a use case calling another). `SequelizeSessionRepository`
+and `SequelizeSessionDetailReader` (the `/progress/admin` computation cached 10 s per session, invalidated on start/end) in
+sequelize-repository; `@earthcation/excel`'s `ExcelSessionReportWriter` (ExcelJS, moved from the old `workbook.ts`) implements
+`SessionReportWriter`. `SessionController` + `routes/sessions.routes.ts` + `dto/v1/sessions.ts` in rest-api; `container.routes.sessions`.
+The "Juego libre" gateway (`FreePlaySessions`/`SequelizeFreePlaySessions`) arrived with **learning** above — sessions does not
+re-implement it. `legacy/contexts/` is now empty; `legacy/adapters/`, `legacy/ports/` and `legacy/shared/errors.ts` (the old
+functional `Result`/`DomainError` HTTP plumbing) were deleted with this migration, since sessions was their last consumer.
 
 ### TypeScript (fase 3, 2026-10-19)
 
@@ -95,43 +116,18 @@ container's `security` instances (auth middleware, rate limiter, test seed, `scr
   10 (blank lines and comments excluded), `complexity` 5, `max-params` 3, `max-depth` 2, no `let`, no mutation,
   no classes, no `throw`, no loops. TypeScript is pinned to 6.0.x (typescript-eslint does not support 7 yet).
 
-### Bounded contexts (strangler, one PR per context)
+### Bounded contexts (strangler, historical — fase 3b finished this)
 
-`src/contexts/<context>/`: `domain.ts` (types, pure validation, `DomainError` factories), `ports.ts`
-(repository types), `application.ts` (use cases as factories over their ports, returning `Result`),
-`sequelizeRepositories.ts` (rows ↔ domain), `httpV1.ts` (v1 routes, same snake_case responses), `index.ts`
-(composition root mounted by `app.js`). `adapters/http/v1/respond.ts#sendV1` answers an `Err` the v1 way
-(`{ error }` + status). Use cases are unit-tested with in-memory repositories (`tests/unit/`); the v1
-contract snapshots must stay identical in every migration PR.
-
-Migrated: **catalog** (organizations, locations), **vark**, **observability** and **identity** (all now in the clean
-packages, see above). Their old
-routes/controllers/services/utils were deleted. Cross-context ports live in `src/ports/` (`Cache`, adapter
-`src/adapters/cache` over `services/cache.service.js`).
-Behavior change on purpose: `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields
-(`name`, `type` / `municipality`, `department`, `country`); before, the whole body reached the model.
-Behavior changes in identity (contract unchanged): an inactive staff user with a wrong password now gets
-"Credenciales inválidas" (the password is checked before revealing "Usuario inactivo"); the bulk-import preview
-looks up registered cédulas in one query; confirm resolves organization/location first and creates user + profile
-in one transaction (no user without profile if a later step fails). With the clean-architecture move: an unknown `role`
-or a non-numeric `age` now answer 400 ("Rol inválido" / "La edad debe ser un número") instead of a 500 from Postgres;
-an empty `role` in `PUT /api/users/:id` leaves it unchanged (before it was written as NULL); cédula/email are trimmed.
-**deployment** now lives in the clean packages (see above). Error kinds `too_large` (413) and `unavailable` (503)
-arrived with it. Contract tests in `v1.deploy.test.js` run the
-whole flow on disk (`DEPLOY_LOCAL_DIR` = a temp folder; `tests/support/env.cjs` removes the S3/R2 variables).
-**learning** (progress, levels, telemetry, analytics): `attempts.ts` (latest-attempt rule), `summaries.ts`
-(`summarizeAttempts`, `summarizeRisks`, `round`, hardest risks, level progress) and `geo.ts` (DIVIPOLA coordinates) are
-pure; `analyticsReadModel.ts` and `telemetryOverview.ts` aggregate in Postgres and shape with those functions.
-`shared/collections.ts` has `groupBy`/`countBy`/`maxBy`/`keyOf` (order of first appearance).
-`tests/contract/v1.learning.test.js` snapshots the computed VALUES (ids and dates masked), not only the shape.
-**sessions** (rooms, free play, panel detail, participant analysis, Excel): `domain.ts` (room code, who controls and who
-sees a room), `detail.ts` (the whole `/progress/admin` computation, pure), `analysis.ts`, `report.ts` (Excel rows as
-data) + `workbook.ts` (ExcelJS drawing), `labels.ts`. The free-play session (`freeSessions.resolve`, cached 10 min) is
-exported to learning. `v1.sessions.test.js` snapshots the detail/analysis values and every Excel cell.
-
-**Phase 3 is complete (2026-10-20): every route lives in a context; `routes/`, `controllers/` and the domain services are
-gone.** What stays in JS: `models/`, `config/`, `middleware/` (auth, role, rate limit), `services/cache.service.js`,
-`utils/` (clientIp, email, hash, jwt, rateLimitStore), `scripts/`.
+Before the clean-package move (fase 3), each context lived under `src/contexts/<context>/` in a hexagonal-functional
+style (`domain.ts`/`ports.ts`/`application.ts` returning `Result`, `sequelizeRepositories.ts`, `httpV1.ts`, `index.ts`
+composition root mounted by `app.js`). All seven contexts have since moved into the clean packages (see "Migrated so
+far" above) and `src/contexts/` no longer exists. Behavior changes picked up along the way, kept for the record:
+`PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields (before, the whole body reached the
+model); an inactive staff user with a wrong password gets "Credenciales inválidas" (checked before "Usuario
+inactivo"); the bulk-import preview looks up registered cédulas in one query; confirm resolves organization/location
+and creates user + profile in one transaction; an unknown `role` or non-numeric `age` answer 400 instead of a 500
+from Postgres; an empty `role` in `PUT /api/users/:id` leaves it unchanged; cédula/email are trimmed; deployment's
+`too_large` (413) and `unavailable` (503) error kinds arrived with that migration.
 
 No `.env.example` file in the repo — env vars must be inferred from `src/config/database.js` and
 usages of `process.env` (DB connection, JWT secret, Resend API key, `NODE_ENV`).
@@ -160,21 +156,10 @@ publishes, municipios; then `listen`). The Express app itself is `src/app.js`, r
 
 ## Architecture
 
-Hexagonal and functional, one folder per bounded context (see "Bounded contexts" above):
-
-```
-contexts/<context>/domain.ts      → types, pure rules and validation, DomainError factories
-contexts/<context>/ports.ts       → what the use cases need (repositories, read models, adapters)
-contexts/<context>/application.ts → use cases as factories over their ports, returning Result
-contexts/<context>/sequelize*.ts  → rows ↔ domain, read models (aggregation in Postgres)
-contexts/<context>/httpV1.ts      → v1 routes with the old snake_case responses
-contexts/<context>/index.ts       → composition root, mounted by app.js
-models/<Resource>.js, models/index.js → Sequelize models and all associations (read index first)
-```
-
-Contexts: `catalog`, `vark`, `observability`, `identity`, `deployment`, `learning` (telemetry: see
-`docs/TELEMETRY.md`), `sessions`. A new feature goes into its context: pure logic in domain/feature modules, queries
-behind a port, never query logic in `httpV1.ts`.
+Clean/hexagonal, one context per vertical slice (see "Clean architecture monorepo" above for the package layout).
+A new feature goes into its context: pure logic/entities in `domain/model`, orchestration in `domain/usecase`, I/O in
+a `driven-adapters` package, HTTP in `rest-api` — never query logic in a controller. See `docs/TELEMETRY.md` for the
+telemetry wire format served by the `learning` context.
 
 `middleware/auth.middleware.js` validates the JWT from `Authorization` header and attaches
 `req.user`. `middleware/role.middleware.js` exports `requireRole(...roles)` for route-level
@@ -190,26 +175,26 @@ is actually the user's **cédula**, not a chosen username.
   email because they never registered a personal one. `cedula` is the real unique identity.
 - `VarkResult` is **upserted** per user — resubmitting the VARK test overwrites the previous result,
   there is no history of past attempts.
-- `TrainingSession.code` is a **3-digit numeric** room code (`contexts/sessions/domain.ts#roomCode`), easy to
+- `TrainingSession.code` is a **3-digit numeric** room code (`model/src/sessions/Room.ts#roomCode`), easy to
   read/dictate in a classroom. Retry-until-unique only checks against non-`finished` sessions
-  (`application.ts#freeCode`) — a finished session frees its code, needed since 3 digits
+  (`CreateRoomUseCase#freeCode`) — a finished session frees its code, needed since 3 digits
   only gives 1000 combinations. Uniqueness is a **partial unique index** `training_sessions_code_live`
   (non-finished sessions only, created in `scripts/dbMaintenance.js`), and `joinSession` prefers the
   live session for a reused code. `GET /api/sessions/code/:code` (any logged-in user) returns the live
   session (name, instructor) without enrolling — used by the game when the code comes from a QR.
 - `UserRiskProgress.session_id` / `LevelAttempt.session_id`: when the game sends none,
-  `contexts/sessions` (`freeSessions.resolve`) assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
+  `FreePlaySessions`/`SequelizeFreePlaySessions` assigns the **"Juego libre" session** (`TrainingSession.is_free_play`) of the
   player's profile location (a global one if the player has no location) and enrolls the player. Free sessions
   have no instructor or code, are always `active` (start/end return 400), are listed for admins and, in
   `/api/sessions/mine`, for instructors of the same location. `instructor_id`/`location_id` are nullable;
   `index.js` drops their NOT NULL explicitly after `sync` because `alter` does not do it for FK columns.
   Old rows with a null session were left as they were.
 - Instructor access: `GET /:id/progress/admin`, `/:id/participants/:userId/analysis` and
-  `/:id/export.xlsx` allow `instructor` too, guarded by `assertCanView` in `contexts/sessions/application.ts` (admin: all;
+  `/:id/export.xlsx` allow `instructor` too, guarded by `assertCanView` in `usecase/src/sessions/rooms/assertCanView.ts` (admin: all;
   instructor: own rooms + the "Juego libre" session of their profile location; else 403).
 - `GET /api/users/:id/sessions` (new) — a user's `SessionUser` enrollment history with the joined
   `TrainingSession`, used by the frontend's player detail page.
-- `GET /api/analytics/overview` (`contexts/learning/analyticsReadModel.ts#overview`) also returns `riesgos_mas_fallados` (top failed risks by fail
+- `GET /api/analytics/overview` (`SequelizeAnalyticsReadModel.ts#overview`, sequelize-repository) also returns `riesgos_mas_fallados` (top failed risks by fail
   rate, grouped over `UserRiskProgress`) and `tendencia_temporal` (weekly mitigation % via
   `date_trunc('week', recorded_at)`) — both computed on the fly, no new columns.
 
@@ -269,11 +254,11 @@ departamento against this catalog first (normalized + Levenshtein distance ≤2 
 create-if-no-match (marked `location_no_match` in the response so the admin can review it in the
 frontend's bulk-import preview) only when nothing in the catalog is close enough.
 
-### Session detail for the admin panel (`contexts/sessions/detail.ts`, `analysis.ts`)
+### Session detail for the admin panel (`model/src/sessions/detail.ts`, `analysis.ts`)
 
-- `GET /api/sessions/:id/progress/admin` (`getSessionProgressAdmin`) — **3 queries total**
-  (session+participants, all `UserRiskProgress` of the session, all `LevelAttempt` of the session),
-  grouped in memory by `user_id`. It used to do one query per participant. Response keeps the old
+- `GET /api/sessions/:id/progress/admin` (`GetRoomDetailUseCase` → `SequelizeSessionDetailReader` → `sessionDetail()`)
+  — **3 queries total** (session+participants, all `UserRiskProgress` of the session, all `LevelAttempt` of the
+  session), grouped in memory by `user_id`. It used to do one query per participant. Response keeps the old
   per-participant fields (`total_attempts`, `mitigated`, `percentage`, `avg_reaction_ms`,
   `by_level`) and adds `band`, `risks`, `weakest_risk`, `telemetry` (attempt totals, per-level
   summary, `journeys` = attempt-by-attempt outcomes per level), plus top-level `summary`, `risks`
@@ -282,21 +267,21 @@ frontend's bulk-import preview) only when nothing in the catalog is close enough
 - `performanceBand(pct, hasData)` — `destacado` ≥80 · `en_progreso` 40–79 · `refuerzo` <40 ·
   `sin_datos`. The frontend (`modules/admin/sessions/bands.js`) and the Excel export use the same
   cut-offs — change them together.
-- `GET /api/sessions/:id/participants/:userId/analysis` (`getParticipantAnalysis`) — one
+- `GET /api/sessions/:id/participants/:userId/analysis` (`GetParticipantAnalysisUseCase`) — one
   participant's session-scoped data + group averages for comparison (`group`), summed `summary`
-  counters, event counts, panel reading time, and prev/next navigation. Reuses
-  `getSessionProgressAdmin`.
-- `GET /api/sessions/:id/export.xlsx` (`report.ts` rows + `workbook.ts`, **ExcelJS**, not `xlsx` —
-  SheetJS CE can't style cells) — sheets Resumen / Participantes / Riesgos de la sesión /
-  Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
+  counters, event counts, panel reading time, and prev/next navigation. Reuses the same cached
+  `SequelizeSessionDetailReader#read` as the detail above (not a use-case-to-use-case call: the cache key is shared).
+- `GET /api/sessions/:id/export.xlsx` (`model/src/sessions/report.ts` rows + `@earthcation/excel`'s
+  `ExcelSessionReportWriter`, **ExcelJS**, not `xlsx` — SheetJS CE can't style cells) — sheets Resumen / Participantes /
+  Riesgos de la sesión / Resultados por riesgo / Intentos por nivel, branded header row, frozen header, autofilter,
   tinted result cells. Dates are written in Colombia local time (UTC−5) since Excel has no
-  timezone. Spanish labels for game enums live in `contexts/sessions/labels.ts`.
-- `contexts/learning/summaries.ts` exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
-  (used by `getUserSummary` and the session service) — don't duplicate those loops.
+  timezone. Spanish labels for game enums live in `model/src/sessions/labels.ts`.
+- `model/src/learning/summaries.ts` (`@earthcation/model`) exports the pure aggregators `summarizeAttempts` / `summarizeRisks`
+  (used by learning's use cases and the session service) — don't duplicate those loops.
 
 ### Analytics — mines map (`GET /api/analytics/map`)
 
-`analyticsReadModel.ts#minesMap` powers the frontend's Leaflet map of mining units. `Organization`
+`SequelizeAnalyticsReadModel.ts#minesMap` (sequelize-repository) powers the frontend's Leaflet map of mining units. `Organization`
 has no `location_id` of its own — each org's location is inferred as the most frequent
 municipality/department among its active players' `UserProfile.location`. Returns one row per
 organization with `municipality`/`department`/`player_count`/`percentage` (mitigation rate,
@@ -330,7 +315,7 @@ to a constraint here, dropping the index directly fails). If a unique/not-null f
 change again, verify with a raw query against `pg_constraint` that the old constraint actually left
 before assuming the model change took effect.
 
-### Success percentages = latest attempt (`contexts/learning/attempts.ts`)
+### Success percentages = latest attempt (`model/src/learning/attempts.ts`)
 
 Every success % (analytics overview/by level/by organization/by location, mines map, session
 participants, `GET /api/progress/level/:levelId`) uses only the **latest attempt of each player in each
@@ -339,12 +324,12 @@ not average with older tries. Rows without `attempt_id` are grouped per session 
 `riesgos_mas_fallados` and `tendencia_temporal` still use the full history on purpose (difficulty /
 trend). The frontend mirrors this in `earthcation_fe/src/lib/attempts.js`.
 
-### Mines map coordinates (`contexts/learning/geo.ts`)
+### Mines map coordinates (`@earthcation/geo-catalog`'s `DivipolaCoordinates`)
 
-`src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
-`gdxc-w37w`). `coordsFor(municipality, department)` matches catalog names tolerant to accents,
+`geo-catalog/src/data/colombia-municipios-coords.json` is DANE DIVIPOLA with lat/lng (datos.gov.co dataset
+`gdxc-w37w`). `DivipolaCoordinates#locate(municipality, department)` matches catalog names tolerant to accents,
 articles and official vs popular names (1104 of the 1105 catalog municipios resolve); unmatched
-ones fall back to the department capital (`location_exact: false`). `GET /api/analytics/map`
+ones fall back to the department capital (`exact: false`). `GET /api/analytics/map`
 returns `lat`, `lng`, `location_exact` and `results` per organization.
 
 ### Known gaps (don't "fix" without being asked — these are accepted current state)
