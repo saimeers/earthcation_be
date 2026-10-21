@@ -22,6 +22,9 @@ import {
   StartAttemptUseCase, EndAttemptUseCase, SaveEventsUseCase, ListAttemptsUseCase, GetAttemptDetailUseCase,
   GetUserSummaryUseCase, GetTelemetryOverviewUseCase, GetAnalyticsOverviewUseCase, GetAnalyticsByOrganizationUseCase,
   GetAnalyticsByLocationUseCase, GetMinesMapUseCase,
+  CreateRoomUseCase, JoinRoomUseCase, StartRoomUseCase, EndRoomUseCase, GetRoomByCodeUseCase, ListMyRoomsUseCase,
+  ListAllRoomsUseCase, ListRoomsByLocationUseCase, GetRoomProgressUseCase, GetRoomDetailUseCase,
+  GetParticipantAnalysisUseCase, ExportRoomReportUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
@@ -29,6 +32,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
+  SequelizeSessionRepository, SequelizeSessionDetailReader,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -38,7 +42,7 @@ import { createRedisClient, RedisCache } from '@earthcation/redis-cache'
 import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
 import { BcryptPasswordHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
 import { ResendMailer } from '@earthcation/resend-mailer'
-import { XlsxSpreadsheetReader } from '@earthcation/excel'
+import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
   authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1,
@@ -46,6 +50,7 @@ import {
   type LoginRecorder,
   authRoutesV1, bulkImportRoutesV1, userRoutesV1,
   progressRoutesV1, levelRoutesV1, telemetryRoutesV1, analyticsRoutesV1,
+  sessionRoutesV1,
 } from '@earthcation/rest-api'
 import { loadEnv, type Env } from './config/env'
 
@@ -255,7 +260,7 @@ const identity = {
 const learningRepository = new SequelizeLearningRepository(models)
 const learningReadModel = new SequelizeLearningReadModel(models)
 const analyticsReadModel = new SequelizeAnalyticsReadModel(models, new DivipolaCoordinates())
-// La sala "Juego libre" la resuelve el contexto de sesiones (gateway); aprendizaje solo la consume
+// La sala "Juego libre" del jugador cuando el resultado o el intento llega sin sala (gateway de sesiones)
 const freePlaySessions = new SequelizeFreePlaySessions(models, cache)
 
 const learning = {
@@ -286,6 +291,31 @@ const learning = {
   },
 }
 
+// ── Sesiones ─────────────────────────────────────────────────────────────────
+
+const sessionRepository = new SequelizeSessionRepository(models)
+const sessionDetailReader = new SequelizeSessionDetailReader(models, cache)
+
+const sessions = {
+  authenticate: auth,
+  sessions: {
+    create: new CreateRoomUseCase(sessionRepository, Math.random),
+    join: new JoinRoomUseCase(sessionRepository),
+    start: new StartRoomUseCase({ repo: sessionRepository, cache, clock: systemClock }),
+    end: new EndRoomUseCase({ repo: sessionRepository, cache, clock: systemClock }),
+    byCode: new GetRoomByCodeUseCase(sessionRepository),
+    mine: new ListMyRoomsUseCase(sessionRepository),
+    all: new ListAllRoomsUseCase(sessionRepository),
+    byLocation: new ListRoomsByLocationUseCase(sessionRepository),
+    progress: new GetRoomProgressUseCase(sessionRepository),
+    detail: new GetRoomDetailUseCase({ repo: sessionRepository, detailReader: sessionDetailReader }),
+    analysis: new GetParticipantAnalysisUseCase({ repo: sessionRepository, detailReader: sessionDetailReader }),
+    exportReport: new ExportRoomReportUseCase({
+      repo: sessionRepository, detailReader: sessionDetailReader, reportWriter: new ExcelSessionReportWriter(), clock: systemClock,
+    }),
+  },
+}
+
 export const routes = {
   organizations: organizationRoutesV1(catalog),
   locations: locationRoutesV1(catalog),
@@ -302,4 +332,5 @@ export const routes = {
   levels: levelRoutesV1(learning),
   telemetry: telemetryRoutesV1(learning),
   analytics: analyticsRoutesV1(learning),
+  sessions: sessionRoutesV1(sessions),
 }

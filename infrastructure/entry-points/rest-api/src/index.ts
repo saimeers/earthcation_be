@@ -32,3 +32,7 @@ export type { ProgressUseCases } from './controllers/learning/ProgressController
 export type { LevelUseCases } from './controllers/learning/LevelController'
 export type { TelemetryUseCases } from './controllers/learning/TelemetryController'
 export type { AnalyticsUseCases } from './controllers/learning/AnalyticsController'
+
+// ── sessions ──
+export { sessionRoutesV1, type SessionsRoutesDeps } from './routes/sessions.routes'
+export type { SessionUseCases } from './controllers/sessions/SessionController'

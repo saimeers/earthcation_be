@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { ok, err, map, flatMap, andThen, fromNullable } from '../../src/legacy/shared/result'
-import { notFound, businessRule, validation, httpStatusOf } from '../../src/legacy/shared/errors'
 import { parseEnv } from '../../src/config/env'
 
 describe('Result', () => {
@@ -22,19 +21,6 @@ describe('Result', () => {
   it('fromNullable', () => {
     expect(fromNullable(0, () => 'falta')).toEqual(ok(0))
     expect(fromNullable(null, () => 'falta')).toEqual(err('falta'))
-  })
-})
-
-describe('errores de dominio', () => {
-  it('estado HTTP por tipo', () => {
-    expect(httpStatusOf(notFound('USER_NOT_FOUND', 'Usuario no encontrado'))).toBe(404)
-    expect(httpStatusOf(validation('VALIDATION_ERROR', 'Dato inválido'))).toBe(400)
-    expect(httpStatusOf(businessRule('SESSION_FINISHED', 'La sesión terminó'))).toBe(422)
-  })
-
-  it('details solo si se da', () => {
-    expect(notFound('X', 'y')).toEqual({ kind: 'not_found', code: 'X', message: 'y' })
-    expect(validation('X', 'y', { field: 'cedula' }).details).toEqual({ field: 'cedula' })
   })
 })
 

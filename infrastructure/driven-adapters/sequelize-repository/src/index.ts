@@ -27,3 +27,7 @@ export { SequelizeLearningRepository } from './learning/SequelizeLearningReposit
 export { SequelizeLearningReadModel } from './learning/SequelizeLearningReadModel'
 export { SequelizeAnalyticsReadModel } from './learning/SequelizeAnalyticsReadModel'
 export { SequelizeFreePlaySessions } from './learning/SequelizeFreePlaySessions'
+
+// ── sessions ──
+export { SequelizeSessionRepository } from './sessions/SequelizeSessionRepository'
+export { SequelizeSessionDetailReader } from './sessions/SequelizeSessionDetailReader'
