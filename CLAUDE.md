@@ -124,7 +124,10 @@ once no client calls it (visits stats show zero traffic). There is no `v2`.
   (`/auth/login`, `/auth/password-resets`, `/auth/password`, `/users`, `/users/:id`, `/users/:id/sessions`,
   `/users/:id/active`) and sessions (`/sessions`, `/sessions/join`, `/sessions/code/:code`, `/sessions/:id`,
   `/sessions/:id/status` (PUT active|finished), `/progress`, `/participants/:userId/analysis`, `/report.xlsx`).
-  Pending: bulk import, learning, deployment, observability; then the panel and the
+  learning (`/risk-results`, `/levels`, `/attempts` + `/attempts/:id/events`, `/users/:id/attempts`, `/telemetry/overview`,
+  `/analytics/*`). Request bodies reach the use cases in snake_case: `v1/dto/snake.ts` converts them (an event `payload`
+  is left untouched; on reads `payload` is also kept as is, `camelize` converts every other key).
+  Pending: bulk import, deployment, observability; then the panel and the
   game move over, legacy is removed and the READMEs are written.
 - Read models (users, VARK listings) still arrive as raw snake_case rows: `v1/dto/camelize.ts` turns them into
   camelCase with ISO dates (keys of data dictionaries such as `fail_reasons`, `fail_stages` and `journeys` are kept as is); the zod response schemas document the shape. Binary replies use `file(contentType, filename, content)` and `response.contentType` in the route spec. `createApp` mounts the same login /
