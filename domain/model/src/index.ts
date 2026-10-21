@@ -6,6 +6,7 @@ export * from './shared/gateways/Clock'
 export * from './identity/AuthenticatedUser'
 export * from './identity/errors/AuthErrors'
 export * from './identity/gateways/TokenVerifier'
+export * from './identity/gateways/AccountDirectory'
 
 export * from './catalog/Organization'
 export * from './catalog/Location'

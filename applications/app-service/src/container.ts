@@ -33,7 +33,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
-  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog,
+  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -55,7 +55,7 @@ import {
   progressRoutesLegacy, levelRoutesLegacy, telemetryRoutesLegacy, analyticsRoutesLegacy,
   sessionRoutesLegacy,
 } from '@earthcation/rest-api'
-import { parseEnv, type Env } from './config/env'
+import { allowedOrigins, parseEnv, type Env } from './config/env'
 
 // Composition root (inyección manual): instancia los adaptadores, se los pasa a los casos de uso y arma la app HTTP.
 // Exporta la app, las tareas de arranque y lo que la semilla de pruebas y scripts/load usan directo (conexión,
@@ -65,11 +65,22 @@ export const env = parseEnv()
 
 const databaseConfig = (e: Env) => ({
   host: e.DB_HOST, port: e.DB_PORT, name: e.DB_NAME, user: e.DB_USER, password: e.DB_PASS,
-  ssl: e.NODE_ENV === 'production', poolMax: e.DB_POOL_MAX, poolMin: e.DB_POOL_MIN,
+  ssl: e.NODE_ENV === 'production', sslCa: e.DB_SSL_CA?.replaceAll('\\n', '\n'), poolMax: e.DB_POOL_MAX, poolMin: e.DB_POOL_MIN,
 })
 
 export const sequelize = createSequelize(databaseConfig(env))
 export const models = defineModels(sequelize)
+
+// ── Registro, caché y borde de Cloudflare (los usa la seguridad desde la primera petición) ───────────────────
+
+const log = (message: string): void => { console.error(message) }
+
+/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
+const redis = createRedisClient(env.REDIS_URL, log)
+/** Caché de lecturas de todos los contextos. */
+const cache = new RedisCache(redis)
+/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
+const edge = cloudflareEdge(env.CF_EDGE_SECRET)
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 
@@ -81,7 +92,10 @@ export const security = {
 // Quién hace la petición en curso (la entrada abre el ámbito y `authenticate` le pone el actor)
 const requestScope = new AsyncRequestContext()
 
-const auth: RequestHandler = authenticate(security.tokens, (user) => { requestScope.setActor({ id: user.id, role: user.role }) })
+// El token solo vale mientras la cuenta esté activa; el estado vigente se consulta con una caché de 60 s
+const accounts = new SequelizeAccountDirectory(models, cache)
+
+const auth: RequestHandler = authenticate(security.tokens, { accounts, onAuthenticated: (user) => { requestScope.setActor({ id: user.id, role: user.role }) } })
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 
@@ -165,15 +179,6 @@ const deploymentUseCases = {
 }
 
 // ── Observabilidad ───────────────────────────────────────────────────────────
-
-const log = (message: string): void => { console.error(message) }
-
-/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
-const redis = createRedisClient(env.REDIS_URL, log)
-/** Caché de lecturas de todos los contextos. */
-const cache = new RedisCache(redis)
-/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
-const edge = cloudflareEdge(env.CF_EDGE_SECRET)
 
 const metricsStore = new InMemoryMetricsStore()
 
@@ -411,7 +416,7 @@ const routesV1 = createRouterV1({
 const limiters = rateLimiters({
   limits: {
     userMax: env.RATE_LIMIT_USER_MAX, ipMax: env.RATE_LIMIT_IP_MAX, authMax: env.RATE_LIMIT_AUTH_MAX,
-    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX,
+    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX, joinMax: env.RATE_LIMIT_JOIN_MAX,
   },
   tokens: security.tokens,
   clientIp: edge.clientIp,
@@ -427,7 +432,7 @@ export const app = createApp({
   requestContext: requestContext(requestScope, auditHash, edge.clientIp),
   limiters,
   metrics: metrics(metricsStore),
-  allowedOrigins: env.ALLOWED_ORIGINS,
+  allowedOrigins: allowedOrigins(env),
   servePlayLocal: localPublishing,
   ...(env.NODE_ENV !== 'test' && { requestLog: env.NODE_ENV === 'production' ? 'tiny' : 'dev' }),
   log,

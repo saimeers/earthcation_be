@@ -158,6 +158,24 @@ action (it is reported to the service log; it is not in the same DB transaction 
 `GET /api/v1/audit-logs` (filters, paging) and `/audit-logs/export` (CSV), admin and developer only.
 Add an action: extend `AUDIT_ACTIONS`, then wrap the use case in the container.
 
+### Authentication hardening (fase 5)
+
+- **The token does not outlive the account.** `authenticate(tokens, { accounts, onAuthenticated })` asks the
+  `AccountDirectory` port (`SequelizeAccountDirectory`, cached 60 s under namespace `account`) for the current state:
+  a disabled account gets 403 `ACCOUNT_DISABLED`, a missing one 403 `TOKEN_INVALID`, and `req.user.role` comes from the
+  account, not from the token. A change therefore takes effect within a minute (the legacy API shares this middleware).
+- **Session length:** staff tokens (instructor, admin, developer) last 24 h, players 7 days (`JwtTokenService`).
+- **Room codes are 3 digits:** `limiters.join` (`RATE_LIMIT_JOIN_MAX`, default 20 per 15 min, per user) covers
+  `/sessions/join` and `/sessions/code` in legacy and v1.
+- **CORS:** in production a missing or `*` `ALLOWED_ORIGINS` means "only the origins of `FRONTEND_URL` and `PLAY_URL`"
+  (`allowedOrigins()` in `config/env.ts`); outside production an empty list still accepts any origin.
+- **Game ZIPs:** `BuildInspection.inspect` rejects (400 `InvalidBuildError`) a ZIP with more than 3000 entries, more than
+  800 MB unpacked (declared size, checked before reading), paths with `..`, backslashes, NUL or absolute paths, and any
+  entry that unpacks bigger than it declared (`ZipEntry.size`, filled by `AdmZipReader`).
+- **DB TLS:** set `DB_SSL_CA` (PEM, `
+` allowed) to verify the server certificate; without it the connection is
+  encrypted but not verified (Railway issues its own certificate). Pending: obtain Railway's CA and set it in production.
+
 ### TypeScript
 
 - All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is

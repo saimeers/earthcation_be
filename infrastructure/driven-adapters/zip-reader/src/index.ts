@@ -7,7 +7,7 @@ const bufferOf = (zip: Uint8Array): Buffer => (Buffer.isBuffer(zip) ? zip : Buff
 export class AdmZipReader implements ZipReader {
   read(zip: Uint8Array): readonly ZipEntry[] | null {
     try {
-      return new AdmZip(bufferOf(zip)).getEntries().map((e) => ({ name: e.entryName, isDirectory: e.isDirectory, read: () => e.getData() }))
+      return new AdmZip(bufferOf(zip)).getEntries().map((e) => ({ name: e.entryName, isDirectory: e.isDirectory, size: e.header.size, read: () => e.getData() }))
     } catch {
       return null
     }

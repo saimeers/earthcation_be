@@ -22,6 +22,8 @@ export interface RateLimits {
   readonly loginCedulaMax: number
   /** Logins fallidos con cédulas no registradas desde una misma IP. */
   readonly loginIpFailMax: number
+  /** Intentos de unirse a una sala o validar un código (el código tiene 3 dígitos: hay que frenar adivinarlo). */
+  readonly joinMax: number
 }
 
 export interface RateLimitDeps {
@@ -39,6 +41,7 @@ export interface RateLimiters {
   readonly auth: RequestHandler
   readonly loginCedula: RequestHandler
   readonly loginIpFail: RequestHandler
+  readonly join: RequestHandler
 }
 
 const WINDOW_MS = 15 * 60 * 1000
@@ -125,4 +128,5 @@ export const rateLimiters = (deps: RateLimitDeps): RateLimiters => ({
   auth: limiter(deps, 'rl:auth:', { limit: deps.limits.authMax }),
   loginCedula: loginCedulaLimiter(deps),
   loginIpFail: loginIpFailLimiter(deps),
+  join: limiter(deps, 'rl:join:', { limit: deps.limits.joinMax, message: tooMany('Demasiados intentos con códigos de sala, intenta de nuevo en unos minutos.') }),
 })

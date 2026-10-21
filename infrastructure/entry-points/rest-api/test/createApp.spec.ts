@@ -17,7 +17,7 @@ const unused = {} as unknown as LocationUseCases & OrganizationUseCases
 
 const appWith = (userMax = 1000) => {
   const limiters = rateLimiters({
-    limits: { userMax, ipMax: userMax, authMax: 100, loginCedulaMax: 100, loginIpFailMax: 100 },
+    limits: { userMax, ipMax: userMax, authMax: 100, loginCedulaMax: 100, loginIpFailMax: 100, joinMax: 100 },
     tokens, clientIp: (req) => req.ip, cedulaExists: () => Promise.resolve(false),
   })
   const routesV1 = createRouterV1({
