@@ -1,13 +1,14 @@
-import express, { type Express, type RequestHandler } from 'express'
+import express, { type Express, type ErrorRequestHandler, type Request, type RequestHandler, type Router } from 'express'
 import compression from 'compression'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
-import { errorHandlerV1, notFoundV1 } from './middlewares/errorHandler'
+import { errorHandlerLegacy, notFoundLegacy } from './middlewares/errorHandler'
+import { errorHandlerV1 } from './v1/http/errors'
 import type { RateLimiters } from './middlewares/rateLimit'
 
-/** Routers y handlers de la v1, ya armados con sus casos de uso por el composition root. */
-export interface AppRoutesV1 {
+/** Routers y handlers de la legacy, ya armados con sus casos de uso por el composition root. */
+export interface AppRoutesLegacy {
   readonly publicHealth: RequestHandler
   readonly playLocal: RequestHandler
   readonly visits: RequestHandler
@@ -27,7 +28,9 @@ export interface AppRoutesV1 {
 }
 
 export interface AppDeps {
-  readonly routes: AppRoutesV1
+  readonly routes: AppRoutesLegacy
+  /** API v1 (/api/v1): su propio router, con validación, errores y documentación. */
+  readonly routesV1: Router
   readonly limiters: RateLimiters
   /** Mide cada petición (va al principio). */
   readonly metrics: RequestHandler
@@ -55,7 +58,11 @@ const mountCommon = (app: Express, deps: AppDeps): void => {
 }
 
 // Estado público mínimo y visitas van antes del límite global: las visitas llegan todas desde las IP del Worker
-const mountUnlimited = (app: Express, { routes }: AppDeps): void => {
+// La ingesta de visitas de v1 (POST /api/v1/visits) también va antes del límite: llega desde las IP del Worker
+const isVisitIngest = (req: Request): boolean => req.method === 'POST' && req.path === '/visits'
+
+const mountUnlimited = (app: Express, { routes, routesV1 }: AppDeps): void => {
+  app.use('/api/v1', (req, res, next) => { if (isVisitIngest(req)) routesV1(req, res, next); else next() })
   app.get('/api/health', routes.publicHealth)
   app.use('/api/visits', routes.visits)
 }
@@ -64,6 +71,13 @@ const mountLimits = (app: Express, { limiters }: AppDeps): void => {
   app.use('/api', limiters.global)
   app.use('/api/auth/login', limiters.auth, limiters.loginIpFail, limiters.loginCedula)
   app.use('/api/auth/forgot-password', limiters.auth)
+  // v1: los mismos límites en el login y en la solicitud de restablecimiento
+  app.use('/api/v1/auth/login', limiters.auth, limiters.loginIpFail, limiters.loginCedula)
+  app.use('/api/v1/auth/password-resets', limiters.auth)
+}
+
+const mountV1 = (app: Express, { routesV1 }: AppDeps): void => {
+  app.use('/api/v1', routesV1)
 }
 
 const mountIdentityAndCatalog = (app: Express, { routes }: AppDeps): void => {
@@ -85,12 +99,19 @@ const mountOperationAndLearning = (app: Express, { routes }: AppDeps): void => {
   app.use('/api/sessions', routes.sessions)
 }
 
+const errorsByVersion = (log: (message: string) => void): ErrorRequestHandler => {
+  const legacy = errorHandlerLegacy(log)
+  const v1 = errorHandlerV1(log)
+  // eslint-disable-next-line max-params -- Express reconoce un manejador de errores por sus 4 parámetros
+  return (err, req, res, next) => { (req.originalUrl.startsWith('/api/v1') ? v1 : legacy)(err, req, res, next) }
+}
+
 const mountFallbacks = (app: Express, deps: AppDeps): void => {
   app.get('/health', (_req, res) => { res.json({ status: 'ok', timestamp: new Date() }) })
   app.get('/', (_req, res) => { res.send('API funcionando 🚀') })
-  // Un único errorHandler traduce los errores de dominio y los de Express a la respuesta de v1
-  app.use(notFoundV1)
-  app.use(errorHandlerV1(deps.log))
+  // Los errores que llegan hasta aquí (cuerpo JSON mal formado, rutas de legacy) se traducen al formato de su versión
+  app.use(notFoundLegacy)
+  app.use(errorsByVersion(deps.log))
 }
 
 /** La app Express completa sin arrancar el servidor (la usan main y las pruebas con supertest). */
@@ -98,7 +119,7 @@ export const createApp = (deps: AppDeps): Express => {
   const app = express()
   // Detrás del proxy de Cloudflare/Railway: req.ip es el del proxy (el visitante sale de CF-Connecting-IP)
   app.set('trust proxy', 1)
-  for (const mount of [mountPlayLocal, mountCommon, mountUnlimited, mountLimits, mountIdentityAndCatalog, mountOperationAndLearning, mountFallbacks]) {
+  for (const mount of [mountPlayLocal, mountCommon, mountUnlimited, mountLimits, mountV1, mountIdentityAndCatalog, mountOperationAndLearning, mountFallbacks]) {
     mount(app, deps)
   }
   return app

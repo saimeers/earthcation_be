@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import type { GetLevelUseCase, ListLevelsUseCase } from '@earthcation/usecase'
-import { pathParam } from '../../dto/v1/request'
+import { pathParam } from '../../dto/legacy/request'
 
 export interface LevelUseCases {
   readonly list: ListLevelsUseCase

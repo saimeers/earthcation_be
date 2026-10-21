@@ -15,8 +15,8 @@ export interface LearningRoutesDeps {
 
 const staff = (auth: RequestHandler) => [auth, requireRole('admin', 'instructor', 'developer')]
 
-/** `/api/progress` (v1) */
-export const progressRoutesV1 = (deps: LearningRoutesDeps): Router => {
+/** `/api/progress` (legacy) */
+export const progressRoutesLegacy = (deps: LearningRoutesDeps): Router => {
   const c = new ProgressController(deps.progress)
   return Router()
     .post('/save', deps.authenticate, c.save)
@@ -26,8 +26,8 @@ export const progressRoutesV1 = (deps: LearningRoutesDeps): Router => {
     .get('/user/:userId/history', ...staff(deps.authenticate), c.history)
 }
 
-/** `/api/levels` (v1) */
-export const levelRoutesV1 = (deps: LearningRoutesDeps): Router => {
+/** `/api/levels` (legacy) */
+export const levelRoutesLegacy = (deps: LearningRoutesDeps): Router => {
   const c = new LevelController(deps.levels)
   return Router()
     .get('/', deps.authenticate, c.list)
@@ -50,8 +50,8 @@ const panelRoutes = (router: Router, auth: RequestHandler, c: TelemetryControlle
   router.get('/attempts/:id', ...staff(auth), c.attemptDetail)
 }
 
-/** `/api/telemetry` (v1) */
-export const telemetryRoutesV1 = (deps: LearningRoutesDeps): Router => {
+/** `/api/telemetry` (legacy) */
+export const telemetryRoutesLegacy = (deps: LearningRoutesDeps): Router => {
   const c = new TelemetryController(deps.telemetry)
   const router = Router()
   gameRoutes(router, deps.authenticate, c)
@@ -61,8 +61,8 @@ export const telemetryRoutesV1 = (deps: LearningRoutesDeps): Router => {
 
 const readers = (auth: RequestHandler) => [auth, requireRole('instructor', 'admin', 'developer')]
 
-/** `/api/analytics` (v1) */
-export const analyticsRoutesV1 = (deps: LearningRoutesDeps): Router => {
+/** `/api/analytics` (legacy) */
+export const analyticsRoutesLegacy = (deps: LearningRoutesDeps): Router => {
   const c = new AnalyticsController(deps.analytics)
   return Router()
     .get('/overview', deps.authenticate, requireRole('admin', 'developer'), c.overview)

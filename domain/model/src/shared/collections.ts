@@ -1,4 +1,4 @@
-// Agrupar y contar conservando el orden de primera aparición (como hacían los objetos/Map de v1).
+// Agrupar y contar conservando el orden de primera aparición (como hacían los objetos/Map de la API legacy).
 // La mutación queda dentro del Map recién creado y nunca se ve desde afuera: para quien llama son puras,
 // y evitan copiar el Map en cada paso (con miles de filas, un reduce inmutable sería cuadrático).
 

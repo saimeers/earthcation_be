@@ -46,13 +46,13 @@ import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
-  createApp, rateLimiters,
-  authenticate, locationRoutesV1, organizationRoutesV1, varkRoutesV1,
-  cloudflareEdge, deployRoutesV1, healthRoutesV1, loginRecorder, metrics, playLocalRoutes, publicHealthV1, visitRoutesV1,
+  createApp, createRouterV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
+  authenticate, locationRoutesLegacy, organizationRoutesLegacy, varkRoutesLegacy,
+  cloudflareEdge, deployRoutesLegacy, healthRoutesLegacy, loginRecorder, metrics, playLocalRoutes, publicHealthLegacy, visitRoutesLegacy,
   type LoginRecorder,
-  authRoutesV1, bulkImportRoutesV1, userRoutesV1,
-  progressRoutesV1, levelRoutesV1, telemetryRoutesV1, analyticsRoutesV1,
-  sessionRoutesV1,
+  authRoutesLegacy, bulkImportRoutesLegacy, userRoutesLegacy,
+  progressRoutesLegacy, levelRoutesLegacy, telemetryRoutesLegacy, analyticsRoutesLegacy,
+  sessionRoutesLegacy,
 } from '@earthcation/rest-api'
 import { parseEnv, type Env } from './config/env'
 
@@ -311,23 +311,34 @@ const sessions = {
 // ── App HTTP ─────────────────────────────────────────────────────────────────
 
 const routes = {
-  organizations: organizationRoutesV1(catalog),
-  locations: locationRoutesV1(catalog),
-  vark: varkRoutesV1(vark),
-  deploy: deployRoutesV1({ authenticate: auth, deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
+  organizations: organizationRoutesLegacy(catalog),
+  locations: locationRoutesLegacy(catalog),
+  vark: varkRoutesLegacy(vark),
+  deploy: deployRoutesLegacy({ authenticate: auth, deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
   playLocal: playLocalRoutes(new GetPlayFileUseCase(storages.published)),
-  visits: visitRoutesV1(observability),
-  health: healthRoutesV1(observability),
-  publicHealth: publicHealthV1(observability),
-  auth: authRoutesV1(identity),
-  users: userRoutesV1(identity),
-  bulkImport: bulkImportRoutesV1(identity),
-  progress: progressRoutesV1(learning),
-  levels: levelRoutesV1(learning),
-  telemetry: telemetryRoutesV1(learning),
-  analytics: analyticsRoutesV1(learning),
-  sessions: sessionRoutesV1(sessions),
+  visits: visitRoutesLegacy(observability),
+  health: healthRoutesLegacy(observability),
+  publicHealth: publicHealthLegacy(observability),
+  auth: authRoutesLegacy(identity),
+  users: userRoutesLegacy(identity),
+  bulkImport: bulkImportRoutesLegacy(identity),
+  progress: progressRoutesLegacy(learning),
+  levels: levelRoutesLegacy(learning),
+  telemetry: telemetryRoutesLegacy(learning),
+  analytics: analyticsRoutesLegacy(learning),
+  sessions: sessionRoutesLegacy(sessions),
 }
+
+const routesV1 = createRouterV1({
+  routes: [...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning),
+    ...deploymentRoutesV1({ deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
+    ...observabilityRoutesV1({ visits: observability.visits, health: observability.health, ingestSecret: observability.ingestSecret }),
+    ...importRoutesV1(identity.bulkImport)],
+  authenticate: auth,
+  docsAccess: env.DOCS_ACCESS,
+  info: { title: 'API de Earthcation', version: '2.0.0', description: 'API v1 de la plataforma de capacitación en seguridad minera Earthcation.' },
+  log,
+})
 
 const limiters = rateLimiters({
   limits: {
@@ -344,6 +355,7 @@ const limiters = rateLimiters({
 /** La app Express completa, sin escuchar: la arranca boot.ts y la usan las pruebas de contrato (supertest). */
 export const app = createApp({
   routes,
+  routesV1,
   limiters,
   metrics: metrics(metricsStore),
   allowedOrigins: env.ALLOWED_ORIGINS,

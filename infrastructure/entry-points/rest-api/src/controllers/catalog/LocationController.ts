@@ -3,8 +3,8 @@ import type {
   ChangeLocationStatusUseCase, CreateLocationUseCase, GetLocationUseCase, ListLocationsUseCase, SearchLocationsUseCase,
   UpdateLocationUseCase,
 } from '@earthcation/usecase'
-import { locationV1 } from '../../dto/v1/catalog'
-import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+import { locationLegacy } from '../../dto/legacy/catalog'
+import { bodyOf, pathParam, queryText } from '../../dto/legacy/request'
 
 export interface LocationUseCases {
   readonly list: ListLocationsUseCase
@@ -23,26 +23,26 @@ export class LocationController {
   constructor(private readonly useCases: LocationUseCases) {}
 
   list = async (_req: Request, res: Response): Promise<void> => {
-    res.json((await this.useCases.list.execute()).map(locationV1))
+    res.json((await this.useCases.list.execute()).map(locationLegacy))
   }
 
   search = async (req: Request, res: Response): Promise<void> => {
     const query = { municipality: queryText(req, 'municipality'), department: queryText(req, 'department'), country: queryText(req, 'country') }
-    res.json((await this.useCases.search.execute(query)).map(locationV1))
+    res.json((await this.useCases.search.execute(query)).map(locationLegacy))
   }
 
   get = async (req: Request, res: Response): Promise<void> => {
-    res.json(locationV1(await this.useCases.get.execute(pathParam(req, 'id'))))
+    res.json(locationLegacy(await this.useCases.get.execute(pathParam(req, 'id'))))
   }
 
   create = async (req: Request, res: Response): Promise<void> => {
     const location = await this.useCases.create.execute(placeOf(bodyOf(req)))
-    res.status(201).json({ message: 'Localidad creada', data: locationV1(location) })
+    res.status(201).json({ message: 'Localidad creada', data: locationLegacy(location) })
   }
 
   update = async (req: Request, res: Response): Promise<void> => {
     const location = await this.useCases.update.execute({ id: pathParam(req, 'id'), changes: placeOf(bodyOf(req)) })
-    res.json({ message: 'Localidad actualizada', data: locationV1(location) })
+    res.json({ message: 'Localidad actualizada', data: locationLegacy(location) })
   }
 
   disable = async (req: Request, res: Response): Promise<void> => {

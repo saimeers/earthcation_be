@@ -16,17 +16,17 @@ export interface ObservabilityRoutesDeps {
 // Estadísticas y detalle de salud: admin y desarrollador
 const staff = (auth: RequestHandler) => [auth, requireRole('admin', 'developer')]
 
-/** /api/visits (v1). Se monta antes del limitador global: todas las visitas llegan desde las IP del Worker. */
-export const visitRoutesV1 = (deps: ObservabilityRoutesDeps): Router => {
+/** /api/visits (legacy). Se monta antes del limitador global: todas las visitas llegan desde las IP del Worker. */
+export const visitRoutesLegacy = (deps: ObservabilityRoutesDeps): Router => {
   const c = new VisitController(deps.visits)
   return Router()
     .post('/ingest', requireIngestSecret(deps.ingestSecret), c.ingest)
     .get('/stats', ...staff(deps.authenticate), c.stats)
 }
 
-/** GET /api/health (v1): estado público mínimo, para monitores externos y Railway. */
-export const publicHealthV1 = (deps: ObservabilityRoutesDeps): RequestHandler => new HealthController(deps.health).status
+/** GET /api/health (legacy): estado público mínimo, para monitores externos y Railway. */
+export const publicHealthLegacy = (deps: ObservabilityRoutesDeps): RequestHandler => new HealthController(deps.health).status
 
-/** /api/health (v1): /details con BD, Redis, pool y métricas de las últimas 15 min. */
-export const healthRoutesV1 = (deps: ObservabilityRoutesDeps): Router =>
+/** /api/health (legacy): /details con BD, Redis, pool y métricas de las últimas 15 min. */
+export const healthRoutesLegacy = (deps: ObservabilityRoutesDeps): Router =>
   Router().get('/details', ...staff(deps.authenticate), new HealthController(deps.health).details)

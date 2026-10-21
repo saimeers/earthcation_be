@@ -42,7 +42,11 @@ export interface RateLimiters {
 }
 
 const WINDOW_MS = 15 * 60 * 1000
-const TOO_MANY = { error: 'Demasiadas peticiones, intenta de nuevo en unos minutos.' }
+// v1 responde con el formato ; legacy con 
+const tooMany = (text: string) => (req: Request) =>
+  (req.originalUrl.startsWith('/api/v1') ? { error: { code: 'RATE_LIMITED', message: text } } : { error: text })
+
+const TOO_MANY = tooMany('Demasiadas peticiones, intenta de nuevo en unos minutos.')
 
 /** Adapta un WindowCounter al Store de express-rate-limit. */
 class CounterStore implements Store {
@@ -103,7 +107,7 @@ const loginCedulaLimiter = (deps: RateLimitDeps): RequestHandler => limiter(deps
   limit: deps.limits.loginCedulaMax,
   skipSuccessfulRequests: true,
   keyGenerator: (req) => `c:${createHash('sha256').update(cedulaOf(req)).digest('hex')}`,
-  message: { error: 'Demasiados intentos con esa cédula, intenta de nuevo en unos minutos.' },
+  message: tooMany('Demasiados intentos con esa cédula, intenta de nuevo en unos minutos.'),
 })
 
 // Por IP: frena que desde un mismo lugar se prueben muchas cédulas que no existen. Las registradas no cuentan: si
@@ -112,10 +116,10 @@ const loginIpFailLimiter = (deps: RateLimitDeps): RequestHandler => limiter(deps
   limit: deps.limits.loginIpFailMax,
   skip: async (req) => { const cedula = cedulaOf(req).trim(); return cedula !== '' && deps.cedulaExists(cedula) },
   keyGenerator: (req) => ipKey(deps, req),
-  message: { error: 'Demasiados intentos fallidos desde esta red, intenta de nuevo en unos minutos.' },
+  message: tooMany('Demasiados intentos fallidos desde esta red, intenta de nuevo en unos minutos.'),
 })
 
-/** Los límites de peticiones de la API v1. */
+/** Los límites de peticiones de la API legacy. */
 export const rateLimiters = (deps: RateLimitDeps): RateLimiters => ({
   global: limiter(deps, 'rl:global:', { limit: deps.limits.userMax, anonymousMax: deps.limits.ipMax }),
   auth: limiter(deps, 'rl:auth:', { limit: deps.limits.authMax }),

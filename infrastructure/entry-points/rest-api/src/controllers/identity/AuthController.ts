@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import type { LoginUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase } from '@earthcation/usecase'
-import { loginOrigin, sessionV1 } from '../../dto/v1/identity'
-import { bodyOf } from '../../dto/v1/request'
+import { loginOrigin, sessionLegacy } from '../../dto/legacy/identity'
+import { bodyOf } from '../../dto/legacy/request'
 
 export interface AuthUseCases {
   readonly login: LoginUseCase
@@ -17,7 +17,7 @@ export class AuthController {
 
   login = async (req: Request, res: Response): Promise<void> => {
     const body = bodyOf(req)
-    res.json(sessionV1(await this.useCases.login.execute({ cedula: body.cedula, password: body.password, origin: loginOrigin(req) })))
+    res.json(sessionLegacy(await this.useCases.login.execute({ cedula: body.cedula, password: body.password, origin: loginOrigin(req) })))
   }
 
   forgotPassword = async (req: Request, res: Response): Promise<void> => {

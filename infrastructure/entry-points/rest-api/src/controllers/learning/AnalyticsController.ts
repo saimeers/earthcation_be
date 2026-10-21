@@ -2,7 +2,7 @@ import type { Request, Response } from 'express'
 import type {
   GetAnalyticsByLocationUseCase, GetAnalyticsByOrganizationUseCase, GetAnalyticsOverviewUseCase, GetMinesMapUseCase,
 } from '@earthcation/usecase'
-import { pathParam, queryText } from '../../dto/v1/request'
+import { pathParam, queryText } from '../../dto/legacy/request'
 
 export interface AnalyticsUseCases {
   readonly overview: GetAnalyticsOverviewUseCase

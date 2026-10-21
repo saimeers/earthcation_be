@@ -1,6 +1,6 @@
 /**
- * Fila que v1 devuelve tal cual al panel (usuario con perfil, organización, localidad y VARK, sin secretos; o una
- * inscripción con su sala). v2 tendrá su propia proyección.
+ * Fila que la API legacy devuelve tal cual al panel (usuario con perfil, organización, localidad y VARK, sin secretos; o una
+ * inscripción con su sala). v1 tendrá su propia proyección.
  */
 export type UserListingRow = Readonly<Record<string, unknown>>
 

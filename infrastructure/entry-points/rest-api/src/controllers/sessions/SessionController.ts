@@ -6,8 +6,8 @@ import type {
 } from '@earthcation/usecase'
 import type { Requester } from '@earthcation/model'
 import { currentUser } from '../../middlewares/auth'
-import { createdRoomV1, endedRoomV1, exportFilename, joinedRoomV1, startedRoomV1, XLSX_CONTENT_TYPE } from '../../dto/v1/sessions'
-import { bodyOf, pathParam, queryText } from '../../dto/v1/request'
+import { createdRoomLegacy, endedRoomLegacy, exportFilename, joinedRoomLegacy, startedRoomLegacy, XLSX_CONTENT_TYPE } from '../../dto/legacy/sessions'
+import { bodyOf, pathParam, queryText } from '../../dto/legacy/request'
 
 export interface SessionUseCases {
   readonly create: CreateRoomUseCase
@@ -32,22 +32,22 @@ export class SessionController {
 
   create = async (req: Request, res: Response): Promise<void> => {
     const session = await this.useCases.create.execute({ instructorId: requesterOf(req).id, body: bodyOf(req) })
-    res.status(201).json(createdRoomV1(session))
+    res.status(201).json(createdRoomLegacy(session))
   }
 
   join = async (req: Request, res: Response): Promise<void> => {
     const joined = await this.useCases.join.execute({ userId: requesterOf(req).id, body: bodyOf(req) })
-    res.json(joinedRoomV1(joined))
+    res.json(joinedRoomLegacy(joined))
   }
 
   start = async (req: Request, res: Response): Promise<void> => {
     const session = await this.useCases.start.execute({ id: pathParam(req, 'id'), instructorId: requesterOf(req).id })
-    res.json(startedRoomV1(session))
+    res.json(startedRoomLegacy(session))
   }
 
   end = async (req: Request, res: Response): Promise<void> => {
     const session = await this.useCases.end.execute({ id: pathParam(req, 'id'), instructorId: requesterOf(req).id })
-    res.json(endedRoomV1(session))
+    res.json(endedRoomLegacy(session))
   }
 
   byCode = async (req: Request, res: Response): Promise<void> => {

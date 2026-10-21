@@ -14,8 +14,8 @@ export interface DeploymentRoutesDeps {
 // Solo sin S3 (desarrollo) llega el ZIP a la API; con S3 el navegador lo sube a la URL prefirmada
 const rawZip = (maxMb: number) => express.raw({ type: ['application/zip', 'application/octet-stream'], limit: `${maxMb}mb` })
 
-/** /api/deploy (v1): solo desarrollador y admin. */
-export const deployRoutesV1 = (deps: DeploymentRoutesDeps): Router => {
+/** /api/deploy (legacy): solo desarrollador y admin. */
+export const deployRoutesLegacy = (deps: DeploymentRoutesDeps): Router => {
   const c = new DeploymentController(deps.deployment)
   return Router()
     .use(deps.authenticate, requireRole('admin', 'developer'))

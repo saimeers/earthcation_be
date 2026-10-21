@@ -18,7 +18,7 @@ pnpm build         # turbo: tsc -b in every package, in dependency order (Railwa
 pnpm start         # node applications/app-service/dist/main.js
 pnpm dev           # tsx watch on app-service
 pnpm lint          # eslint per package (root eslint.config.mjs)
-pnpm test          # turbo: vitest per package; app-service = v1 contract tests against a disposable Postgres
+pnpm test          # turbo: vitest per package; app-service = legacy + v1 contract tests against a disposable Postgres
 pnpm boundaries    # dependency-cruiser: allowed graph between layers
 ```
 
@@ -35,34 +35,34 @@ applications/app-service           the only deployable: config/env.ts, container
 ```
 Graph: model ← nothing · usecase ← model · adapters ← model · entry-points ← usecase, model · app-service ← all.
 Style: classes + throw (use cases with `execute(cmd)`, entities/VOs with behavior, typed `DomainError` subclasses
-from `@earthcation/model`, one `errorHandlerV1` in rest-api maps `kind` → status). Packages export only `index.ts`.
+from `@earthcation/model`, one `errorHandlerLegacy`/`errorHandlerV1` in rest-api map `kind` → status). Packages export only `index.ts`.
 All seven contexts (catalog → vark → observability → identity → deployment → learning → sessions) live in the
 clean packages and **`applications/app-service/src/legacy/` no longer exists** (closed 2026-10-20): the Express app is
-rest-api's `createApp(deps)` (helmet, cors, compression, morgan, metrics, `rateLimiters`, every v1 router, 404 +
-`errorHandlerV1`), built by `container.ts` and exported as `app`; boot (`src/boot.ts#prepareDatabase`/`start`) runs
+rest-api's `createApp(deps)` (helmet, cors, compression, morgan, metrics, `rateLimiters`, every legacy router, the v1 router, 404 +
+`errorHandlerLegacy`), built by `container.ts` and exported as `app`; boot (`src/boot.ts#prepareDatabase`/`start`) runs
 migrations, `RecoverInterruptedPublishesUseCase` and `SeedPlaceCatalogUseCase` (municipios) before `listen`.
 app-service is TypeScript only (no `allowJs`).
 
 Migrated so far — **catalog**: `model/src/catalog` (`Organization`, `Location` entities with `prepare`/`change`/
 `disable`/`enable`, errors, `OrganizationRepository`/`LocationRepository`), 13 use cases in
 `usecase/src/catalog/{organizations,locations}/<case>/`, `SequelizeOrganizationRepository`/`SequelizeLocationRepository`,
-`OrganizationController`/`LocationController` + `routes/catalog.routes.ts` + `dto/v1/catalog.ts` in rest-api.
+`OrganizationController`/`LocationController` + `routes/catalog.routes.ts` + `dto/legacy/catalog.ts` in rest-api.
 Shared pieces that arrived with it: `@earthcation/sequelize-repository` owns **all models** (`defineModels(sequelize)`),
 the connection factory and the Umzug migrations; `app-service/src/container.ts` creates the connection from
 `config/env.ts` (DB_* validated there) and exports `sequelize` + `models` (used directly only by the test seed and
 `scripts/load`).
-rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as v1). `main.ts` validates env
+rest-api has `authenticate(TokenVerifier)` / `requireRole` (same 401/403 messages as the legacy API). `main.ts` validates env
 before loading the app.
 — **vark**: `model/src/vark` (`VarkAnswers#score` = the old `scoreVark`, `VarkResult` entity, `VarkStyle`/`parseVarkStyle`,
 errors, `VarkRepository` whose panel listings are the `VarkListingRow` read model of raw rows), 5 use cases in
 `usecase/src/vark/results/<case>/`, `SequelizeVarkRepository`, `VarkController` + `routes/vark.routes.ts` +
-`dto/v1/vark.ts`; mounted from `container.routes.vark`.
+`dto/legacy/vark.ts`; mounted from `container.routes.vark`.
 — **deployment**: `model/src/deployment` (`GameVersion` state machine, `VersionLabel`/`ZipSize`, pure `BuildInspection`
 and `ActivationPointer`, errors, gateways `GameVersionRepository`/`OriginalsStorage`/`PublishedStorage`/`ZipReader`/
 `PreviewSigner`/`PublishQueue`/`IdGenerator`), 11 use cases in `usecase/src/deployment/{status,versions,publishing,play}/`,
 `SequelizeGameVersionRepository`, new adapters `object-storage` (S3/R2/disk), `zip-reader`, `hmac-signer`,
 `in-process-queue` (the container wires the queue to `PublishVersionUseCase`), `DeploymentController`/`PlayLocalController`
-+ `routes/deployment.routes.ts` + `dto/v1/deployment.ts`; the local-publishing flag goes to `createApp`
++ `routes/deployment.routes.ts` + `dto/legacy/deployment.ts`; the local-publishing flag goes to `createApp`
 (`servePlayLocal`) and the boot recovery to `bootTasks`. Deploy env vars are validated in `config/env.ts`.
 — **observability**: `model/src/observability` (`Visit.fromWorker`, `BotDetector`, `UserAgent`, `LoginEvent` + `loginPlace`/`utf8Header`,
 `VisitWindow`, pure `summarizeMetrics`, `Health` types; gateways `VisitRepository`, `LoginEventRepository`, `VisitStatsReadModel`,
@@ -87,7 +87,7 @@ value objects `RiskResultInput`/`NewAttemptInput`/`EventBatch` with their errors
 `AnalyticsReadModel`/`FreePlaySessions`/`MunicipalityCoordinates`), 16 use cases in `usecase/src/learning/{progress,levels,telemetry,
 analytics}/`, `SequelizeLearningRepository`/`SequelizeLearningReadModel`/`SequelizeAnalyticsReadModel` (Postgres aggregation + the
 model's pure functions) and `SequelizeFreePlaySessions` (the "Juego libre" gateway, cached 10 min) in sequelize-repository;
-`ProgressController`/`LevelController`/`TelemetryController`/`AnalyticsController` + `routes/learning.routes.ts` + `dto/v1/learning.ts`
+`ProgressController`/`LevelController`/`TelemetryController`/`AnalyticsController` + `routes/learning.routes.ts` + `dto/legacy/learning.ts`
 in rest-api; `container.routes.{progress,levels,telemetry,analytics}`. New adapter `@earthcation/geo-catalog`'s `DivipolaCoordinates`
 (DIVIPOLA municipio/department matching, reusing `levenshtein` from `@earthcation/model`) replaces the old `geo.ts`.
 `shared/collections.ts` (`groupBy`/`countBy`/`maxBy`/`keyOf`/`sum`) moved to `model/src/shared/collections.ts`.
@@ -97,9 +97,49 @@ errors, gateways `SessionRepository`/`SessionDetailReader`/`SessionReportWriter`
 (`assertCanView.ts` is a shared non-use-case helper for detail/analysis/export, not a use case calling another). `SequelizeSessionRepository`
 and `SequelizeSessionDetailReader` (the `/progress/admin` computation cached 10 s per session, invalidated on start/end) in
 sequelize-repository; `@earthcation/excel`'s `ExcelSessionReportWriter` (ExcelJS, moved from the old `workbook.ts`) implements
-`SessionReportWriter`. `SessionController` + `routes/sessions.routes.ts` + `dto/v1/sessions.ts` in rest-api; `container.routes.sessions`.
+`SessionReportWriter`. `SessionController` + `routes/sessions.routes.ts` + `dto/legacy/sessions.ts` in rest-api; `container.routes.sessions`.
 The "Juego libre" gateway (`FreePlaySessions`/`SequelizeFreePlaySessions`) arrived with **learning** above — sessions does not
 re-implement it.
+
+### API naming: `legacy` and `v1` (decision 2026-10-21)
+
+Two APIs live side by side in rest-api. **Legacy** is the original unversioned API (`/api/...`, snake_case,
+`{ message, data }` bodies, `{ error: string }`): `routes/*.routes.ts`, `controllers/`, `dto/legacy/`,
+`errorHandlerLegacy`; the panel and the published Unity builds still use it, so its contract snapshots must not
+change. **v1** is the new API (`/api/v1/...`), everything under `src/v1/`; it replaces legacy and legacy is deleted
+once no client calls it (visits stats show zero traffic). There is no `v2`.
+- A route is defined **once** with `route({ method, path, tag, summary, roles, params, query, body, response, handler })`
+  (`v1/http/route.ts`); the Express router and the OpenAPI 3.1 document (`v1/openapi/buildOpenApi.ts`, schemas come from
+  zod's `toJSONSchema`) are both generated from it. Swagger UI: `/api/v1/docs`, spec: `/api/v1/openapi.json`
+  (`DOCS_ACCESS=public|staff`; `staff` requires an admin/developer token).
+- Envelope `{ data, meta? }` (`reply.ts`: `ok`, `page`, `created` → 201 + `Location`, `noContent`); errors
+  `{ error: { code, message, details? } }` with the domain `code`, business rules are **422** (legacy: 400), 5xx hide
+  the detail; invalid input is 400 `VALIDATION_ERROR` with `details: [{ field, message }]` (zod, `v1/http/validate.ts`);
+  ids are validated as UUID. Lists take `?page&limit&sort=-field` (`pagination.ts`: `listQuery`, `paginate`, `sortBy`;
+  paging is in memory for now, use cases still return full lists). JSON is camelCase, dates ISO 8601.
+- Request-level pieces shared by both: `createApp` mounts `/api/v1` before the legacy routers, the global rate limiter
+  covers both (its message follows the version of the path: `RATE_LIMITED` in v1), and body-parser errors are
+  translated by `errorsByVersion`.
+- Migrated to v1 so far: catalog (locations, organizations), VARK (`/vark-results`, `/vark-results/me`) and identity
+  (`/auth/login`, `/auth/password-resets`, `/auth/password`, `/users`, `/users/:id`, `/users/:id/sessions`,
+  `/users/:id/active`) and sessions (`/sessions`, `/sessions/join`, `/sessions/code/:code`, `/sessions/:id`,
+  `/sessions/:id/status` (PUT active|finished), `/progress`, `/participants/:userId/analysis`, `/report.xlsx`).
+  learning (`/risk-results`, `/levels`, `/attempts` + `/attempts/:id/events`, `/users/:id/attempts`, `/telemetry/overview`,
+  `/analytics/*`). Request bodies reach the use cases in snake_case: `v1/dto/snake.ts` converts them (an event `payload`
+  is left untouched; on reads `payload` is also kept as is, `camelize` converts every other key).
+  deployment (`/game-versions`, `/status`, `/:id/upload` raw ZIP, `/completion`, `/activation`, `/preview-url`), observability
+  (`POST /visits` guarded by `x-ingest-secret`, `/visits/stats`, `/health`, `/health/details`) and bulk import
+  (`/user-imports/previews` multipart, `/user-imports`). Route specs can add `middlewares` (raw/multipart/secret) and
+  `upload` (documents a non-JSON body); `POST /api/v1/visits` is mounted before the global rate limit like the legacy
+  ingest (the Worker still calls the legacy path until legacy is removed; then its `API_URL` path changes).
+  **All contexts are now on v1.** Next: the panel and the game move over, legacy is removed, READMEs; then the panel and the
+  game move over, legacy is removed and the READMEs are written.
+- Read models (users, VARK listings) still arrive as raw snake_case rows: `v1/dto/camelize.ts` turns them into
+  camelCase with ISO dates (keys of data dictionaries such as `fail_reasons`, `fail_stages` and `journeys` are kept as is); the zod response schemas document the shape. Binary replies use `file(contentType, filename, content)` and `response.contentType` in the route spec. `createApp` mounts the same login /
+  password-reset rate limits on `/api/v1/auth/*` as on the legacy paths. `RouteContext` also carries `req` (login origin)
+  and `userOf(ctx)` returns the authenticated user.
+- Tests: `rest-api/test/v1.spec.ts` (unit, stub use cases), `createApp.spec.ts`, and
+  `app-service/test/contract/v1.catalog.test.js` (real Postgres).
 
 ### TypeScript
 
@@ -117,7 +157,7 @@ re-implement it.
 ### Bounded contexts (strangler, historical — fase 3b finished this)
 
 Before the clean-package move (fase 3), each context lived under `src/contexts/<context>/` in a hexagonal-functional
-style (`domain.ts`/`ports.ts`/`application.ts` returning `Result`, `sequelizeRepositories.ts`, `httpV1.ts`, `index.ts`
+style (`domain.ts`/`ports.ts`/`application.ts` returning `Result`, `sequelizeRepositories.ts`, `httpLegacy.ts`, `index.ts`
 composition root mounted by `app.js`). All seven contexts have since moved into the clean packages (see "Migrated so
 far" above) and `src/contexts/` no longer exists. Behavior changes picked up along the way, kept for the record:
 `PUT /api/organizations/:id` and `/api/locations/:id` only apply editable fields (before, the whole body reached the
@@ -136,10 +176,10 @@ by the tests.
 
 ## Tests (fase 2, 2026-10-19)
 
-- **Contract tests of v1** (`tests/contract/`): every GET × 5 roles (anónimo, jugador, instructor,
+- **Contract tests of the legacy API** (`test/contract/legacy.*.test.js`): every GET × 5 roles (anónimo, jugador, instructor,
   desarrollador, admin) and the writes (permissions + happy paths) snapshot `{ status, content-type,
   shape }`, where shape = keys and types (`uuid`, `date`, `string`…), not values. Plus the session Excel
-  (sheets, headers, row counts). While v1 lives these snapshots must not change; an intended change is
+  (sheets, headers, row counts). While the legacy API lives these snapshots must not change; an intended change is
   updated with `pnpm --filter @earthcation/app-service test -- -u` and explained in the PR.
 - `tests/support/seed.cjs` (global setup, once per run): `DROP SCHEMA public CASCADE`, `prepareDatabase`,
   levels/risks + admin/developer straight into the models, and everything else through the API like
@@ -150,7 +190,7 @@ by the tests.
 - Test files are ESM but load `src/` through `createRequire`, so the email stubs and the app share
   Node's CommonJS cache.
 - CI (`.github/workflows/ci.yml`) runs lint + tests against a `postgres:16` service container.
-- Recorded current behavior worth revisiting in v2: `GET /api/sessions/:id/progress` answers 403 to
+- Recorded current behavior worth revisiting in v1: `GET /api/sessions/:id/progress` answers 403 to
   admin and developer (only the owning instructor gets 200); `GET /api/vark/me` is 404 for staff.
 
 ## Architecture

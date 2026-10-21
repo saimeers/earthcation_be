@@ -1,6 +1,6 @@
 /**
  * Clase de error de dominio que decide cómo responde la API: el dominio lanza subclases con un `code` estable
- * (en mayúsculas, para la API v2 y los clientes) y un `message` en español para el usuario; un único errorHandler
+ * (en mayúsculas, para la API v1 y los clientes) y un `message` en español para el usuario; un único errorHandler
  * en rest-api traduce el `kind` a estado HTTP. Nada fuera de esta jerarquía llega como 4xx: lo demás es un 500.
  */
 export type ErrorKind =
@@ -56,7 +56,7 @@ export class TooLargeError extends DomainError {
   readonly kind = 'too_large'
 }
 
-/** Regla de negocio que impide la operación (v1: 400; v2: 422). */
+/** Regla de negocio que impide la operación (legacy: 400; v1: 422). */
 export class BusinessRuleError extends DomainError {
   readonly kind = 'business_rule'
 }
