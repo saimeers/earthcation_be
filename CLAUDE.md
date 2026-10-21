@@ -191,6 +191,15 @@ The legacy `reads` snapshots changed once for this (developer `age` null, instru
 intended, approved.
 Panel follow-up: hide the Excel button for the developer role.
 
+### Anonymization (fase 5)
+
+`POST /api/v1/users/:id/anonymization` (admin, audited as `user.anonymized`): right of erasure on request.
+`AnonymizeUserUseCase` → `User.anonymize(unusableHash)`: name, cedula, username (alias `anon-<8 chars of id>`), email, age
+are cleared, the account is disabled and its password replaced by the hash of a random secret nobody knows; the progress
+stays, with no identity. Not undoable; not your own account (403 `CANNOT_ANONYMIZE_SELF`), not twice (409
+`USER_ALREADY_ANONYMIZED`). The cedula becomes free to register again. What is stored and why:
+`docs/PRIVACIDAD.md`.
+
 ### TypeScript
 
 - All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is
