@@ -110,12 +110,13 @@ cp .env.test.example .env.test      # base de datos de PRUEBAS, ver más abajo
 Para correr la API en local crea un archivo `.env` con al menos estas variables (ver la tabla de configuración):
 
 ```bash
-JWT_SECRET=un-secreto-de-al-menos-32-caracteres-aleatorios
+# Genera uno con: openssl rand -hex 32
+JWT_SECRET=<tu-secreto-de-al-menos-32-caracteres>
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=earthcation_dev
 DB_USER=postgres
-DB_PASS=tu-clave
+DB_PASS=<tu-clave-local>
 FRONTEND_URL=http://localhost:5173
 ```
 
