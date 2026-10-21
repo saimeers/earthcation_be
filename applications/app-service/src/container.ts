@@ -14,7 +14,7 @@ import {
   GetHealthUseCase, GetVisitStatsUseCase, IngestVisitUseCase, RecordLoginUseCase,
   ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPlayFileUseCase,
   GetPreviewUrlUseCase, ListVersionsUseCase, PublishVersionUseCase, ReceiveLocalZipUseCase,
-  RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
+  EditVersionNotesUseCase, RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
   ChangeUserStatusUseCase, ConfirmBulkImportUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase,
   ListUsersUseCase, LoginUseCase, PreviewBulkImportUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase,
   UpdateUserUseCase,
@@ -173,6 +173,7 @@ const deploymentUseCases = {
   complete: new CompleteUploadUseCase({ versions: gameVersions, originals: storages.originals, queue: publishQueue }),
   activate: new ActivateVersionUseCase({ versions: gameVersions, published: storages.published, clock: systemClock }),
   remove: new RemoveVersionUseCase({ versions: gameVersions, ...storages }),
+  editNotes: new EditVersionNotesUseCase(gameVersions),
   preview: new GetPreviewUrlUseCase({
     versions: gameVersions, published: storages.published, signer, clock: systemClock, settings: deploySettings,
   }),
@@ -383,6 +384,7 @@ versions.create = audited(versions.create, {
 }, auditDeps)
 versions.complete = audited(versions.complete, { action: 'game_version.completed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
 versions.activate = audited(versions.activate, { action: 'game_version.activated', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+versions.editNotes = audited(versions.editNotes, { action: 'game_version.updated', describe: ([c]) => ({ targetType: 'game_version', targetId: c.id, changes: { fields: ['notes'] } }) }, auditDeps)
 versions.remove = audited(versions.remove, { action: 'game_version.removed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
 
 // ── Lecturas acotadas ────────────────────────────────────────────────────────

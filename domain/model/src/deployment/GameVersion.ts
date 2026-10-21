@@ -21,7 +21,7 @@ export interface VersionManifest extends BuildManifest {
 export interface GameVersionProps {
   readonly id: string
   readonly label: string
-  readonly notes: string | null
+  notes: string | null
   status: VersionStatus
   /** Clave del ZIP original (S3 o disco). */
   readonly originalKey: string | null
@@ -79,11 +79,17 @@ export class GameVersion {
   get label(): string { return this.props.label }
   get status(): VersionStatus { return this.props.status }
   get activatedAt(): Date | null { return this.props.activatedAt }
+  get notes(): string | null { return this.props.notes }
   get publishedPrefix(): string | null { return this.props.publishedPrefix }
   get originalKey(): string | null { return this.props.originalKey }
   /** Dónde está el ZIP original (las filas viejas sin clave usan la de siempre). */
   get storedOriginalKey(): string { return this.props.originalKey ?? GameVersion.originalKeyFor(this.props.id) }
   get productVersion(): string | null { return this.props.manifest?.productVersion ?? null }
+
+  /** Cambia la nota (se recorta y un texto vacío la borra). */
+  describe(notes: unknown): void {
+    this.props.notes = notesOf(notes)
+  }
 
   /** El ZIP solo se recibe mientras la versión lo espera. */
   assertAwaitingZip(): void {

@@ -48,6 +48,10 @@ export class SequelizeGameVersionRepository implements GameVersionRepository {
     await this.models.GameVersion.update(lifecycleColumns(v), { where: { id: v.id } })
   }
 
+  async saveNotes(v: GameVersion): Promise<void> {
+    await this.models.GameVersion.update({ notes: v.notes }, { where: { id: v.id } })
+  }
+
   async failInterrupted(reason: string): Promise<void> {
     await this.models.GameVersion.update({ status: 'failed', error: reason }, { where: { status: 'processing' } })
   }

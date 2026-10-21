@@ -23,6 +23,8 @@ export interface GameVersionRepository {
   /** Guarda el paso a 'processing' solo si la fila sigue en `from`: false si otro clic (u otra instancia) se adelantó. */
   startProcessing(version: GameVersion, from: VersionStatus): Promise<boolean>
   save(version: GameVersion): Promise<void>
+  /** Guarda solo la nota, sin tocar el estado (otra publicación en curso no se pisa). */
+  saveNotes(version: GameVersion): Promise<void>
   /** Al arrancar: las que quedaron en 'processing' pasan a 'failed' con el motivo dado. */
   failInterrupted(reason: string): Promise<void>
   remove(id: string): Promise<void>

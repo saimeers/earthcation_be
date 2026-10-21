@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import type {
-  ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPreviewUrlUseCase,
+  ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, EditVersionNotesUseCase, GetDeployStatusUseCase, GetPreviewUrlUseCase,
   ListVersionsUseCase, ReceiveLocalZipUseCase, RemoveVersionUseCase,
 } from '@earthcation/usecase'
 import { currentUser } from '../../middlewares/auth'
@@ -15,6 +15,7 @@ export interface DeploymentUseCases {
   readonly complete: CompleteUploadUseCase
   readonly activate: ActivateVersionUseCase
   readonly remove: RemoveVersionUseCase
+  readonly editNotes: EditVersionNotesUseCase
   readonly preview: GetPreviewUrlUseCase
 }
 
