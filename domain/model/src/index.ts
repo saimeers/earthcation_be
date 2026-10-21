@@ -103,6 +103,11 @@ export * from './audit/gateways/AuditLog'
 export * from './audit/gateways/RequestContext'
 export * from './audit/gateways/IpHasher'
 
+// ── idempotency ──
+export * from './idempotency/IdempotencyKey'
+export * from './idempotency/errors'
+export * from './idempotency/gateways/IdempotencyStore'
+
 // ── privacy ──
 export * from './privacy/ReadScope'
 export * from './privacy/PersonalData'

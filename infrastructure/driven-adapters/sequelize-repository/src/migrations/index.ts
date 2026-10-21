@@ -2,6 +2,7 @@ import type { Sequelize } from 'sequelize'
 import { SequelizeStorage, Umzug, type MigrationParams } from 'umzug'
 import * as baseline from './0001_baseline'
 import * as auditLogs from './0002_audit_logs'
+import * as idempotencyKeys from './0003_idempotency_keys'
 
 interface Migration {
   readonly name: string
@@ -10,7 +11,7 @@ interface Migration {
 
 // Lista explícita (no un glob): funciona igual desde src/ con tsx y desde dist/ compilado.
 // Las migraciones aplicadas quedan en la tabla `schema_migrations`.
-const MIGRATIONS: readonly Migration[] = [baseline, auditLogs]
+const MIGRATIONS: readonly Migration[] = [baseline, auditLogs, idempotencyKeys]
 
 const quiet = { info: () => undefined, warn: console.warn, error: console.error, debug: () => undefined }
 

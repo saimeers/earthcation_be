@@ -200,6 +200,27 @@ stays, with no identity. Not undoable; not your own account (403 `CANNOT_ANONYMI
 `USER_ALREADY_ANONYMIZED`). The cedula becomes free to register again. What is stored and why:
 `docs/PRIVACIDAD.md`.
 
+### Idempotency-Key (fase 4, v1 only)
+
+The game retries on network errors, so the three POSTs that create data accept an optional `Idempotency-Key` header
+(`POST /attempts`, `POST /attempts/:id/events`, `POST /risk-results`): a retry with the same key, user and request
+gets the first response back (same status, body and `Location`, plus `Idempotent-Replayed: true`) and nothing is
+created twice. Without the header everything works as before. Legacy routes do not support it.
+- Layers: `model/src/idempotency` (`IdempotencyKey` value object, errors, `IdempotencyStore` port), `usecase/src/idempotency`
+  (`IdempotentExecutor`: claim → run → complete, or release when the action fails), `SequelizeIdempotencyStore`
+  (table `idempotency_keys`, migration `0003`), rest-api `v1/http/idempotency.ts` (`createIdempotencyGuard`).
+- A route opts in with `idempotent: true` in its `route({...})` spec; the guard is part of `MountKit` and
+  `RouterV1Deps.idempotency` (required). The OpenAPI document shows the header on those routes only.
+- Key: 8 to 128 chars of `A-Za-z0-9._:-` (a UUID works), else 400 `IDEMPOTENCY_KEY_INVALID`. Scope is the user. The
+  fingerprint is sha256 of method + path + body with sorted keys; same key with another fingerprint is 422
+  `IDEMPOTENCY_KEY_REUSED`; same key while the first request still runs is 409 `IDEMPOTENCY_IN_PROGRESS`.
+- Only successful replies are remembered: an error releases the key so the corrected retry runs. Keys live 24 h
+  (an expired one is reclaimed by the next claim; boot purges them); a run "in progress" for more than 2 min is
+  considered abandoned and the next retry takes it over.
+- The claim is one `INSERT ... ON CONFLICT DO UPDATE ... WHERE expired RETURNING`, so concurrent requests with the same key
+  run the action once. Tests: unit (key, executor, HTTP guard) and `v1.idempotencia.test.js` (real Postgres: attempts,
+  events, progress, concurrency, expired and abandoned keys).
+
 ### TypeScript
 
 - All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is

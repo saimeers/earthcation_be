@@ -1,4 +1,5 @@
 import { z, type ZodType } from 'zod'
+import { IDEMPOTENCY_HEADER } from '../http/idempotency'
 import type { OperationDoc } from '../http/route'
 import { components } from './components'
 
@@ -62,11 +63,17 @@ const requestBody = (doc: OperationDoc) => {
   return doc.body ? { requestBody: { required: true, content: { 'application/json': { schema: toSchema(doc.body, 'input') } } } } : {}
 }
 
+const idempotencyParameter = {
+  name: IDEMPOTENCY_HEADER, in: 'header', required: false,
+  description: 'Identifica el intento: si la red falla y el cliente reintenta con la misma clave (y el mismo cuerpo) recibe la respuesta de la primera vez, con la cabecera Idempotent-Replayed, sin repetir la acción. Un UUID basta; se recuerda un día.',
+  schema: { type: 'string', minLength: 8, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' },
+}
+
 const operation = (doc: OperationDoc) => ({
   tags: [doc.tag],
   summary: doc.summary,
   ...security(doc),
-  parameters: [...fieldsOf(doc.params, 'path'), ...fieldsOf(doc.query, 'query')],
+  parameters: [...fieldsOf(doc.params, 'path'), ...fieldsOf(doc.query, 'query'), ...(doc.idempotent ? [idempotencyParameter] : [])],
   ...requestBody(doc),
   responses: { [doc.response.status]: successResponse(doc), ...errorResponses(doc) },
 })

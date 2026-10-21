@@ -3,6 +3,7 @@ import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { createApp, rateLimiters, type AppRoutesLegacy, type LocationUseCases, type OrganizationUseCases } from '../src'
 import { authenticate, catalogRoutesV1, createRouterV1 } from '../src'
+import { noIdempotency } from './support/noIdempotency'
 
 const noop: RequestHandler = (_req, res) => { res.json({ ok: true }) }
 const pass: RequestHandler = (_req, _res, next) => { next() }
@@ -22,7 +23,7 @@ const appWith = (userMax = 1000) => {
   })
   const routesV1 = createRouterV1({
     routes: catalogRoutesV1({ locations: unused, organizations: unused as unknown as OrganizationUseCases }),
-    authenticate: authenticate(tokens), docsAccess: 'public', info: { title: 't', version: '2', description: 'x' }, log: () => undefined,
+    authenticate: authenticate(tokens), idempotency: noIdempotency, docsAccess: 'public', info: { title: 't', version: '2', description: 'x' }, log: () => undefined,
   })
   return createApp({ routes, routesV1, limiters, metrics: pass, requestContext: pass, maskedRoles: [], allowedOrigins: [], servePlayLocal: false, log: () => undefined })
 }
