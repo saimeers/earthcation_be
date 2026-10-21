@@ -4,6 +4,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import { errorHandlerLegacy, notFoundLegacy } from './middlewares/errorHandler'
+import { maskForRoles } from './middlewares/maskForRoles'
 import { errorHandlerV1 } from './v1/http/errors'
 import type { RateLimiters } from './middlewares/rateLimit'
 
@@ -36,6 +37,8 @@ export interface AppDeps {
   readonly metrics: RequestHandler
   /** Abre el ámbito de la petición (origen y, después, actor) para la auditoría; va antes de las rutas. */
   readonly requestContext: RequestHandler
+  /** Enmascara los datos personales en las respuestas JSON de estos roles (lecturas acotadas); vacío = no enmascara. */
+  readonly maskedRoles: readonly string[]
   /** Orígenes permitidos por CORS; vacío = cualquiera. */
   readonly allowedOrigins: readonly string[]
   /** Sin R2 (desarrollo) la API sirve el juego publicado en /play-local, como lo haría el Worker. */
@@ -58,6 +61,7 @@ const mountCommon = (app: Express, deps: AppDeps): void => {
   if (deps.requestLog) app.use(morgan(deps.requestLog))
   app.use(deps.metrics)
   app.use(deps.requestContext)
+  if (deps.maskedRoles.length > 0) app.use(maskForRoles(deps.maskedRoles))
 }
 
 // Estado público mínimo y visitas van antes del límite global: las visitas llegan todas desde las IP del Worker

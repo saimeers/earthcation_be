@@ -42,6 +42,8 @@ const schema = z.object({
   ...deployment,
   ...rateLimits,
   ALLOWED_ORIGINS: origins,
+  // Lecturas acotadas: el instructor solo lee a los jugadores de sus salas y el desarrollador no ve datos personales
+  SCOPED_READS: z.enum(['true', 'false']).catch('true').transform((v) => v === 'true'),
   // Documentación de la API v1 (Swagger UI y OpenAPI): pública o solo para admin y desarrollador con token
   DOCS_ACCESS: z.enum(['public', 'staff']).catch('public'),
   // Sal de las huellas de IP del registro de auditoría; sin ella se deriva del JWT_SECRET

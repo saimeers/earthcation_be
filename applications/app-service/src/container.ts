@@ -25,7 +25,7 @@ import {
   CreateRoomUseCase, JoinRoomUseCase, StartRoomUseCase, EndRoomUseCase, GetRoomByCodeUseCase, ListMyRoomsUseCase,
   ListAllRoomsUseCase, ListRoomsByLocationUseCase, GetRoomProgressUseCase, GetRoomDetailUseCase,
   GetParticipantAnalysisUseCase, ExportRoomReportUseCase,
-  SeedPlaceCatalogUseCase, ListAuditLogsUseCase, audited, fieldChanges,
+  SeedPlaceCatalogUseCase, ListAuditLogsUseCase, audited, fieldChanges, scoped, deniedTo,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
@@ -33,7 +33,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
-  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory,
+  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory, SequelizeReadScope,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -383,6 +383,40 @@ versions.complete = audited(versions.complete, { action: 'game_version.completed
 versions.activate = audited(versions.activate, { action: 'game_version.activated', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
 versions.remove = audited(versions.remove, { action: 'game_version.removed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
 
+// ── Lecturas acotadas ────────────────────────────────────────────────────────
+
+// El instructor solo lee a los jugadores de sus salas (y los del Juego libre de su localidad); el desarrollador no ve datos
+// personales (la entrada los enmascara en sus respuestas JSON) ni exporta el Excel, que lleva nombres y cédulas. Se apaga con
+// SCOPED_READS=false.
+const readScope = new SequelizeReadScope(models, cache)
+const scopeDeps = { scope: readScope, context: requestScope }
+const ownerOf = (key: string) => (row: Record<string, unknown>): string | undefined => (typeof row[key] === 'string' ? row[key] : undefined)
+
+if (env.SCOPED_READS) {
+  const usersOf = identity.users
+  usersOf.list = scoped(usersOf.list, { rowOwner: ownerOf('id') }, scopeDeps)
+  usersOf.get = scoped(usersOf.get, { target: ([id]) => id }, scopeDeps)
+  usersOf.sessions = scoped(usersOf.sessions, { target: ([id]) => id }, scopeDeps)
+
+  const results = vark.vark
+  results.list = scoped(results.list, { rowOwner: ownerOf('user_id') }, scopeDeps)
+  results.listByStyle = scoped(results.listByStyle, { rowOwner: ownerOf('user_id') }, scopeDeps)
+  results.listByPlace = scoped(results.listByPlace, { rowOwner: ownerOf('user_id') }, scopeDeps)
+
+  learning.progress.list = scoped(learning.progress.list, { target: ([q]) => q.userId }, scopeDeps)
+  learning.telemetry.listAttempts = scoped(learning.telemetry.listAttempts, { target: ([q]) => q.userId }, scopeDeps)
+  learning.telemetry.userSummary = scoped(learning.telemetry.userSummary, { target: ([q]) => q.userId }, scopeDeps)
+  learning.telemetry.attemptDetail = scoped(learning.telemetry.attemptDetail, {
+    resultOwner: (detail) => ownerOf('user_id')((detail as { attempt?: Record<string, unknown> }).attempt ?? {}),
+  }, scopeDeps)
+
+  sessions.sessions.exportReport = deniedTo(
+    sessions.sessions.exportReport,
+    { roles: ['developer'], message: 'El informe en Excel lleva nombres y cédulas: soporte técnico no lo exporta' },
+    requestScope,
+  )
+}
+
 const routes = {
   organizations: organizationRoutesLegacy(catalog),
   locations: locationRoutesLegacy(catalog),
@@ -430,6 +464,7 @@ export const app = createApp({
   routes,
   routesV1,
   requestContext: requestContext(requestScope, auditHash, edge.clientIp),
+  maskedRoles: env.SCOPED_READS ? ['developer'] : [],
   limiters,
   metrics: metrics(metricsStore),
   allowedOrigins: allowedOrigins(env),

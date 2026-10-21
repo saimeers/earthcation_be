@@ -24,7 +24,7 @@ const appWith = (userMax = 1000) => {
     routes: catalogRoutesV1({ locations: unused, organizations: unused as unknown as OrganizationUseCases }),
     authenticate: authenticate(tokens), docsAccess: 'public', info: { title: 't', version: '2', description: 'x' }, log: () => undefined,
   })
-  return createApp({ routes, routesV1, limiters, metrics: pass, requestContext: pass, allowedOrigins: [], servePlayLocal: false, log: () => undefined })
+  return createApp({ routes, routesV1, limiters, metrics: pass, requestContext: pass, maskedRoles: [], allowedOrigins: [], servePlayLocal: false, log: () => undefined })
 }
 
 describe('createApp: errores y límites según la versión', () => {
