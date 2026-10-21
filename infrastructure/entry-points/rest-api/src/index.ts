@@ -1,6 +1,8 @@
 // API pública del punto de entrada HTTP
 export { createRouterV1, type RouterV1Deps } from './v1/createRouterV1'
 export { catalogRoutesV1, type CatalogV1Deps } from './v1/routes/catalog.routes'
+export { varkRoutesV1 } from './v1/routes/vark.routes'
+export { identityRoutesV1 } from './v1/routes/identity.routes'
 export type { Route } from './v1/http/route'
 export { createApp, type AppDeps, type AppRoutesLegacy } from './createApp'
 export { rateLimiters, type RateLimitDeps, type RateLimiters, type RateLimits, type WindowCounter } from './middlewares/rateLimit'

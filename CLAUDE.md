@@ -120,8 +120,14 @@ once no client calls it (visits stats show zero traffic). There is no `v2`.
 - Request-level pieces shared by both: `createApp` mounts `/api/v1` before the legacy routers, the global rate limiter
   covers both (its message follows the version of the path: `RATE_LIMITED` in v1), and body-parser errors are
   translated by `errorsByVersion`.
-- Migrated to v1 so far: catalog (locations, organizations). Pending: vark, identity, sessions, learning, deployment,
-  observability; then the panel and the game move over, legacy is removed and the READMEs are written.
+- Migrated to v1 so far: catalog (locations, organizations), VARK (`/vark-results`, `/vark-results/me`) and identity
+  (`/auth/login`, `/auth/password-resets`, `/auth/password`, `/users`, `/users/:id`, `/users/:id/sessions`,
+  `/users/:id/active`). Pending: bulk import, sessions, learning, deployment, observability; then the panel and the
+  game move over, legacy is removed and the READMEs are written.
+- Read models (users, VARK listings) still arrive as raw snake_case rows: `v1/dto/camelize.ts` turns them into
+  camelCase with ISO dates; the zod response schemas document the shape. `createApp` mounts the same login /
+  password-reset rate limits on `/api/v1/auth/*` as on the legacy paths. `RouteContext` also carries `req` (login origin)
+  and `userOf(ctx)` returns the authenticated user.
 - Tests: `rest-api/test/v1.spec.ts` (unit, stub use cases), `createApp.spec.ts`, and
   `app-service/test/contract/v1.catalog.test.js` (real Postgres).
 
