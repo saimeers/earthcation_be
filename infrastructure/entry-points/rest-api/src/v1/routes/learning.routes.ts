@@ -46,7 +46,7 @@ const rowsPage = (rows: readonly unknown[], q: { sort?: string, page: number, li
 
 const progressRoutes = (uc: ProgressUseCases): Route[] => [
   route({
-    method: 'post', path: '/risk-results', tag: 'Progreso', summary: 'Registra el resultado del jugador frente a un riesgo', roles: [],
+    method: 'post', path: '/risk-results', tag: 'Progreso', summary: 'Registra el resultado del jugador frente a un riesgo', roles: [], idempotent: true,
     body: riskResultBody,
     response: { status: 201, description: 'El resultado guardado', schema: riskResultDto },
     handler: async ({ body, user }) => created('/api/v1/risk-results/me', camelize(await uc.save.execute({ userId: userOf({ user }).id, body: snakeBody(body) }))),
@@ -88,7 +88,7 @@ const levelRoutes = (uc: LevelUseCases): Route[] => [
 
 const attemptRoutes = (uc: TelemetryUseCases): Route[] => [
   route({
-    method: 'post', path: '/attempts', tag: 'Telemetría', summary: 'Abre un intento de nivel', roles: [],
+    method: 'post', path: '/attempts', tag: 'Telemetría', summary: 'Abre un intento de nivel', roles: [], idempotent: true,
     body: startAttemptBody,
     response: { status: 201, description: 'El intento abierto (cabecera Location)', schema: attemptDto },
     handler: async ({ body, user }) => {
@@ -104,7 +104,7 @@ const attemptRoutes = (uc: TelemetryUseCases): Route[] => [
       ok(camelize(await uc.endAttempt.execute({ userId: userOf({ user }).id, attemptId: params.id, body: snakeBody(body) }))),
   }),
   route({
-    method: 'post', path: '/attempts/:id/events', tag: 'Telemetría', summary: 'Guarda un lote de eventos del intento', roles: [],
+    method: 'post', path: '/attempts/:id/events', tag: 'Telemetría', summary: 'Guarda un lote de eventos del intento', roles: [], idempotent: true,
     params: attemptParams, body: eventsBody,
     response: { status: 201, description: 'Cuántos eventos se guardaron', schema: savedEventsDto },
     handler: async ({ params, body, user }) => {

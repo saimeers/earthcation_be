@@ -1,0 +1,3 @@
+# Falso positivo: en la prueba de idempotencia la clave de ejemplo iba como literal en el SQL (se corrigió en el commit siguiente)
+311f8f4acc51d94353ec845348e8dd749ae7d737:applications/app-service/test/contract/v1.idempotencia.test.js:generic-api-key:126
+d481c0be932dec0900f82f6e65243023dc3b3e3b:applications/app-service/test/contract/v1.idempotencia.test.js:generic-api-key:123

@@ -14,7 +14,7 @@ import {
   GetHealthUseCase, GetVisitStatsUseCase, IngestVisitUseCase, RecordLoginUseCase,
   ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPlayFileUseCase,
   GetPreviewUrlUseCase, ListVersionsUseCase, PublishVersionUseCase, ReceiveLocalZipUseCase,
-  EditVersionNotesUseCase, RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
+  EditVersionNotesUseCase, IdempotentExecutor, RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
   ChangeUserStatusUseCase, ConfirmBulkImportUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase,
   ListUsersUseCase, LoginUseCase, PreviewBulkImportUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase,
   UpdateUserUseCase,
@@ -33,7 +33,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
-  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory, SequelizeReadScope,
+  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory, SequelizeReadScope, SequelizeIdempotencyStore,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -47,7 +47,7 @@ import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
-  createApp, createRouterV1, requestContext, auditRoutesV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
+  createApp, createRouterV1, createIdempotencyGuard, requestContext, auditRoutesV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
   authenticate, locationRoutesLegacy, organizationRoutesLegacy, varkRoutesLegacy,
   cloudflareEdge, deployRoutesLegacy, healthRoutesLegacy, loginRecorder, metrics, playLocalRoutes, publicHealthLegacy, visitRoutesLegacy,
   type LoginRecorder,
@@ -440,12 +440,16 @@ const routes = {
   sessions: sessionRoutesLegacy(sessions),
 }
 
+// Idempotency-Key en las peticiones del juego que crean datos (intentos, eventos y progreso)
+const idempotencyStore = new SequelizeIdempotencyStore(sequelize, () => new Date())
+
 const routesV1 = createRouterV1({
   routes: [...auditRoutesV1(new ListAuditLogsUseCase(auditLog)), ...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning),
     ...deploymentRoutesV1({ deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
     ...observabilityRoutesV1({ visits: observability.visits, health: observability.health, ingestSecret: observability.ingestSecret }),
     ...importRoutesV1(identity.bulkImport)],
   authenticate: auth,
+  idempotency: createIdempotencyGuard(new IdempotentExecutor(idempotencyStore)),
   docsAccess: env.DOCS_ACCESS,
   info: { title: 'API de Earthcation', version: '2.0.0', description: 'API v1 de la plataforma de capacitación en seguridad minera Earthcation.' },
   log,
@@ -481,6 +485,8 @@ export const app = createApp({
 export const bootTasks = {
   /** Las publicaciones cortadas por el reinicio quedan fallidas. */
   recoverInterruptedPublishes: new RecoverInterruptedPublishesUseCase(gameVersions),
+  /** Claves de idempotencia vencidas (más de un día). */
+  purgeIdempotencyKeys: { execute: () => idempotencyStore.purgeExpired() },
   /** Catálogo oficial de municipios (idempotente). */
   seedPlaceCatalog: new SeedPlaceCatalogUseCase({ catalog: new JsonPlaceCatalog(), locations: locationRepository }),
 }

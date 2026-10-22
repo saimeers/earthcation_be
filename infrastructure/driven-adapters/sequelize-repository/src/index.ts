@@ -36,3 +36,6 @@ export { SequelizeSessionDetailReader } from './sessions/SequelizeSessionDetailR
 
 // ── audit ──
 export { SequelizeAuditLog } from './audit/SequelizeAuditLog'
+
+// ── idempotency ──
+export { SequelizeIdempotencyStore } from './idempotency/SequelizeIdempotencyStore'

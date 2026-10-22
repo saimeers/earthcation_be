@@ -14,6 +14,8 @@ export interface Reply {
   readonly status?: number
   readonly data?: unknown
   readonly meta?: PageMeta
+  /** Cabeceras extra de la respuesta (p. ej. `Idempotent-Replayed`). */
+  readonly headers?: Readonly<Record<string, string>>
   /** Ruta del recurso creado (cabecera `Location`). */
   readonly location?: string
   /** Cuerpo binario (p. ej. el informe en Excel) en lugar del JSON. */
@@ -38,9 +40,14 @@ const sendFile = (res: Response, f: NonNullable<Reply['file']>): void => {
   res.end(f.content)
 }
 
+const setHeaders = (res: Response, reply: Reply): void => {
+  if (reply.location) res.location(reply.location)
+  for (const [name, value] of Object.entries(reply.headers ?? {})) res.setHeader(name, value)
+}
+
 const sendJson = (res: Response, reply: Reply): void => {
   const status = reply.status ?? 200
-  if (reply.location) res.location(reply.location)
+  setHeaders(res, reply)
   if (status === 204) res.status(status).end()
   else res.status(status).json(reply.meta ? { data: reply.data, meta: reply.meta } : { data: reply.data })
 }

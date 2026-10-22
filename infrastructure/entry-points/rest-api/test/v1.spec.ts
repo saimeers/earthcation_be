@@ -5,6 +5,7 @@ import {
   BusinessRuleError, Location, NotFoundError, Organization, type AuthenticatedUser, type Role,
 } from '@earthcation/model'
 import { authenticate, catalogRoutesV1, createRouterV1, type LocationUseCases, type OrganizationUseCases } from '../src'
+import { noIdempotency } from './support/noIdempotency'
 
 // Token de prueba: "Bearer <rol>" es válido para ese rol; cualquier otro, inválido
 const tokens = {
@@ -45,7 +46,7 @@ const appWith = (docsAccess: 'public' | 'staff' = 'public') => {
   const app = express()
   app.use(express.json())
   app.use('/api/v1', createRouterV1({
-    routes: catalogRoutesV1({ locations, organizations }), authenticate: authenticate(tokens), docsAccess,
+    routes: catalogRoutesV1({ locations, organizations }), authenticate: authenticate(tokens), idempotency: noIdempotency, docsAccess,
     info: { title: 'Prueba', version: '2.0.0', description: 'x' }, log: (m) => logs.push(m),
   }))
   return { app, logs }
@@ -117,7 +118,7 @@ describe('API v1', () => {
     expect((await request(app).get('/api/v1/nada')).body).toEqual({ error: { code: 'ROUTE_NOT_FOUND', message: 'Ruta no encontrada' } })
     const broken = { ...locations, get: { execute: () => Promise.reject(new Error('relation "x" does not exist')) } } as unknown as LocationUseCases
     const app2 = express().use('/api/v1', createRouterV1({
-      routes: catalogRoutesV1({ locations: broken, organizations }), authenticate: authenticate(tokens), docsAccess: 'public',
+      routes: catalogRoutesV1({ locations: broken, organizations }), authenticate: authenticate(tokens), idempotency: noIdempotency, docsAccess: 'public',
       info: { title: 'p', version: '2', description: 'x' }, log: (m) => logs.push(m),
     }))
     const res = await request(app2).get(`/api/v1/locations/${ID.one}`)
