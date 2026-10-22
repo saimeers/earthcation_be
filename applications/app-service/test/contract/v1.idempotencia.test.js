@@ -120,21 +120,22 @@ describe('Idempotency-Key: claves vencidas y abandonadas', () => {
 
   it('una ejecución abandonada (en curso hace más de 2 minutos) la toma el reintento; una reciente responde 409', async () => {
     const p = await newPlayer()
-    const insert = `INSERT INTO idempotency_keys (user_id, key, fingerprint, locked_at, created_at) VALUES (:id, 'clave-en-curso-01', :fp, now() - interval ':age', now())`
+    const busyKey = 'clave-en-curso-01'
+    const insert = `INSERT INTO idempotency_keys (user_id, key, fingerprint, locked_at, created_at) VALUES (:id, :busyKey, :fp, now() - interval ':age', now())`
     const fingerprintOf = async () => {
-      await post('/api/v1/attempts', p, body, 'clave-en-curso-01')
-      const [rows] = await sequelize.query("SELECT fingerprint FROM idempotency_keys WHERE user_id = :id AND key = 'clave-en-curso-01'", { replacements: { id: p.id } })
+      await post('/api/v1/attempts', p, body, busyKey)
+      const [rows] = await sequelize.query('SELECT fingerprint FROM idempotency_keys WHERE user_id = :id AND key = :busyKey', { replacements: { id: p.id, busyKey } })
       await sequelize.query('DELETE FROM idempotency_keys WHERE user_id = :id', { replacements: { id: p.id } })
       await sequelize.query('DELETE FROM level_attempts WHERE user_id = :id', { replacements: { id: p.id } })
       return rows[0].fingerprint
     }
     const fp = await fingerprintOf()
-    await sequelize.query(insert.replace(':age', '10 seconds'), { replacements: { id: p.id, fp } })
-    const busy = await post('/api/v1/attempts', p, body, 'clave-en-curso-01')
+    await sequelize.query(insert.replace(':age', '10 seconds'), { replacements: { id: p.id, fp, busyKey } })
+    const busy = await post('/api/v1/attempts', p, body, busyKey)
     expect([busy.status, busy.body.error.code]).toEqual([409, 'IDEMPOTENCY_IN_PROGRESS'])
     await sequelize.query('DELETE FROM idempotency_keys WHERE user_id = :id', { replacements: { id: p.id } })
-    await sequelize.query(insert.replace(':age', '5 minutes'), { replacements: { id: p.id, fp } })
-    const taken = await post('/api/v1/attempts', p, body, 'clave-en-curso-01')
+    await sequelize.query(insert.replace(':age', '5 minutes'), { replacements: { id: p.id, fp, busyKey } })
+    const taken = await post('/api/v1/attempts', p, body, busyKey)
     expect(taken.status).toBe(201)
     expect(await count('level_attempts', p.id)).toBe(1)
   })
