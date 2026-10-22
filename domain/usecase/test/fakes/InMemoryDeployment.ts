@@ -30,6 +30,12 @@ export class InMemoryGameVersionRepository implements GameVersionRepository {
     return Promise.resolve(created)
   }
 
+  saveNotes(v: GameVersion) {
+    const stored = this.rows.get(v.id)
+    if (stored) stored.describe(v.notes)
+    return Promise.resolve()
+  }
+
   /** Cambio condicional: solo si la fila guardada sigue en `from`. */
   startProcessing(v: GameVersion, from: VersionStatus) {
     const stored = this.rows.get(v.id)
@@ -90,7 +96,7 @@ export class ManualQueue implements PublishQueue {
 }
 
 const text = (s: string) => new TextEncoder().encode(s)
-export const entry = (name: string, content = name): ZipEntry => ({ name, isDirectory: false, read: () => text(content) })
+export const entry = (name: string, content = name): ZipEntry => ({ name, isDirectory: false, size: content.length, read: () => text(content) })
 export const webglEntries = (): ZipEntry[] => [
   entry('index.html', 'productVersion: "1.0"'),
   ...['x.loader.js', 'x.framework.js.br', 'x.wasm.br', 'x.data.br'].map((f) => entry(`Build/${f}`)),

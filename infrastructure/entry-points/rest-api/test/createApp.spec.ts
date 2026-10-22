@@ -3,6 +3,7 @@ import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { createApp, rateLimiters, type AppRoutesLegacy, type LocationUseCases, type OrganizationUseCases } from '../src'
 import { authenticate, catalogRoutesV1, createRouterV1 } from '../src'
+import { noIdempotency } from './support/noIdempotency'
 
 const noop: RequestHandler = (_req, res) => { res.json({ ok: true }) }
 const pass: RequestHandler = (_req, _res, next) => { next() }
@@ -17,14 +18,14 @@ const unused = {} as unknown as LocationUseCases & OrganizationUseCases
 
 const appWith = (userMax = 1000) => {
   const limiters = rateLimiters({
-    limits: { userMax, ipMax: userMax, authMax: 100, loginCedulaMax: 100, loginIpFailMax: 100 },
+    limits: { userMax, ipMax: userMax, authMax: 100, loginCedulaMax: 100, loginIpFailMax: 100, joinMax: 100 },
     tokens, clientIp: (req) => req.ip, cedulaExists: () => Promise.resolve(false),
   })
   const routesV1 = createRouterV1({
     routes: catalogRoutesV1({ locations: unused, organizations: unused as unknown as OrganizationUseCases }),
-    authenticate: authenticate(tokens), docsAccess: 'public', info: { title: 't', version: '2', description: 'x' }, log: () => undefined,
+    authenticate: authenticate(tokens), idempotency: noIdempotency, docsAccess: 'public', info: { title: 't', version: '2', description: 'x' }, log: () => undefined,
   })
-  return createApp({ routes, routesV1, limiters, metrics: pass, allowedOrigins: [], servePlayLocal: false, log: () => undefined })
+  return createApp({ routes, routesV1, limiters, metrics: pass, requestContext: pass, maskedRoles: [], allowedOrigins: [], servePlayLocal: false, log: () => undefined })
 }
 
 describe('createApp: errores y límites según la versión', () => {

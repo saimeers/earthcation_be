@@ -2,6 +2,7 @@ import type { Request, RequestHandler, Router } from 'express'
 import type { ZodType } from 'zod'
 import { TokenRequiredError, type AuthenticatedUser, type Role } from '@earthcation/model'
 import { requireRole } from '../../middlewares/auth'
+import type { IdempotencyGuard } from './idempotency'
 import { send, type Reply } from './reply'
 import { parseWith } from './validate'
 
@@ -32,6 +33,8 @@ export interface RouteSpec<P, Q, B> {
   readonly body?: ZodType<B>
   /** Middlewares propios de la ruta (cuerpo binario, multipart, secreto de ingesta), después de los roles. */
   readonly middlewares?: readonly RequestHandler[]
+  /** El cliente puede mandar `Idempotency-Key`: un reintento de la misma petición no repite la acción. */
+  readonly idempotent?: true
   /** Cuerpo que no es JSON (un ZIP, un archivo multipart): solo para documentarlo. */
   readonly upload?: { readonly contentType: string, readonly description: string, readonly field?: string }
   readonly response: { readonly status: 200 | 201 | 202 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean, readonly contentType?: string }
@@ -48,13 +51,20 @@ export interface OperationDoc {
   readonly params?: ZodType
   readonly query?: ZodType
   readonly body?: ZodType
+  readonly idempotent?: true
   readonly upload?: RouteSpec<unknown, unknown, unknown>['upload']
   readonly response: RouteSpec<unknown, unknown, unknown>['response']
 }
 
+/** Lo que una ruta necesita del router que la monta. */
+export interface MountKit {
+  readonly authenticate: RequestHandler
+  readonly idempotency: IdempotencyGuard
+}
+
 export interface Route {
   readonly doc: OperationDoc
-  readonly mount: (router: Router, authenticate: RequestHandler) => void
+  readonly mount: (router: Router, kit: MountKit) => void
 }
 
 /** El usuario de una ruta con `roles` (ya pasó por `authenticate`). */
@@ -75,14 +85,15 @@ const contextOf = <P, Q, B>(spec: RouteSpec<P, Q, B>, req: Request): RouteContex
   req,
 })
 
-const handlerOf = <P, Q, B>(spec: RouteSpec<P, Q, B>): RequestHandler => async (req, res) => {
-  send(res, await spec.handler(contextOf(spec, req)))
+const handlerOf = <P, Q, B>(spec: RouteSpec<P, Q, B>, guard: IdempotencyGuard): RequestHandler => async (req, res) => {
+  const run = () => spec.handler(contextOf(spec, req))
+  send(res, spec.idempotent ? await guard.run(req, run) : await run())
 }
 
 /** Define una ruta de v1. */
 export const route = <P = undefined, Q = undefined, B = undefined>(spec: RouteSpec<P, Q, B>): Route => ({
   doc: spec,
-  mount: (router, authenticate) => {
-    router[spec.method](spec.path, ...guards(spec.roles, authenticate), ...(spec.middlewares ?? []), handlerOf(spec))
+  mount: (router, { authenticate, idempotency }) => {
+    router[spec.method](spec.path, ...guards(spec.roles, authenticate), ...(spec.middlewares ?? []), handlerOf(spec, idempotency))
   },
 })

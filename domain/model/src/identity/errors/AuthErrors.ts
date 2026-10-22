@@ -12,3 +12,8 @@ export class InvalidTokenError extends ForbiddenError {
 export class RoleNotAllowedError extends ForbiddenError {
   constructor() { super('ROLE_NOT_ALLOWED', 'No tienes permiso para esta acción') }
 }
+
+// La cuenta existe pero un admin la deshabilitó: el token sigue siendo válido, la cuenta no
+export class AccountDisabledError extends ForbiddenError {
+  constructor() { super('ACCOUNT_DISABLED', 'La cuenta está deshabilitada') }
+}

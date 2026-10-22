@@ -1,5 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express'
-import { RoleNotAllowedError, TokenRequiredError, type AuthenticatedUser, type Role, type TokenVerifier } from '@earthcation/model'
+import {
+  AccountDisabledError, InvalidTokenError, RoleNotAllowedError, TokenRequiredError,
+  type AccountDirectory, type AuthenticatedUser, type Role, type TokenVerifier,
+} from '@earthcation/model'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -10,12 +13,32 @@ declare module 'express-serve-static-core' {
 
 const bearer = (req: Request): string | undefined => req.headers.authorization?.split(' ')[1]
 
-/** Exige un token válido (`Authorization: Bearer …`) y deja al usuario en `req.user`. */
-export const authenticate = (tokens: TokenVerifier): RequestHandler => (req: Request, _res: Response, next: NextFunction) => {
+export interface AuthenticateOptions {
+  /**
+   * Estado vigente de la cuenta. Con él, un token no sobrevive a una cuenta deshabilitada o borrada y el rol sale de la
+   * cuenta, no del token (si cambió desde que se firmó, manda el actual).
+   */
+  readonly accounts?: AccountDirectory
+  /** Avisa quién es (la auditoría lo guarda en el ámbito de la petición). */
+  readonly onAuthenticated?: (user: AuthenticatedUser) => void
+}
+
+const currentAccount = async (claims: AuthenticatedUser, accounts: AccountDirectory | undefined): Promise<AuthenticatedUser> => {
+  if (!accounts) return claims
+  const status = await accounts.find(claims.id)
+  if (!status) throw new InvalidTokenError()
+  if (!status.isActive) throw new AccountDisabledError()
+  return { ...claims, role: status.role }
+}
+
+/** Exige un token válido (`Authorization: Bearer …`) de una cuenta vigente y deja al usuario en `req.user`. */
+export const authenticate = (tokens: TokenVerifier, options: AuthenticateOptions = {}): RequestHandler => async (req: Request, _res: Response, next: NextFunction) => {
   const token = bearer(req)
   if (!token) throw new TokenRequiredError()
+  const user = await currentAccount(tokens.verify(token), options.accounts)
   // eslint-disable-next-line no-param-reassign -- así pasa Express datos entre middlewares (req.user)
-  req.user = tokens.verify(token)
+  req.user = user
+  options.onAuthenticated?.(user)
   next()
 }
 

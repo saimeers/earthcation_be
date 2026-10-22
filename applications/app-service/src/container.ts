@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Request, RequestHandler } from 'express'
 import {
-  randomIds, systemClock, type RuntimeInfo,
+  randomIds, systemClock, DomainError, type RuntimeInfo,
   IdentifierAvailability, PlaceMatcher, ResetTokenFactory, type LoginRecorder as LoginRecorderPort,
 } from '@earthcation/model'
 import {
@@ -14,7 +14,7 @@ import {
   GetHealthUseCase, GetVisitStatsUseCase, IngestVisitUseCase, RecordLoginUseCase,
   ActivateVersionUseCase, CompleteUploadUseCase, CreateVersionUseCase, GetDeployStatusUseCase, GetPlayFileUseCase,
   GetPreviewUrlUseCase, ListVersionsUseCase, PublishVersionUseCase, ReceiveLocalZipUseCase,
-  RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
+  EditVersionNotesUseCase, IdempotentExecutor, RecoverInterruptedPublishesUseCase, RemoveVersionUseCase,
   ChangeUserStatusUseCase, ConfirmBulkImportUseCase, CreateUserUseCase, GetUserSessionsUseCase, GetUserUseCase,
   ListUsersUseCase, LoginUseCase, PreviewBulkImportUseCase, RequestPasswordResetUseCase, ResetPasswordUseCase,
   UpdateUserUseCase,
@@ -25,7 +25,7 @@ import {
   CreateRoomUseCase, JoinRoomUseCase, StartRoomUseCase, EndRoomUseCase, GetRoomByCodeUseCase, ListMyRoomsUseCase,
   ListAllRoomsUseCase, ListRoomsByLocationUseCase, GetRoomProgressUseCase, GetRoomDetailUseCase,
   GetParticipantAnalysisUseCase, ExportRoomReportUseCase,
-  SeedPlaceCatalogUseCase,
+  SeedPlaceCatalogUseCase, ListAuditLogsUseCase, audited, fieldChanges, scoped, deniedTo, AnonymizeUserUseCase,
 } from '@earthcation/usecase'
 import {
   createSequelize, defineModels, SequelizeLocationRepository, SequelizeOrganizationRepository, SequelizeVarkRepository,
@@ -33,7 +33,7 @@ import {
   SequelizeGameVersionRepository,
   SequelizeImportDirectory, SequelizeUserReadModel, SequelizeUserRepository,
   SequelizeLearningRepository, SequelizeLearningReadModel, SequelizeAnalyticsReadModel, SequelizeFreePlaySessions,
-  SequelizeSessionRepository, SequelizeSessionDetailReader,
+  SequelizeSessionRepository, SequelizeSessionDetailReader, SequelizeAuditLog, SequelizeAccountDirectory, SequelizeReadScope, SequelizeIdempotencyStore,
 } from '@earthcation/sequelize-repository'
 import { createDeploymentStorages } from '@earthcation/object-storage'
 import { AdmZipReader } from '@earthcation/zip-reader'
@@ -41,12 +41,13 @@ import { HmacPreviewSigner } from '@earthcation/hmac-signer'
 import { InProcessPublishQueue } from '@earthcation/in-process-queue'
 import { createRedisClient, RedisCache, RedisWindowCounter } from '@earthcation/redis-cache'
 import { InMemoryMetricsStore } from '@earthcation/in-memory-metrics'
-import { BcryptPasswordHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
+import { BcryptPasswordHasher, HmacIpHasher, JwtTokenService, RandomPasswordGenerator, Sha256ResetTokenService } from '@earthcation/security'
+import { AsyncRequestContext } from '@earthcation/request-context'
 import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
-  createApp, createRouterV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
+  createApp, createRouterV1, createIdempotencyGuard, requestContext, auditRoutesV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
   authenticate, locationRoutesLegacy, organizationRoutesLegacy, varkRoutesLegacy,
   cloudflareEdge, deployRoutesLegacy, healthRoutesLegacy, loginRecorder, metrics, playLocalRoutes, publicHealthLegacy, visitRoutesLegacy,
   type LoginRecorder,
@@ -54,7 +55,7 @@ import {
   progressRoutesLegacy, levelRoutesLegacy, telemetryRoutesLegacy, analyticsRoutesLegacy,
   sessionRoutesLegacy,
 } from '@earthcation/rest-api'
-import { parseEnv, type Env } from './config/env'
+import { allowedOrigins, parseEnv, type Env } from './config/env'
 
 // Composition root (inyección manual): instancia los adaptadores, se los pasa a los casos de uso y arma la app HTTP.
 // Exporta la app, las tareas de arranque y lo que la semilla de pruebas y scripts/load usan directo (conexión,
@@ -64,11 +65,22 @@ export const env = parseEnv()
 
 const databaseConfig = (e: Env) => ({
   host: e.DB_HOST, port: e.DB_PORT, name: e.DB_NAME, user: e.DB_USER, password: e.DB_PASS,
-  ssl: e.NODE_ENV === 'production', poolMax: e.DB_POOL_MAX, poolMin: e.DB_POOL_MIN,
+  ssl: e.NODE_ENV === 'production', sslCa: e.DB_SSL_CA?.replaceAll('\\n', '\n'), poolMax: e.DB_POOL_MAX, poolMin: e.DB_POOL_MIN,
 })
 
 export const sequelize = createSequelize(databaseConfig(env))
 export const models = defineModels(sequelize)
+
+// ── Registro, caché y borde de Cloudflare (los usa la seguridad desde la primera petición) ───────────────────
+
+const log = (message: string): void => { console.error(message) }
+
+/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
+const redis = createRedisClient(env.REDIS_URL, log)
+/** Caché de lecturas de todos los contextos. */
+const cache = new RedisCache(redis)
+/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
+const edge = cloudflareEdge(env.CF_EDGE_SECRET)
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 
@@ -77,7 +89,13 @@ export const security = {
   passwords: new BcryptPasswordHasher(),
 }
 
-const auth: RequestHandler = authenticate(security.tokens)
+// Quién hace la petición en curso (la entrada abre el ámbito y `authenticate` le pone el actor)
+const requestScope = new AsyncRequestContext()
+
+// El token solo vale mientras la cuenta esté activa; el estado vigente se consulta con una caché de 60 s
+const accounts = new SequelizeAccountDirectory(models, cache)
+
+const auth: RequestHandler = authenticate(security.tokens, { accounts, onAuthenticated: (user) => { requestScope.setActor({ id: user.id, role: user.role }) } })
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 
@@ -155,21 +173,13 @@ const deploymentUseCases = {
   complete: new CompleteUploadUseCase({ versions: gameVersions, originals: storages.originals, queue: publishQueue }),
   activate: new ActivateVersionUseCase({ versions: gameVersions, published: storages.published, clock: systemClock }),
   remove: new RemoveVersionUseCase({ versions: gameVersions, ...storages }),
+  editNotes: new EditVersionNotesUseCase(gameVersions),
   preview: new GetPreviewUrlUseCase({
     versions: gameVersions, published: storages.published, signer, clock: systemClock, settings: deploySettings,
   }),
 }
 
 // ── Observabilidad ───────────────────────────────────────────────────────────
-
-const log = (message: string): void => { console.error(message) }
-
-/** Cliente de Redis (o null): lo comparten la caché y los límites de peticiones. */
-const redis = createRedisClient(env.REDIS_URL, log)
-/** Caché de lecturas de todos los contextos. */
-const cache = new RedisCache(redis)
-/** Visitante detrás de Cloudflare (lo usan el registro de logins y los límites de peticiones). */
-const edge = cloudflareEdge(env.CF_EDGE_SECRET)
 
 const metricsStore = new InMemoryMetricsStore()
 
@@ -237,6 +247,7 @@ const identity = {
     }),
     update: new UpdateUserUseCase({ users: userRepository, availability, readModel: userReadModel }),
     changeStatus: new ChangeUserStatusUseCase(userRepository),
+    anonymize: new AnonymizeUserUseCase({ users: userRepository, passwords: security.passwords, generator: passwordGenerator }),
   },
   bulkImport: {
     preview: new PreviewBulkImportUseCase({ spreadsheets: new XlsxSpreadsheetReader(), users: userRepository }),
@@ -310,6 +321,106 @@ const sessions = {
 
 // ── App HTTP ─────────────────────────────────────────────────────────────────
 
+// ── Auditoría ────────────────────────────────────────────────────────────────
+
+// Quién hizo qué sobre qué. Los casos de uso se envuelven aquí, así la API legacy y la v1 quedan auditadas por igual.
+// El registro es de solo inserción (disparador en la BD) y solo guarda nombres de campos y valores no personales.
+const auditLog = new SequelizeAuditLog(models)
+const auditHash = new HmacIpHasher(env.AUDIT_IP_SALT ?? `${env.JWT_SECRET}:audit`)
+const auditDeps = { audit: auditLog, context: requestScope, clock: systemClock, report: log }
+
+const org = catalog.organizations
+org.create = audited(org.create, { action: 'organization.created', describe: (_a, o) => ({ targetType: 'organization', targetId: o.id, changes: { name: o.name, type: o.type } }) }, auditDeps)
+org.update = audited(org.update, { action: 'organization.updated', describe: ([c], o) => ({ targetType: 'organization', targetId: o.id, changes: fieldChanges(c.changes) }) }, auditDeps)
+org.changeStatus = audited(org.changeStatus, {
+  action: ([c]) => (c.active ? 'organization.enabled' : 'organization.disabled'), describe: ([c]) => ({ targetType: 'organization', targetId: c.id }),
+}, auditDeps)
+
+const place = catalog.locations
+place.create = audited(place.create, { action: 'location.created', describe: (_a, l) => ({ targetType: 'location', targetId: l.id, changes: { municipality: l.municipality, department: l.department } }) }, auditDeps)
+place.update = audited(place.update, { action: 'location.updated', describe: ([c], l) => ({ targetType: 'location', targetId: l.id, changes: fieldChanges(c.changes) }) }, auditDeps)
+place.changeStatus = audited(place.changeStatus, {
+  action: ([c]) => (c.active ? 'location.enabled' : 'location.disabled'), describe: ([c]) => ({ targetType: 'location', targetId: c.id }),
+}, auditDeps)
+
+const people = identity.users
+people.create = audited(people.create, { action: 'user.created', describe: ([c], created) => ({ targetType: 'user', targetId: created.userId, changes: fieldChanges(c.fields) }) }, auditDeps)
+people.update = audited(people.update, { action: 'user.updated', describe: ([c]) => ({ targetType: 'user', targetId: c.id, changes: fieldChanges(c.fields) }) }, auditDeps)
+people.changeStatus = audited(people.changeStatus, {
+  action: ([c]) => (c.active ? 'user.enabled' : 'user.disabled'), describe: ([c]) => ({ targetType: 'user', targetId: c.id }),
+}, auditDeps)
+people.anonymize = audited(people.anonymize, { action: 'user.anonymized', describe: ([c]) => ({ targetType: 'user', targetId: c.id }) }, auditDeps)
+identity.bulkImport.confirm = audited(identity.bulkImport.confirm, {
+  action: 'user.imported',
+  describe: (_a, r) => ({ targetType: 'user', targetId: null, changes: { created: r.created.length, skipped: r.skipped.length, errors: r.errors.length } }),
+}, auditDeps)
+
+// Los inicios de sesión del personal quedan; los de jugadores no (son muchos y no son una acción administrativa). Un
+// intento rechazado se registra siempre, con la huella de la cédula y no la cédula.
+const loginFailure = (cedula: unknown, error: unknown) => ({
+  targetType: 'account', targetId: null,
+  changes: { reason: error instanceof DomainError ? error.code : 'ERROR', cedula: typeof cedula === 'string' ? auditHash.hash(cedula) : null },
+})
+identity.auth.login = audited(identity.auth.login, {
+  action: 'auth.login_succeeded',
+  describe: (_a, r) => (r.user.role === 'player' ? null : { targetType: 'user', targetId: r.user.id, actor: { id: r.user.id, role: r.user.role } }),
+  failure: { action: 'auth.login_failed', describe: ([c], error) => loginFailure(c.cedula, error) },
+}, auditDeps)
+identity.auth.requestPasswordReset = audited(identity.auth.requestPasswordReset, {
+  action: 'auth.password_reset_requested', describe: () => ({ targetType: 'account', targetId: null }),
+}, auditDeps)
+identity.auth.resetPassword = audited(identity.auth.resetPassword, {
+  action: 'auth.password_reset_completed', describe: () => ({ targetType: 'account', targetId: null }),
+}, auditDeps)
+
+const rooms = sessions.sessions
+rooms.start = audited(rooms.start, { action: 'session.started', describe: ([c]) => ({ targetType: 'session', targetId: c.id }) }, auditDeps)
+rooms.end = audited(rooms.end, { action: 'session.ended', describe: ([c]) => ({ targetType: 'session', targetId: c.id }) }, auditDeps)
+rooms.exportReport = audited(rooms.exportReport, { action: 'session.exported', describe: ([c]) => ({ targetType: 'session', targetId: c.id }) }, auditDeps)
+
+const versions = deploymentUseCases
+versions.create = audited(versions.create, {
+  action: 'game_version.created', describe: ([c], created) => ({ targetType: 'game_version', targetId: created.version.id, changes: { label: c.label } }),
+}, auditDeps)
+versions.complete = audited(versions.complete, { action: 'game_version.completed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+versions.activate = audited(versions.activate, { action: 'game_version.activated', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+versions.editNotes = audited(versions.editNotes, { action: 'game_version.updated', describe: ([c]) => ({ targetType: 'game_version', targetId: c.id, changes: { fields: ['notes'] } }) }, auditDeps)
+versions.remove = audited(versions.remove, { action: 'game_version.removed', describe: ([id]) => ({ targetType: 'game_version', targetId: id }) }, auditDeps)
+
+// ── Lecturas acotadas ────────────────────────────────────────────────────────
+
+// El instructor solo lee a los jugadores de sus salas (y los del Juego libre de su localidad); el desarrollador no ve datos
+// personales (la entrada los enmascara en sus respuestas JSON) ni exporta el Excel, que lleva nombres y cédulas. Se apaga con
+// SCOPED_READS=false.
+const readScope = new SequelizeReadScope(models, cache)
+const scopeDeps = { scope: readScope, context: requestScope }
+const ownerOf = (key: string) => (row: Record<string, unknown>): string | undefined => (typeof row[key] === 'string' ? row[key] : undefined)
+
+if (env.SCOPED_READS) {
+  const usersOf = identity.users
+  usersOf.list = scoped(usersOf.list, { rowOwner: ownerOf('id') }, scopeDeps)
+  usersOf.get = scoped(usersOf.get, { target: ([id]) => id }, scopeDeps)
+  usersOf.sessions = scoped(usersOf.sessions, { target: ([id]) => id }, scopeDeps)
+
+  const results = vark.vark
+  results.list = scoped(results.list, { rowOwner: ownerOf('user_id') }, scopeDeps)
+  results.listByStyle = scoped(results.listByStyle, { rowOwner: ownerOf('user_id') }, scopeDeps)
+  results.listByPlace = scoped(results.listByPlace, { rowOwner: ownerOf('user_id') }, scopeDeps)
+
+  learning.progress.list = scoped(learning.progress.list, { target: ([q]) => q.userId }, scopeDeps)
+  learning.telemetry.listAttempts = scoped(learning.telemetry.listAttempts, { target: ([q]) => q.userId }, scopeDeps)
+  learning.telemetry.userSummary = scoped(learning.telemetry.userSummary, { target: ([q]) => q.userId }, scopeDeps)
+  learning.telemetry.attemptDetail = scoped(learning.telemetry.attemptDetail, {
+    resultOwner: (detail) => ownerOf('user_id')((detail as { attempt?: Record<string, unknown> }).attempt ?? {}),
+  }, scopeDeps)
+
+  sessions.sessions.exportReport = deniedTo(
+    sessions.sessions.exportReport,
+    { roles: ['developer'], message: 'El informe en Excel lleva nombres y cédulas: soporte técnico no lo exporta' },
+    requestScope,
+  )
+}
+
 const routes = {
   organizations: organizationRoutesLegacy(catalog),
   locations: locationRoutesLegacy(catalog),
@@ -329,12 +440,16 @@ const routes = {
   sessions: sessionRoutesLegacy(sessions),
 }
 
+// Idempotency-Key en las peticiones del juego que crean datos (intentos, eventos y progreso)
+const idempotencyStore = new SequelizeIdempotencyStore(sequelize, () => new Date())
+
 const routesV1 = createRouterV1({
-  routes: [...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning),
+  routes: [...auditRoutesV1(new ListAuditLogsUseCase(auditLog)), ...catalogRoutesV1(catalog), ...varkRoutesV1(vark.vark), ...identityRoutesV1(identity), ...sessionRoutesV1(sessions.sessions), ...learningRoutesV1(learning),
     ...deploymentRoutesV1({ deployment: deploymentUseCases, maxUploadMb: env.DEPLOY_MAX_MB }),
     ...observabilityRoutesV1({ visits: observability.visits, health: observability.health, ingestSecret: observability.ingestSecret }),
     ...importRoutesV1(identity.bulkImport)],
   authenticate: auth,
+  idempotency: createIdempotencyGuard(new IdempotentExecutor(idempotencyStore)),
   docsAccess: env.DOCS_ACCESS,
   info: { title: 'API de Earthcation', version: '2.0.0', description: 'API v1 de la plataforma de capacitación en seguridad minera Earthcation.' },
   log,
@@ -343,7 +458,7 @@ const routesV1 = createRouterV1({
 const limiters = rateLimiters({
   limits: {
     userMax: env.RATE_LIMIT_USER_MAX, ipMax: env.RATE_LIMIT_IP_MAX, authMax: env.RATE_LIMIT_AUTH_MAX,
-    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX,
+    loginCedulaMax: env.RATE_LIMIT_LOGIN_CEDULA_MAX, loginIpFailMax: env.RATE_LIMIT_LOGIN_IP_FAIL_MAX, joinMax: env.RATE_LIMIT_JOIN_MAX,
   },
   tokens: security.tokens,
   clientIp: edge.clientIp,
@@ -356,9 +471,11 @@ const limiters = rateLimiters({
 export const app = createApp({
   routes,
   routesV1,
+  requestContext: requestContext(requestScope, auditHash, edge.clientIp),
+  maskedRoles: env.SCOPED_READS ? ['developer'] : [],
   limiters,
   metrics: metrics(metricsStore),
-  allowedOrigins: env.ALLOWED_ORIGINS,
+  allowedOrigins: allowedOrigins(env),
   servePlayLocal: localPublishing,
   ...(env.NODE_ENV !== 'test' && { requestLog: env.NODE_ENV === 'production' ? 'tiny' : 'dev' }),
   log,
@@ -368,6 +485,8 @@ export const app = createApp({
 export const bootTasks = {
   /** Las publicaciones cortadas por el reinicio quedan fallidas. */
   recoverInterruptedPublishes: new RecoverInterruptedPublishesUseCase(gameVersions),
+  /** Claves de idempotencia vencidas (más de un día). */
+  purgeIdempotencyKeys: { execute: () => idempotencyStore.purgeExpired() },
   /** Catálogo oficial de municipios (idempotente). */
   seedPlaceCatalog: new SeedPlaceCatalogUseCase({ catalog: new JsonPlaceCatalog(), locations: locationRepository }),
 }

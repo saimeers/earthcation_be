@@ -2970,7 +2970,7 @@ exports[`v1 GET como desarrollador > /api/sessions/:id/participants/:userId/anal
       "lantern_switched_on": "number",
     },
     "user": {
-      "age": "number",
+      "age": "null",
       "cedula": "string",
       "email": "null",
       "first_name": "string",
@@ -3664,7 +3664,7 @@ exports[`v1 GET como desarrollador > /api/users 1`] = `
 {
   "body": [
     {
-      "age": "null | number",
+      "age": "null",
       "cedula": "string",
       "created_at": "date",
       "email": "null | string",
@@ -3694,7 +3694,7 @@ exports[`v1 GET como desarrollador > /api/users 1`] = `
 exports[`v1 GET como desarrollador > /api/users/:id 1`] = `
 {
   "body": {
-    "age": "number",
+    "age": "null",
     "cedula": "string",
     "created_at": "date",
     "email": "null",
@@ -3765,7 +3765,7 @@ exports[`v1 GET como desarrollador > /api/users?role=player 1`] = `
 {
   "body": [
     {
-      "age": "number",
+      "age": "null",
       "cedula": "string",
       "created_at": "date",
       "email": "null",
@@ -5327,7 +5327,7 @@ exports[`v1 GET como instructor > /api/users 1`] = `
 {
   "body": [
     {
-      "age": "null | number",
+      "age": "number",
       "cedula": "string",
       "created_at": "date",
       "email": "null | string",
@@ -5337,16 +5337,28 @@ exports[`v1 GET como instructor > /api/users 1`] = `
       "last_name": "string",
       "profile": {
         "id": "uuid",
-        "location": ""null" | null | {"country":"string","department":"string","id":"uuid","is_active":"boolean","municipality":"string"}",
-        "location_id": "null | uuid",
-        "organization": ""null" | null | {"created_at":"date","id":"uuid","is_active":"boolean","name":"string","type":"string"}",
-        "organization_id": "null | uuid",
+        "location": {
+          "country": "string",
+          "department": "string",
+          "id": "uuid",
+          "is_active": "boolean",
+          "municipality": "string",
+        },
+        "location_id": "uuid",
+        "organization": {
+          "created_at": "date",
+          "id": "uuid",
+          "is_active": "boolean",
+          "name": "string",
+          "type": "string",
+        },
+        "organization_id": "uuid",
         "user_id": "uuid",
       },
       "role": "string",
       "updated_at": "date",
       "username": "string",
-      "varkProfile": ""null" | null | {"auditory_score":"number","dominant_style":"string","reading_score":"number","visual_score":"number"}",
+      "varkProfile": ""null" | {"auditory_score":"number","dominant_style":"string","reading_score":"number","visual_score":"number"}",
     },
   ],
   "status": 200,

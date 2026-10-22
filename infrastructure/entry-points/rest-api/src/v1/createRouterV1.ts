@@ -1,6 +1,7 @@
 import { Router, type RequestHandler } from 'express'
 import swaggerUi from 'swagger-ui-express'
 import { requireRole } from '../middlewares/auth'
+import type { IdempotencyGuard } from './http/idempotency'
 import type { Route } from './http/route'
 import { buildOpenApi, type ApiInfo } from './openapi/buildOpenApi'
 import { errorHandlerV1, notFoundV1 } from './http/errors'
@@ -8,6 +9,8 @@ import { errorHandlerV1, notFoundV1 } from './http/errors'
 export interface RouterV1Deps {
   readonly routes: readonly Route[]
   readonly authenticate: RequestHandler
+  /** Repite la respuesta guardada cuando un cliente reintenta una petición con la misma `Idempotency-Key`. */
+  readonly idempotency: IdempotencyGuard
   /** `public`: la documentación la ve cualquiera; `staff`: solo admin y desarrollador, con token. */
   readonly docsAccess: 'public' | 'staff'
   readonly info: ApiInfo
@@ -26,7 +29,7 @@ export const createRouterV1 = (deps: RouterV1Deps): Router => {
   const document = buildOpenApi(deps.routes.map((r) => r.doc), deps.info)
   router.get('/openapi.json', ...docsGuard(deps), (_req, res) => { res.json(document) })
   router.use('/docs', ...docsGuard(deps), swaggerUi.serve, swaggerUi.setup(document, { customSiteTitle: deps.info.title }))
-  for (const r of deps.routes) r.mount(router, deps.authenticate)
+  for (const r of deps.routes) r.mount(router, { authenticate: deps.authenticate, idempotency: deps.idempotency })
   router.use(notFoundV1)
   router.use(errorHandlerV1(deps.log))
   return router

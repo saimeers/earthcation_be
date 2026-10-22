@@ -4,6 +4,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import { errorHandlerLegacy, notFoundLegacy } from './middlewares/errorHandler'
+import { maskForRoles } from './middlewares/maskForRoles'
 import { errorHandlerV1 } from './v1/http/errors'
 import type { RateLimiters } from './middlewares/rateLimit'
 
@@ -34,6 +35,10 @@ export interface AppDeps {
   readonly limiters: RateLimiters
   /** Mide cada petición (va al principio). */
   readonly metrics: RequestHandler
+  /** Abre el ámbito de la petición (origen y, después, actor) para la auditoría; va antes de las rutas. */
+  readonly requestContext: RequestHandler
+  /** Enmascara los datos personales en las respuestas JSON de estos roles (lecturas acotadas); vacío = no enmascara. */
+  readonly maskedRoles: readonly string[]
   /** Orígenes permitidos por CORS; vacío = cualquiera. */
   readonly allowedOrigins: readonly string[]
   /** Sin R2 (desarrollo) la API sirve el juego publicado en /play-local, como lo haría el Worker. */
@@ -55,6 +60,8 @@ const mountCommon = (app: Express, deps: AppDeps): void => {
   app.use(express.json({ limit: '1mb' }))
   if (deps.requestLog) app.use(morgan(deps.requestLog))
   app.use(deps.metrics)
+  app.use(deps.requestContext)
+  if (deps.maskedRoles.length > 0) app.use(maskForRoles(deps.maskedRoles))
 }
 
 // Estado público mínimo y visitas van antes del límite global: las visitas llegan todas desde las IP del Worker
@@ -74,6 +81,8 @@ const mountLimits = (app: Express, { limiters }: AppDeps): void => {
   // v1: los mismos límites en el login y en la solicitud de restablecimiento
   app.use('/api/v1/auth/login', limiters.auth, limiters.loginIpFail, limiters.loginCedula)
   app.use('/api/v1/auth/password-resets', limiters.auth)
+  // El código de sala son 3 dígitos: unirse y validar códigos se limita por jugador para que no se pueda adivinar
+  for (const path of ['/api/sessions/join', '/api/sessions/code', '/api/v1/sessions/join', '/api/v1/sessions/code']) app.use(path, limiters.join)
 }
 
 const mountV1 = (app: Express, { routesV1 }: AppDeps): void => {

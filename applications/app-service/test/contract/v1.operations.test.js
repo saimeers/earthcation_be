@@ -55,6 +55,18 @@ describe('API v1: despliegue del juego', () => {
     expect((await send('post', '/api/v1/game-versions', dev, { label: '' })).body.error.code).toBe('VALIDATION_ERROR')
   })
 
+  it('editar la nota: tildes intactas, vacío la borra, 403 a un instructor y 404 si no existe', async () => {
+    const url = `/api/v1/game-versions/${version.id}`
+    const edited = await send('patch', url, dev, { notes: 'Iluminación de la mina y multigás' })
+    expect([edited.status, edited.body.data.notes, edited.body.data.status]).toEqual([200, 'Iluminación de la mina y multigás', 'uploading'])
+    const listed = (await send('get', '/api/v1/game-versions?limit=100', dev)).body.data.find((v) => v.id === version.id)
+    expect(listed.notes).toBe('Iluminación de la mina y multigás')
+    expect((await send('patch', url, dev, { notes: null })).body.data.notes).toBeNull()
+    expect((await send('patch', url, s.instructor, { notes: 'x' })).status).toBe(403)
+    expect((await send('patch', url.replace(version.id, '00000000-0000-4000-8000-000000000000'), dev, { notes: 'x' })).status).toBe(404)
+    await send('patch', url, dev, { notes: 'Notas v1' })
+  })
+
   it('sube el ZIP, completa y publica en segundo plano', async () => {
     expect((await putZip(version.id, zip)).status).toBe(204)
     const done = await send('post', `/api/v1/game-versions/${version.id}/completion`, dev)

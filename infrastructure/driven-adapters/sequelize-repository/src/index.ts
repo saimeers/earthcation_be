@@ -20,6 +20,8 @@ export { SequelizeHealthProbe } from './observability/SequelizeHealthProbe'
 // ── identity ──
 export { SequelizeUserRepository } from './identity/SequelizeUserRepository'
 export { SequelizeUserReadModel } from './identity/SequelizeUserReadModel'
+export { SequelizeAccountDirectory } from './identity/SequelizeAccountDirectory'
+export { SequelizeReadScope } from './privacy/SequelizeReadScope'
 export { SequelizeImportDirectory } from './identity/SequelizeImportDirectory'
 
 // ── learning ──
@@ -31,3 +33,9 @@ export { SequelizeFreePlaySessions } from './learning/SequelizeFreePlaySessions'
 // ── sessions ──
 export { SequelizeSessionRepository } from './sessions/SequelizeSessionRepository'
 export { SequelizeSessionDetailReader } from './sessions/SequelizeSessionDetailReader'
+
+// ── audit ──
+export { SequelizeAuditLog } from './audit/SequelizeAuditLog'
+
+// ── idempotency ──
+export { SequelizeIdempotencyStore } from './idempotency/SequelizeIdempotencyStore'

@@ -6,6 +6,7 @@ export * from './shared/gateways/Clock'
 export * from './identity/AuthenticatedUser'
 export * from './identity/errors/AuthErrors'
 export * from './identity/gateways/TokenVerifier'
+export * from './identity/gateways/AccountDirectory'
 
 export * from './catalog/Organization'
 export * from './catalog/Location'
@@ -95,3 +96,18 @@ export * from './sessions/errors/SessionErrors'
 export * from './sessions/gateways/SessionRepository'
 export * from './sessions/gateways/SessionDetailReader'
 export * from './sessions/gateways/SessionReportWriter'
+
+// ── audit ──
+export * from './audit/AuditEntry'
+export * from './audit/gateways/AuditLog'
+export * from './audit/gateways/RequestContext'
+export * from './audit/gateways/IpHasher'
+
+// ── idempotency ──
+export * from './idempotency/IdempotencyKey'
+export * from './idempotency/errors'
+export * from './idempotency/gateways/IdempotencyStore'
+
+// ── privacy ──
+export * from './privacy/ReadScope'
+export * from './privacy/PersonalData'

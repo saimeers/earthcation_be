@@ -9,6 +9,7 @@ export const prepareDatabase = async (): Promise<void> => {
   const applied = await migrate(sequelize)
   console.log(applied.length > 0 ? `✅ Migraciones aplicadas: ${applied.join(', ')}` : '✅ Esquema al día.')
   await bootTasks.recoverInterruptedPublishes.execute()
+  await bootTasks.purgeIdempotencyKeys.execute()
   const created = await bootTasks.seedPlaceCatalog.execute()
   if (created > 0) console.log(`✅ Catálogo de municipios: ${created} filas nuevas sembradas.`)
 }

@@ -141,6 +141,86 @@ once no client calls it (visits stats show zero traffic). There is no `v2`.
 - Tests: `rest-api/test/v1.spec.ts` (unit, stub use cases), `createApp.spec.ts`, and
   `app-service/test/contract/v1.catalog.test.js` (real Postgres).
 
+### Audit log (fase 5)
+
+Who did what to what, in `audit_logs` (migration `0002_audit_logs`, append-only: a trigger rejects UPDATE, DELETE and
+TRUNCATE). The model has `AuditEntry`/`AUDIT_ACTIONS` and the ports `AuditLog`, `RequestContext`, `IpHasher`; use cases
+are wrapped with `audited(useCase, { action, describe, failure? }, deps)` (`usecase/src/audit/audited`) **in the
+composition root** (`container.ts`, "Auditoría" block), so the legacy and v1 APIs are both audited with no change to the
+commands. Actor and origin come from the request scope: `requestContext` middleware (rest-api) opens it with the
+visitor-IP HMAC and user agent, `authenticate(tokens, onAuthenticated)` sets the actor; `@earthcation/request-context`
+implements it with AsyncLocalStorage. The IP is never stored (HMAC with `AUDIT_IP_SALT`, default derived from
+`JWT_SECRET`). `changes` never holds personal data: `fieldChanges()` keeps field names (and the role).
+Audited: staff login ok (players are not) and every failed login (cedula hash only), password reset request/completion,
+user create/update/enable/disable/import, organization and location create/update/enable/disable, session
+start/end/export, game version create/complete/activate/remove. A failure to write the audit entry does not undo the
+action (it is reported to the service log; it is not in the same DB transaction as the change). Read it with
+`GET /api/v1/audit-logs` (filters, paging) and `/audit-logs/export` (CSV), admin and developer only.
+Add an action: extend `AUDIT_ACTIONS`, then wrap the use case in the container.
+
+### Authentication hardening (fase 5)
+
+- **The token does not outlive the account.** `authenticate(tokens, { accounts, onAuthenticated })` asks the
+  `AccountDirectory` port (`SequelizeAccountDirectory`, cached 60 s under namespace `account`) for the current state:
+  a disabled account gets 403 `ACCOUNT_DISABLED`, a missing one 403 `TOKEN_INVALID`, and `req.user.role` comes from the
+  account, not from the token. A change therefore takes effect within a minute (the legacy API shares this middleware).
+- **Session length:** staff tokens (instructor, admin, developer) last 24 h, players 7 days (`JwtTokenService`).
+- **Room codes are 3 digits:** `limiters.join` (`RATE_LIMIT_JOIN_MAX`, default 20 per 15 min, per user) covers
+  `/sessions/join` and `/sessions/code` in legacy and v1.
+- **CORS:** in production a missing or `*` `ALLOWED_ORIGINS` means "only the origins of `FRONTEND_URL` and `PLAY_URL`"
+  (`allowedOrigins()` in `config/env.ts`); outside production an empty list still accepts any origin.
+- **Game ZIPs:** `BuildInspection.inspect` rejects (400 `InvalidBuildError`) a ZIP with more than 3000 entries, more than
+  800 MB unpacked (declared size, checked before reading), paths with `..`, backslashes, NUL or absolute paths, and any
+  entry that unpacks bigger than it declared (`ZipEntry.size`, filled by `AdmZipReader`).
+- **DB TLS:** set `DB_SSL_CA` (PEM, `
+` allowed) to verify the server certificate; without it the connection is
+  encrypted but not verified (Railway issues its own certificate). Pending: obtain Railway's CA and set it in production.
+
+### Scoped reads (fase 5, `SCOPED_READS`, on by default)
+
+Who can read whose personal data. **Instructor:** only the players of their rooms (and those playing in the free-play room
+of their location). Port `ReadScope.visiblePlayerIds` (`SequelizeReadScope`, cached 60 s) and the decorator
+`scoped(useCase, { target?, rowOwner?, resultOwner? }, deps)` (`usecase/src/privacy/scoped.ts`), applied in the container
+("Lecturas acotadas" block): users list/get/sessions, VARK listings, and per-user progress/attempts/telemetry summary/attempt
+detail. Out of scope is 403 `USER_OUT_OF_SCOPE`; lists drop the other rows. **Developer:** no personal data. The
+`maskForRoles(['developer'])` middleware masks cedula, username, email, names (initials) and age in every JSON response
+(`maskPersonalData` in the model, legacy and v1), and `deniedTo` forbids the session Excel (403
+`DATA_NOT_AVAILABLE_TO_ROLE`). Admin sees everything. Set `SCOPED_READS=false` to switch it all off.
+Not scoped on purpose: room listings by location (they are not personal data) and aggregated analytics.
+The legacy `reads` snapshots changed once for this (developer `age` null, instructor user list without non-players):
+intended, approved.
+Panel follow-up: hide the Excel button for the developer role.
+
+### Anonymization (fase 5)
+
+`POST /api/v1/users/:id/anonymization` (admin, audited as `user.anonymized`): right of erasure on request.
+`AnonymizeUserUseCase` → `User.anonymize(unusableHash)`: name, cedula, username (alias `anon-<8 chars of id>`), email, age
+are cleared, the account is disabled and its password replaced by the hash of a random secret nobody knows; the progress
+stays, with no identity. Not undoable; not your own account (403 `CANNOT_ANONYMIZE_SELF`), not twice (409
+`USER_ALREADY_ANONYMIZED`). The cedula becomes free to register again. What is stored and why:
+`docs/PRIVACIDAD.md`.
+
+### Idempotency-Key (fase 4, v1 only)
+
+The game retries on network errors, so the three POSTs that create data accept an optional `Idempotency-Key` header
+(`POST /attempts`, `POST /attempts/:id/events`, `POST /risk-results`): a retry with the same key, user and request
+gets the first response back (same status, body and `Location`, plus `Idempotent-Replayed: true`) and nothing is
+created twice. Without the header everything works as before. Legacy routes do not support it.
+- Layers: `model/src/idempotency` (`IdempotencyKey` value object, errors, `IdempotencyStore` port), `usecase/src/idempotency`
+  (`IdempotentExecutor`: claim → run → complete, or release when the action fails), `SequelizeIdempotencyStore`
+  (table `idempotency_keys`, migration `0003`), rest-api `v1/http/idempotency.ts` (`createIdempotencyGuard`).
+- A route opts in with `idempotent: true` in its `route({...})` spec; the guard is part of `MountKit` and
+  `RouterV1Deps.idempotency` (required). The OpenAPI document shows the header on those routes only.
+- Key: 8 to 128 chars of `A-Za-z0-9._:-` (a UUID works), else 400 `IDEMPOTENCY_KEY_INVALID`. Scope is the user. The
+  fingerprint is sha256 of method + path + body with sorted keys; same key with another fingerprint is 422
+  `IDEMPOTENCY_KEY_REUSED`; same key while the first request still runs is 409 `IDEMPOTENCY_IN_PROGRESS`.
+- Only successful replies are remembered: an error releases the key so the corrected retry runs. Keys live 24 h
+  (an expired one is reclaimed by the next claim; boot purges them); a run "in progress" for more than 2 min is
+  considered abandoned and the next retry takes it over.
+- The claim is one `INSERT ... ON CONFLICT DO UPDATE ... WHERE expired RETURNING`, so concurrent requests with the same key
+  run the action once. Tests: unit (key, executor, HTTP guard) and `v1.idempotencia.test.js` (real Postgres: attempts,
+  events, progress, concurrency, expired and abandoned keys).
+
 ### TypeScript
 
 - All of `src/` in every package is TypeScript, compiled to `dist/`. The entry is
