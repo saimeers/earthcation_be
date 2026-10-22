@@ -29,7 +29,7 @@
     "@earthcation/sequelize-repository": "workspace:*",
     "@earthcation/usecase": "workspace:*",
     "@earthcation/zip-reader": "workspace:*",
-    "dotenv": "17.4.2",
+    "dotenv": "18.0.6",
     "express": "5.2.1",
     "pg": "8.23.1",
     "pg-hstore": "2.3.4",
