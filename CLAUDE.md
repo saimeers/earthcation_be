@@ -173,8 +173,13 @@ Add an action: extend `AUDIT_ACTIONS`, then wrap the use case in the container.
   800 MB unpacked (declared size, checked before reading), paths with `..`, backslashes, NUL or absolute paths, and any
   entry that unpacks bigger than it declared (`ZipEntry.size`, filled by `AdmZipReader`).
 - **DB TLS:** set `DB_SSL_CA` (PEM, `
-` allowed) to verify the server certificate; without it the connection is
-  encrypted but not verified (Railway issues its own certificate). Pending: obtain Railway's CA and set it in production.
+` allowed) to verify that the server certificate was issued by that CA; without
+  it the connection is encrypted but nothing is verified. Railway's certificate says `CN=localhost` while the real host is
+  another, so the **host name is not checked** (`checkServerIdentity` returns undefined): verifying the chain already rules
+  out a server without that CA's key, which is what this protects against. Checking the name would break the connection
+  (`ERR_TLS_CERT_ALTNAME_INVALID`). Get the CA from the server itself:
+  `openssl s_client -starttls postgres -connect <host>:<port> -showcerts` and take the last certificate of the chain
+  (`CN=root-ca`). Covered by `sequelize-repository/test/database.spec.ts`.
 
 ### Scoped reads (fase 5, `SCOPED_READS`, on by default)
 
