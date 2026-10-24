@@ -17,7 +17,8 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
 /** Quién la hizo; null en acciones sin sesión (un login fallido, un restablecimiento). */
 export interface AuditActor {
-  readonly id: string
+  /** null cuando no hay cuenta: el CI que sube versiones con el token de despliegue (rol "ci"). */
+  readonly id: string | null
   readonly role: string
 }
 

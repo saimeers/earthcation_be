@@ -154,6 +154,7 @@ que lee `process.env`. Si falta una obligatoria la API no arranca y lo dice.
 | `RESEND_API_KEY` `EMAIL_FROM` | Para correos | `noreply@saimers.dev` | Envío de correos; sin clave la API arranca pero los envíos fallan |
 | `REDIS_URL` | No | memoria | Caché y límites de peticiones compartidos entre instancias |
 | `VISITS_INGEST_SECRET` | Para visitas | | Secreto compartido con el Worker; sin él la ingesta responde 401 |
+| `DEPLOY_UPLOAD_TOKEN` | Para el CI del juego | | Token (32 caracteres o más) con el que GitHub Actions sube versiones en la cabecera `x-deploy-token`. Solo crea, sube y completa: activar sigue siendo de una persona. Sin él nadie entra por esa vía |
 | `CF_EDGE_SECRET` | En Cloudflare | | Valor de `x-earthcation-edge` que agrega la regla de transformación; permite confiar en la IP del visitante |
 | `PLAY_URL` `PLAY_SIGNING_SECRET` | Para despliegue | | Dominio del juego y secreto compartido con el Worker para las vistas previas |
 | `AWS_S3_BUCKET` `AWS_REGION` `AWS_ACCESS_KEY_ID` `AWS_SECRET_ACCESS_KEY` | No | disco local | Originales de las versiones (subida directa del navegador con URL prefirmada) |
@@ -218,10 +219,13 @@ PostgreSQL 16 de servicio, y escanea secretos con gitleaks.
 Railway despliega la rama `main` cuando el CI está en verde. Detecta pnpm por `packageManager` y el lockfile,
 construye con `pnpm build` y arranca con `pnpm start` (`node applications/app-service/dist/main.js`). Para publicar:
 
-1. Abrir `release/vX.Y.Z` desde `develop`, subir la versión en `package.json` y en
-   `applications/app-service/package.json` (la versión que informa `/api/v1/health`) y actualizar `CHANGELOG.md`.
-2. Fusionar en `main` por pull request, poner el tag `vX.Y.Z` y sincronizar `main` en `develop`.
+1. En `develop`, por pull request: subir la versión en `package.json` y en `applications/app-service/package.json`
+   (la versión que informa `/api/v1/health`) y escribir la entrada de `CHANGELOG.md`.
+2. Abrir `release/vX.Y.Z` desde `develop`, fusionarla en `main` por pull request y poner el tag `vX.Y.Z`. Como la
+   versión ya subió en `develop`, no hace falta sincronizar `main` de vuelta.
 3. Verificar `GET /api/v1/health` en producción.
+
+Detalle en [CONTRIBUTING.md](CONTRIBUTING.md#publicar-una-versión).
 
 El esquema de la base de datos cambia solo por migraciones versionadas (Umzug, tabla `schema_migrations`): cambiar un
 modelo no cambia la base. Una migración nueva es un archivo `00NN_descripcion.ts` en

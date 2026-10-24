@@ -1,6 +1,6 @@
 {
   "name": "@earthcation/app-service",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "private": true,
   "description": "Único desplegable: composition root (env, contenedor, arranque).",
   "type": "commonjs",

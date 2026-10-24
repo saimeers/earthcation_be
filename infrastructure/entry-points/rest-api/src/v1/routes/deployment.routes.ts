@@ -47,16 +47,17 @@ export const deploymentRoutesV1 = ({ deployment: uc, maxUploadMb }: DeploymentV1
   }),
   route({
     method: 'post', path: '/game-versions', tag: 'Despliegue', summary: 'Crea una versión y devuelve adónde subir el ZIP', roles: DEPLOYERS,
-    body: createVersionBody,
+    deployToken: true, body: createVersionBody,
     response: { status: 201, description: 'La versión en estado uploading y el destino de la subida (cabecera Location)', schema: createdVersionDto },
-    handler: async ({ body, user }) => {
-      const c = await uc.create.execute({ label: body.label, notes: body.notes, sizeBytes: body.sizeBytes, uploadedBy: userOf({ user }).id })
+    handler: async ({ body, user, deployer }) => {
+      const uploadedBy = deployer ? null : userOf({ user }).id
+      const c = await uc.create.execute({ label: body.label, notes: body.notes, sizeBytes: body.sizeBytes, uploadedBy })
       return created(`/api/v1/game-versions/${c.version.id}`, toCreatedVersionDto(c))
     },
   }),
   route({
     method: 'put', path: '/game-versions/:id/upload', tag: 'Despliegue', summary: 'Sube el ZIP a la API (solo sin S3, en desarrollo)', roles: DEPLOYERS,
-    params: idParams, middlewares: [rawZip(maxUploadMb)], upload: { contentType: 'application/zip', description: 'El build WebGL comprimido' },
+    params: idParams, deployToken: true, middlewares: [rawZip(maxUploadMb)], upload: { contentType: 'application/zip', description: 'El build WebGL comprimido' },
     response: { status: 204, description: 'ZIP recibido' },
     handler: async ({ params, req }) => {
       await uc.receiveZip.execute({ id: params.id, zip: zipOf(req.body) })
@@ -65,7 +66,7 @@ export const deploymentRoutesV1 = ({ deployment: uc, maxUploadMb }: DeploymentV1
   }),
   route({
     method: 'post', path: '/game-versions/:id/completion', tag: 'Despliegue', summary: 'Marca la subida como completa y encola la publicación', roles: DEPLOYERS,
-    params: idParams,
+    params: idParams, deployToken: true,
     response: { status: 200, description: 'La versión en estado processing', schema: versionDto },
     handler: async ({ params }) => ok(toVersionDto(await uc.complete.execute(params.id))),
   }),

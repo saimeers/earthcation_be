@@ -50,9 +50,11 @@ const errorResponses = (doc: OperationDoc) => ({
   500: errorResponse('Error interno del servidor'),
 })
 
+const rolesText = (roles: readonly string[]): string => (roles.length > 0 ? `Roles: ${roles.join(', ')}.` : 'Requiere autenticación.')
+
 const security = (doc: OperationDoc) => (!doc.roles ? {} : {
-  security: [{ bearerAuth: [] }],
-  description: doc.roles.length > 0 ? `Roles: ${doc.roles.join(', ')}.` : 'Requiere autenticación.',
+  security: [{ bearerAuth: [] }, ...(doc.deployToken ? [{ deployToken: [] }] : [])],
+  description: doc.deployToken ? `${rolesText(doc.roles)} También el CI con la cabecera x-deploy-token.` : rolesText(doc.roles),
 })
 
 const uploadSchema = (u: NonNullable<OperationDoc['upload']>) =>

@@ -1,8 +1,9 @@
 import { Router, type RequestHandler } from 'express'
 import swaggerUi from 'swagger-ui-express'
 import { requireRole } from '../middlewares/auth'
+import { acceptDeployToken } from '../middlewares/deployToken'
 import type { IdempotencyGuard } from './http/idempotency'
-import type { Route } from './http/route'
+import type { MountKit, Route } from './http/route'
 import { buildOpenApi, type ApiInfo } from './openapi/buildOpenApi'
 import { errorHandlerV1, notFoundV1 } from './http/errors'
 
@@ -11,6 +12,8 @@ export interface RouterV1Deps {
   readonly authenticate: RequestHandler
   /** Repite la respuesta guardada cuando un cliente reintenta una petición con la misma `Idempotency-Key`. */
   readonly idempotency: IdempotencyGuard
+  /** Token de despliegue del CI (`acceptDeployToken`). Sin él, la cabecera x-deploy-token siempre es 401. */
+  readonly deployToken?: RequestHandler
   /** `public`: la documentación la ve cualquiera; `staff`: solo admin y desarrollador, con token. */
   readonly docsAccess: 'public' | 'staff'
   readonly info: ApiInfo
@@ -19,6 +22,15 @@ export interface RouterV1Deps {
 
 const docsGuard = (deps: RouterV1Deps): RequestHandler[] =>
   (deps.docsAccess === 'staff' ? [deps.authenticate, requireRole('admin', 'developer')] : [])
+
+const mountRoutes = (router: Router, deps: RouterV1Deps): void => {
+  const kit: MountKit = {
+    authenticate: deps.authenticate,
+    idempotency: deps.idempotency,
+    deployToken: deps.deployToken ?? acceptDeployToken(undefined),
+  }
+  for (const r of deps.routes) r.mount(router, kit)
+}
 
 /**
  * Router de /api/v1: monta cada ruta con su validación y sus roles, publica la documentación (Swagger UI en /docs
@@ -29,7 +41,7 @@ export const createRouterV1 = (deps: RouterV1Deps): Router => {
   const document = buildOpenApi(deps.routes.map((r) => r.doc), deps.info)
   router.get('/openapi.json', ...docsGuard(deps), (_req, res) => { res.json(document) })
   router.use('/docs', ...docsGuard(deps), swaggerUi.serve, swaggerUi.setup(document, { customSiteTitle: deps.info.title }))
-  for (const r of deps.routes) r.mount(router, { authenticate: deps.authenticate, idempotency: deps.idempotency })
+  mountRoutes(router, deps)
   router.use(notFoundV1)
   router.use(errorHandlerV1(deps.log))
   return router

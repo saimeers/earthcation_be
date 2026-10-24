@@ -17,6 +17,8 @@ export interface RouteContext<P, Q, B> {
   readonly body: B
   /** Presente en rutas con `roles`. */
   readonly user: AuthenticatedUser | undefined
+  /** true si la petición entró con el token de despliegue del CI (no hay `user`). */
+  readonly deployer: boolean
 }
 
 /** Una ruta de v1 definida una sola vez: de aquí salen el router de Express y la documentación OpenAPI. */
@@ -35,6 +37,11 @@ export interface RouteSpec<P, Q, B> {
   readonly middlewares?: readonly RequestHandler[]
   /** El cliente puede mandar `Idempotency-Key`: un reintento de la misma petición no repite la acción. */
   readonly idempotent?: true
+  /**
+   * También la puede usar el CI con la cabecera `x-deploy-token` (DEPLOY_UPLOAD_TOKEN) en vez de un usuario. Solo para
+   * subir versiones del juego: ese token no sirve en ninguna otra ruta.
+   */
+  readonly deployToken?: true
   /** Cuerpo que no es JSON (un ZIP, un archivo multipart): solo para documentarlo. */
   readonly upload?: { readonly contentType: string, readonly description: string, readonly field?: string }
   readonly response: { readonly status: 200 | 201 | 202 | 204, readonly description: string, readonly schema?: ZodType, readonly paginated?: boolean, readonly contentType?: string }
@@ -52,6 +59,7 @@ export interface OperationDoc {
   readonly query?: ZodType
   readonly body?: ZodType
   readonly idempotent?: true
+  readonly deployToken?: true
   readonly upload?: RouteSpec<unknown, unknown, unknown>['upload']
   readonly response: RouteSpec<unknown, unknown, unknown>['response']
 }
@@ -60,6 +68,8 @@ export interface OperationDoc {
 export interface MountKit {
   readonly authenticate: RequestHandler
   readonly idempotency: IdempotencyGuard
+  /** Ver `acceptDeployToken`: sin la cabecera pasa a la ruta normal, con usuario y roles. */
+  readonly deployToken: RequestHandler
 }
 
 export interface Route {
@@ -82,6 +92,7 @@ const contextOf = <P, Q, B>(spec: RouteSpec<P, Q, B>, req: Request): RouteContex
   // express.json deja el cuerpo sin definir si no vino
   body: parseWith(spec.body, req.body ?? {}, 'body'),
   user: req.user,
+  deployer: req.deployer === true,
   req,
 })
 
@@ -93,7 +104,10 @@ const handlerOf = <P, Q, B>(spec: RouteSpec<P, Q, B>, guard: IdempotencyGuard): 
 /** Define una ruta de v1. */
 export const route = <P = undefined, Q = undefined, B = undefined>(spec: RouteSpec<P, Q, B>): Route => ({
   doc: spec,
-  mount: (router, { authenticate, idempotency }) => {
-    router[spec.method](spec.path, ...guards(spec.roles, authenticate), ...(spec.middlewares ?? []), handlerOf(spec, idempotency))
+  mount: (router, { authenticate, idempotency, deployToken }) => {
+    const rest = [...(spec.middlewares ?? []), handlerOf(spec, idempotency)]
+    // Va primero: si la petición no trae x-deploy-token, next('route') la pasa al registro de abajo (usuario y roles)
+    if (spec.deployToken) router[spec.method](spec.path, deployToken, ...rest)
+    router[spec.method](spec.path, ...guards(spec.roles, authenticate), ...rest)
   },
 })
