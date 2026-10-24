@@ -2,6 +2,13 @@
 
 Versionado semántico. Cada versión sale de una rama `release/vX.Y.Z` fusionada en `main` con su tag.
 
+## v1.5.1 — 2026-10-23
+
+### Corregido
+- `DB_SSL_CA` ya se puede usar. Antes, ponerla habría tumbado la conexión con la base: el certificado de Railway dice
+  `CN=localhost` y el host real es otro, así que Node rechazaba el certificado por el nombre. Ahora se verifica que el
+  certificado venga de esa CA, sin comprobar el nombre del servidor. Sin CA todo sigue igual: cifrado y sin verificar.
+
 ## v1.5.0 — 2026-10-22
 
 Auditoría, protección de datos personales y escrituras que no se duplican.
