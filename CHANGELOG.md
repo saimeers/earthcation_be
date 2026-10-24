@@ -2,6 +2,14 @@
 
 Versionado semántico. Cada versión sale de una rama `release/vX.Y.Z` fusionada en `main` con su tag.
 
+## v1.6.0 — 2026-10-24
+
+### Nuevo
+- **El CI del juego sube versiones solo.** Con la cabecera `x-deploy-token` (`DEPLOY_UPLOAD_TOKEN`) GitHub Actions
+  crea la versión, sube el ZIP y la completa: aparece lista en el panel y una persona la prueba y la pone en línea.
+  Ese token no sirve para activar, borrar ni leer nada, y sin la cabecera las rutas funcionan igual que antes. La
+  versión queda sin autor y la auditoría registra al actor con el rol `ci`.
+
 ## v1.5.1 — 2026-10-23
 
 ### Corregido
