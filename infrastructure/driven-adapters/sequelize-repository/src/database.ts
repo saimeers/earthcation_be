@@ -15,10 +15,13 @@ export interface DatabaseConfig {
   readonly poolMin: number
 }
 
-// TLS: con la CA del servidor se verifica su certificado; sin ella (Railway entrega uno propio) se cifra sin verificar
-const dialectOptions = (c: DatabaseConfig) => {
+// TLS: con la CA del servidor se verifica que su certificado venga de ella; sin CA solo se cifra, sin verificar nada.
+// El certificado de Railway dice CN=localhost y el host real es otro, asi que el nombre no se comprueba: verificar la
+// cadena ya descarta a un servidor que no tenga la clave de esa CA, que es de lo que protege aqui.
+export const dialectOptions = (c: DatabaseConfig) => {
   if (!c.ssl) return {}
-  return { ssl: c.sslCa ? { require: true, ca: c.sslCa, rejectUnauthorized: true } : { require: true, rejectUnauthorized: false } }
+  if (!c.sslCa) return { ssl: { require: true, rejectUnauthorized: false } }
+  return { ssl: { require: true, ca: c.sslCa, rejectUnauthorized: true, checkServerIdentity: () => undefined } }
 }
 
 // Por defecto Sequelize abre máx. 5 conexiones: con ~50 jugadores escribiendo a la vez las peticiones hacían cola.
