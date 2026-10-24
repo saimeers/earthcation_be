@@ -44,7 +44,8 @@ export interface NewGameVersion {
   readonly notes: string | null
   readonly sizeBytes: number
   readonly originalKey: string
-  readonly uploadedBy: string
+  /** null: la subió el CI con el token de despliegue, sin cuenta. */
+  readonly uploadedBy: string | null
 }
 
 /** Lo que manda el panel para crear una versión; el dominio valida cada campo. */
@@ -52,7 +53,7 @@ export interface GameVersionInput {
   readonly label: unknown
   readonly notes: unknown
   readonly sizeBytes: unknown
-  readonly uploadedBy: string
+  readonly uploadedBy: string | null
 }
 
 const notesOf = (v: unknown): string | null => (typeof v === 'string' && v.trim() !== '' ? v.trim().slice(0, 2000) : null)

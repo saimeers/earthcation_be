@@ -66,6 +66,9 @@ const schema = z.object({
   REDIS_URL: z.string().optional(),
   // Compartido con el Worker de Cloudflare: sin él, POST /api/visits/ingest responde 401 siempre
   VISITS_INGEST_SECRET: z.string().optional(),
+  // Token del CI del juego (cabecera x-deploy-token): solo crea, sube y completa versiones; activar sigue siendo de una
+  // persona. Sin él nadie entra por esa vía.
+  DEPLOY_UPLOAD_TOKEN: z.string().min(32, 'DEPLOY_UPLOAD_TOKEN debe tener al menos 32 caracteres').optional(),
   // Valor de x-earthcation-edge que agrega la Transform Rule de Cloudflare (ver rest-api middlewares/cloudflare.ts)
   CF_EDGE_SECRET: z.string().optional(),
   // Correo (Resend): sin clave la API arranca, pero los envíos fallan (el alta de staff responde email_sent: false)
