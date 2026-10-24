@@ -47,7 +47,7 @@ import { ResendMailer } from '@earthcation/resend-mailer'
 import { ExcelSessionReportWriter, XlsxSpreadsheetReader } from '@earthcation/excel'
 import { DivipolaCoordinates, JsonPlaceCatalog } from '@earthcation/geo-catalog'
 import {
-  createApp, createRouterV1, createIdempotencyGuard, requestContext, auditRoutesV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
+  acceptDeployToken, createApp, createRouterV1, createIdempotencyGuard, requestContext, auditRoutesV1, catalogRoutesV1, varkRoutesV1, identityRoutesV1, sessionRoutesV1, learningRoutesV1, deploymentRoutesV1, observabilityRoutesV1, importRoutesV1, rateLimiters,
   authenticate, locationRoutesLegacy, organizationRoutesLegacy, varkRoutesLegacy,
   cloudflareEdge, deployRoutesLegacy, healthRoutesLegacy, loginRecorder, metrics, playLocalRoutes, publicHealthLegacy, visitRoutesLegacy,
   type LoginRecorder,
@@ -449,6 +449,7 @@ const routesV1 = createRouterV1({
     ...observabilityRoutesV1({ visits: observability.visits, health: observability.health, ingestSecret: observability.ingestSecret }),
     ...importRoutesV1(identity.bulkImport)],
   authenticate: auth,
+  deployToken: acceptDeployToken(env.DEPLOY_UPLOAD_TOKEN, () => { requestScope.setActor({ id: null, role: 'ci' }) }),
   idempotency: createIdempotencyGuard(new IdempotentExecutor(idempotencyStore)),
   docsAccess: env.DOCS_ACCESS,
   info: { title: 'API de Earthcation', version: '2.0.0', description: 'API v1 de la plataforma de capacitación en seguridad minera Earthcation.' },

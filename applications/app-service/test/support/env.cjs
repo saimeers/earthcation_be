@@ -8,6 +8,7 @@ const loadTestEnv = () => {
   process.env.JWT_SECRET ||= 'test-only-secret-0123456789abcdef0123456789abcdef';
   process.env.RESEND_API_KEY ||= 're_test_sin_envio';
   process.env.VISITS_INGEST_SECRET = 'secreto-de-ingesta-de-prueba';
+  process.env.DEPLOY_UPLOAD_TOKEN = 'token-de-despliegue-de-prueba-0123456789abcdef';
   delete process.env.REDIS_URL;
   // Despliegue siempre en disco, en una carpeta temporal por proceso: nunca contra S3 ni R2 reales
   for (const name of ['AWS_S3_BUCKET', 'R2_BUCKET', 'PLAY_SIGNING_SECRET']) delete process.env[name];

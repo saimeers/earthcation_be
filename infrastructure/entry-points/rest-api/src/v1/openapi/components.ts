@@ -1,6 +1,9 @@
 // Piezas comunes del documento OpenAPI: el esquema de seguridad, el error y la paginación (datos declarativos).
 export const components = {
-  securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
+  securitySchemes: {
+    bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+    deployToken: { type: 'apiKey', in: 'header', name: 'x-deploy-token', description: 'Token del CI (DEPLOY_UPLOAD_TOKEN): solo crea, sube y completa versiones del juego' },
+  },
   schemas: {
     Error: {
       type: 'object',

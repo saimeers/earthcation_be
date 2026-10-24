@@ -1,6 +1,11 @@
 import {
-  ConflictError, NotFoundError, TooLargeError, UnavailableError, ValidationError,
+  ConflictError, NotFoundError, TooLargeError, UnauthorizedError, UnavailableError, ValidationError,
 } from '../../shared/errors/DomainError'
+
+/** La cabecera x-deploy-token llegó pero no coincide con DEPLOY_UPLOAD_TOKEN (o no hay token configurado). */
+export class DeployTokenInvalidError extends UnauthorizedError {
+  constructor() { super('DEPLOY_TOKEN_INVALID', 'No autorizado') }
+}
 
 export class VersionNotFoundError extends NotFoundError {
   constructor() { super('VERSION_NOT_FOUND', 'Versión no encontrada') }

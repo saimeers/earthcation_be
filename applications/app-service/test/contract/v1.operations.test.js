@@ -98,6 +98,41 @@ describe('API v1: despliegue del juego', () => {
   })
 })
 
+describe('API v1: el CI sube versiones con el token de despliegue', () => {
+  const zip = webglZip()
+  const ci = (method, path) => request(app)[method](path).set('x-deploy-token', process.env.DEPLOY_UPLOAD_TOKEN)
+  let id
+
+  it('crea, sube y completa sin cuenta: la versión queda lista, sin autor y sin activar', async () => {
+    const created = await ci('post', '/api/v1/game-versions').send({ label: '3.0.2', sizeBytes: zip.length, notes: 'Desde el CI' })
+    expect(created.status).toBe(201)
+    expect(created.body.data.version.uploadedBy).toBeNull()
+    id = created.body.data.version.id
+    expect((await ci('put', `/api/v1/game-versions/${id}/upload`).set('Content-Type', 'application/zip').send(zip)).status).toBe(204)
+    expect((await ci('post', `/api/v1/game-versions/${id}/completion`)).status).toBe(200)
+    expect(await settled(id)).toMatchObject({ status: 'ready', uploader: null, isActive: false })
+  })
+
+  it('no puede activarla ni borrarla: eso sigue siendo de una persona', async () => {
+    expect((await ci('post', `/api/v1/game-versions/${id}/activation`)).status).toBe(401)
+    expect((await ci('delete', `/api/v1/game-versions/${id}`)).status).toBe(401)
+    expect((await send('get', '/api/v1/game-versions/status', dev)).body.data.active?.id).not.toBe(id)
+  })
+
+  it('un token equivocado no crea nada', async () => {
+    const res = await request(app).post('/api/v1/game-versions').set('x-deploy-token', 'equivocado').send({ label: '3.0.3', sizeBytes: zip.length })
+    expect([res.status, res.body.error.code]).toEqual([401, 'DEPLOY_TOKEN_INVALID'])
+    const list = (await send('get', '/api/v1/game-versions?limit=100', dev)).body.data
+    expect(list.some((v) => v.label === '3.0.3')).toBe(false)
+  })
+
+  it('la auditoría registra al CI como actor, sin cuenta', async () => {
+    const rows = (await send('get', '/api/v1/audit-logs?limit=100', s.admin)).body.data.filter((r) => r.targetId === id)
+    expect(rows.map((r) => r.action)).toEqual(expect.arrayContaining(['game_version.created', 'game_version.completed']))
+    expect(rows.every((r) => r.actorId === null && r.actorRole === 'ci')).toBe(true)
+  })
+})
+
 describe('API v1: visitas y salud', () => {
   const CHROME = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36'
   const ingest = (visit, secret = process.env.VISITS_INGEST_SECRET) =>

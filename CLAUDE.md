@@ -527,6 +527,13 @@ files in Cloudflare R2 (`R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SE
 them each falls back to disk (`DEPLOY_LOCAL_DIR`, default `.deploy/`, gitignored) and the API serves the
 published game at `/play-local/` (mounted before helmet, no token check) — dev only. `DEPLOY_MAX_MB` (500).
 
+CI upload token: v1 `POST /game-versions`, `PUT /:id/upload` and `POST /:id/completion` carry `deployToken: true` in
+their `route()` spec, so they are mounted twice: first `acceptDeployToken` (`middlewares/deployToken.ts`; header
+`x-deploy-token` = `DEPLOY_UPLOAD_TOKEN`, constant-time compare), which calls `next('route')` when the header is absent
+so the normal user + roles mount handles it. Valid header: `ctx.deployer = true`, no `user`, `uploadedBy` null, audit
+actor `{ id: null, role: 'ci' }`. Wrong header or no token configured: 401 `DEPLOY_TOKEN_INVALID`. Any other route
+ignores the header (401 `TOKEN_REQUIRED`). Used by the game's GitHub Actions on each `v*` tag.
+
 ### Visits & login locations (`model/src/observability`, `usecase/src/observability`)
 
 `POST /api/visits/ingest` (no token; header `x-ingest-secret` = `VISITS_INGEST_SECRET`, shared with the
